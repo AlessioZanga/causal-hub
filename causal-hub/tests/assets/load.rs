@@ -4,7 +4,7 @@ mod tests {
         assets::*,
         labels,
         models::{BN, CPD, Graph, Labelled},
-        states,
+        support,
         types::{Error, Result},
     };
     use dry::macro_for;
@@ -82,18 +82,36 @@ mod tests {
                 assert_eq!(model.cpds()[6].conditioning_labels(), &labels!["asia"]);
                 assert_eq!(model.cpds()[7].conditioning_labels(), &labels!["either"]);
 
-                // Check CPDs states.
-                assert_eq!(model.cpds()[0].states(), &states![("asia", ["no", "yes"])]);
-                assert_eq!(model.cpds()[1].states(), &states![("bronc", ["no", "yes"])]);
-                assert_eq!(model.cpds()[2].states(), &states![("dysp", ["no", "yes"])]);
+                // Check CPDs support.
                 assert_eq!(
-                    model.cpds()[3].states(),
-                    &states![("either", ["no", "yes"])]
+                    model.cpds()[0].support(),
+                    &support![("asia", ["no", "yes"])]
                 );
-                assert_eq!(model.cpds()[4].states(), &states![("lung", ["no", "yes"])]);
-                assert_eq!(model.cpds()[5].states(), &states![("smoke", ["no", "yes"])]);
-                assert_eq!(model.cpds()[6].states(), &states![("tub", ["no", "yes"])]);
-                assert_eq!(model.cpds()[7].states(), &states![("xray", ["no", "yes"])]);
+                assert_eq!(
+                    model.cpds()[1].support(),
+                    &support![("bronc", ["no", "yes"])]
+                );
+                assert_eq!(
+                    model.cpds()[2].support(),
+                    &support![("dysp", ["no", "yes"])]
+                );
+                assert_eq!(
+                    model.cpds()[3].support(),
+                    &support![("either", ["no", "yes"])]
+                );
+                assert_eq!(
+                    model.cpds()[4].support(),
+                    &support![("lung", ["no", "yes"])]
+                );
+                assert_eq!(
+                    model.cpds()[5].support(),
+                    &support![("smoke", ["no", "yes"])]
+                );
+                assert_eq!(model.cpds()[6].support(), &support![("tub", ["no", "yes"])]);
+                assert_eq!(
+                    model.cpds()[7].support(),
+                    &support![("xray", ["no", "yes"])]
+                );
 
                 // Check CPDs parameters.
                 assert_eq!(

@@ -7,7 +7,7 @@ use backend::{
     datasets::{CatTrj, CatTrjEv, CatTrjEvT, CatTrjs, CatTrjsEv},
     models::Labelled,
     random::{Random, RngCatTrjEv},
-    types::{Set, States},
+    types::{Set, Support},
 };
 use numpy::{PyArray1, prelude::*};
 use pyo3::{
@@ -50,16 +50,16 @@ impl PyCatTrjEv {
         Ok(self.lock().labels().iter().cloned().collect())
     }
 
-    /// Returns the states of the categorical trajectory.
+    /// Returns the support of the categorical trajectory.
     ///
     /// Returns
     /// -------
     /// dict[str, tuple[str, ...]]
-    ///     A reference to the states of the categorical trajectory.
+    ///     A reference to the support of the categorical trajectory.
     ///
-    pub fn states<'a>(&'a self, py: Python<'a>) -> PyResult<BTreeMap<String, Bound<'a, PyTuple>>> {
+    pub fn support<'a>(&'a self, py: Python<'a>) -> PyResult<BTreeMap<String, Bound<'a, PyTuple>>> {
         self.lock()
-            .states()
+            .support()
             .iter()
             .map(|(label, states)| {
                 // Get reference to the label and states.
@@ -183,10 +183,10 @@ impl PyCatTrjEv {
                 .to_owned_array(),
         );
 
-        // Construct the states.
-        let mut states = with_states
+        // Construct the support.
+        let mut support = with_states
             .and_then(|states| {
-                // Convert the PyDict to a States.
+                // Convert the PyDict to Support.
                 states
                     .items()
                     .into_iter()
@@ -208,23 +208,23 @@ impl PyCatTrjEv {
                     .ok()
             })
             .unwrap_or_else(|| {
-                // Infer the states from the columns.
+                // Infer the support from the columns.
                 event
                     .iter()
                     .zip(&state)
-                    .fold(States::default(), |mut acc, (event, state)| {
-                        // Get the entry in the states map.
+                    .fold(Support::default(), |mut acc, (event, state)| {
+                        // Get the entry in the support map.
                         let entry = acc.entry(event.clone()).or_default();
-                        // Insert the state in the states map.
+                        // Insert the state in the support map.
                         entry.insert(state.clone());
-                        // Return the states map.
+                        // Return the support map.
                         acc
                     })
             });
 
-        // Sort the states.
-        states.sort_keys();
-        states.values_mut().for_each(Set::sort);
+        // Sort the support.
+        support.sort_keys();
+        support.values_mut().for_each(Set::sort);
 
         // Zip the iterators together.
         let evidence: Vec<_> = event
@@ -235,10 +235,10 @@ impl PyCatTrjEv {
             // Flatten the nested tuples.
             .map(|(((event, state), start_time), end_time)| {
                 // Convert the event and state.
-                let event = states.get_index_of(&event).ok_or_else(|| {
-                    Error::new_err(format!("Event '{}' not found in states", event))
+                let event = support.get_index_of(&event).ok_or_else(|| {
+                    Error::new_err(format!("Event '{}' not found in support", event))
                 })?;
-                let state = states[event].get_index_of(&state).ok_or_else(|| {
+                let state = support[event].get_index_of(&state).ok_or_else(|| {
                     Error::new_err(format!("State '{}' not found for event '{}'", state, event))
                 })?;
                 // Construct the evidence.
@@ -252,7 +252,7 @@ impl PyCatTrjEv {
             .collect::<PyResult<_>>()?;
 
         // Construct the evidence.
-        CatTrjEv::new(states, evidence)
+        CatTrjEv::new(support, evidence)
             .map(Into::into)
             .map_err(to_pyerr)
     }
@@ -363,8 +363,8 @@ impl PyCatTrjEv {
             .map(|x| x.ok_or_else(|| Error::new_err("Null found in 'end_time' column".to_string())))
             .collect::<PyResult<_>>()?;
 
-        // Construct the states.
-        let mut states = with_states
+        // Construct the support.
+        let mut support = with_states
             .and_then(|states| {
                 states
                     .items()
@@ -386,16 +386,16 @@ impl PyCatTrjEv {
                 event
                     .iter()
                     .zip(&state)
-                    .fold(States::default(), |mut acc, (event, state)| {
+                    .fold(Support::default(), |mut acc, (event, state)| {
                         let entry = acc.entry(event.clone()).or_default();
                         entry.insert(state.clone());
                         acc
                     })
             });
 
-        // Sort the states.
-        states.sort_keys();
-        states.values_mut().for_each(Set::sort);
+        // Sort the support.
+        support.sort_keys();
+        support.values_mut().for_each(Set::sort);
 
         // Build evidence.
         use CatTrjEvT as E;
@@ -405,10 +405,10 @@ impl PyCatTrjEv {
             .zip(start_time)
             .zip(end_time)
             .map(|(((event, state), start_time), end_time)| {
-                let event = states.get_index_of(&event).ok_or_else(|| {
-                    Error::new_err(format!("Event '{}' not found in states", event))
+                let event = support.get_index_of(&event).ok_or_else(|| {
+                    Error::new_err(format!("Event '{}' not found in support", event))
                 })?;
-                let state = states[event].get_index_of(&state).ok_or_else(|| {
+                let state = support[event].get_index_of(&state).ok_or_else(|| {
                     Error::new_err(format!("State '{}' not found for event '{}'", state, event))
                 })?;
                 Ok(E::CertainPositiveInterval {
@@ -420,7 +420,7 @@ impl PyCatTrjEv {
             })
             .collect::<PyResult<_>>()?;
 
-        CatTrjEv::new(states, evidence)
+        CatTrjEv::new(support, evidence)
             .map(Into::into)
             .map_err(to_pyerr)
     }
@@ -493,16 +493,16 @@ impl PyCatTrjsEv {
         Ok(self.lock().labels().iter().cloned().collect())
     }
 
-    /// Returns the states of the categorical trajectory.
+    /// Returns the support of the categorical trajectory.
     ///
     /// Returns
     /// -------
     /// dict[str, tuple[str, ...]]
-    ///     A reference to the states of the categorical trajectory.
+    ///     A reference to the support of the categorical trajectory.
     ///
-    pub fn states<'a>(&'a self, py: Python<'a>) -> PyResult<BTreeMap<String, Bound<'a, PyTuple>>> {
+    pub fn support<'a>(&'a self, py: Python<'a>) -> PyResult<BTreeMap<String, Bound<'a, PyTuple>>> {
         self.lock()
-            .states()
+            .support()
             .iter()
             .map(|(label, states)| {
                 // Get reference to the label and states.

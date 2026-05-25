@@ -94,11 +94,11 @@ impl<R: Rng> ImportanceSampler<'_, R, CatBN, CatEv> {
                         E::CertainPositive { event, state }
                     }
                     E::UncertainNegative { p_not_states, .. } => {
-                        // Allocate the not states.
+                        // Allocate the not support.
                         let mut not_states: Set<_> = (0..p_not_states.len()).collect();
-                        // Repeat until only a subset of the not states are sampled.
+                        // Repeat until only a subset of the not support are sampled.
                         while not_states.len() == p_not_states.len() {
-                            // Sample the not states.
+                            // Sample the not support.
                             not_states = p_not_states
                                 .indexed_iter()
                                 // For each (state, p_not_state) pair ...
@@ -117,7 +117,7 @@ impl<R: Rng> ImportanceSampler<'_, R, CatBN, CatEv> {
             .collect::<Result<Vec<_>>>()?;
 
         // Collect the certain evidence.
-        CatEv::new(self.evidence.states().clone(), certain_evidence)
+        CatEv::new(self.evidence.support().clone(), certain_evidence)
     }
 }
 
@@ -129,11 +129,11 @@ impl<R: Rng> BNSampler<CatBN> for ImportanceSampler<'_, R, CatBN, CatEv> {
         // Get shortened variable type.
         use CatEvT as E;
 
-        // Check the model and the evidences have the same states.
-        if self.model.states() != self.evidence.states() {
+        // Check the model and the evidences have the same support.
+        if self.model.support() != self.evidence.support() {
             return Err(Error::InvalidParameter(
-                "evidence.states",
-                "The model and the evidences must have the same states.",
+                "evidence.support",
+                "The model and the evidences must have the same support.",
             ));
         }
 
@@ -180,7 +180,7 @@ impl<R: Rng> BNSampler<CatBN> for ImportanceSampler<'_, R, CatBN, CatEv> {
                         not_states.iter().for_each(|&j| {
                             // Update the weight.
                             w_i -= p_i[j];
-                            // Zero out the not states.
+                            // Zero out the not support.
                             p_i[j] = 0.;
                         });
                         // Normalize the probabilities.
@@ -240,7 +240,7 @@ impl<R: Rng> BNSampler<CatBN> for ImportanceSampler<'_, R, CatBN, CatEv> {
             })?;
 
         // Construct the samples.
-        let samples = CatTable::new(self.model.states().clone(), samples)?;
+        let samples = CatTable::new(self.model.support().clone(), samples)?;
 
         // Return the weighted samples.
         CatWtdTable::new(samples, weights)
@@ -367,7 +367,7 @@ impl<R: Rng + SeedableRng> ParBNSampler<CatBN> for ImportanceSampler<'_, R, CatB
             })?;
 
         // Construct the samples.
-        let samples = CatTable::new(self.model.states().clone(), samples)?;
+        let samples = CatTable::new(self.model.support().clone(), samples)?;
 
         // Return the weighted samples.
         CatWtdTable::new(samples, weights)
@@ -448,11 +448,11 @@ impl<R: Rng> ImportanceSampler<'_, R, CatCTBN, CatTrjEv> {
                         }
                     }
                     E::UncertainNegativeInterval { p_not_states, .. } => {
-                        // Allocate the not states.
+                        // Allocate the not support.
                         let mut not_states: Set<_> = (0..p_not_states.len()).collect();
-                        // Repeat until only a subset of the not states are sampled.
+                        // Repeat until only a subset of the not support are sampled.
                         while not_states.len() == p_not_states.len() {
-                            // Sample the not states.
+                            // Sample the not support.
                             not_states = p_not_states
                                 .indexed_iter()
                                 // For each (state, p_not_state) pair ...
@@ -480,7 +480,7 @@ impl<R: Rng> ImportanceSampler<'_, R, CatCTBN, CatTrjEv> {
             .collect::<Result<_>>()?;
 
         // Collect the certain evidence.
-        CatTrjEv::new(self.evidence.states().clone(), certain_evidence)
+        CatTrjEv::new(self.evidence.support().clone(), certain_evidence)
     }
 
     /// Sample transition time for variable X_i with state x_i.
@@ -673,11 +673,11 @@ impl<R: Rng> CTBNSampler<CatCTBN> for ImportanceSampler<'_, R, CatCTBN, CatTrjEv
         // Get shortened variable type.
         use CatTrjEvT as E;
 
-        // Check the model and the evidences have the same states.
-        if self.model.states() != self.evidence.states() {
+        // Check the model and the evidences have the same support.
+        if self.model.support() != self.evidence.support() {
             return Err(Error::InvalidParameter(
-                "evidence.states",
-                "The model and the evidences must have the same states.",
+                "evidence.support",
+                "The model and the evidences must have the same support.",
             ));
         }
         // Check length is positive.
@@ -702,7 +702,7 @@ impl<R: Rng> CTBNSampler<CatCTBN> for ImportanceSampler<'_, R, CatCTBN, CatTrjEv
         // Reduce the uncertain evidences to certain evidences.
         let evidence = self.sample_evidence(&mut *rng)?;
 
-        // Sample the initial states with given initial evidence.
+        // Sample the initial support with given initial evidence.
         let (mut event, mut weight) = {
             // Get the initial state distribution.
             let initial_d = self.model.initial_distribution();
@@ -790,7 +790,7 @@ impl<R: Rng> CTBNSampler<CatCTBN> for ImportanceSampler<'_, R, CatCTBN, CatTrjEv
                             not_states.iter().for_each(|&j| {
                                 // Update the weight.
                                 w_i -= q_i_zx[j];
-                                // Zero out the not states.
+                                // Zero out the not support.
                                 q_i_zx[j] = 0.;
                             });
                             // Normalize the probabilities.
@@ -845,8 +845,8 @@ impl<R: Rng> CTBNSampler<CatCTBN> for ImportanceSampler<'_, R, CatCTBN, CatTrjEv
             time = times[i];
         }
 
-        // Get the states of the CIMs.
-        let states = self.model.states().clone();
+        // Get the support of the CIMs.
+        let support = self.model.support().clone();
 
         // Convert the events to a 2D array.
         let shape = (sample_events.len(), sample_events[0].len());
@@ -857,7 +857,7 @@ impl<R: Rng> CTBNSampler<CatCTBN> for ImportanceSampler<'_, R, CatCTBN, CatTrjEv
         let sample_times = Array::from_iter(sample_times);
 
         // Construct the trajectory.
-        let trajectory = CatTrj::new(states, sample_events, sample_times)?;
+        let trajectory = CatTrj::new(support, sample_events, sample_times)?;
 
         // Return the trajectory and its weight.
         CatWtdTrj::new(trajectory, weight)

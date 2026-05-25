@@ -11,7 +11,7 @@ mod tests {
             models::{CTBN, CatCIM, CatCTBN, DiGraph, Graph, Labelled},
             random::{Random, RngCatTrjEv},
             samplers::{CTBNSampler, ForwardSampler, ImportanceSampler, ParCTBNSampler},
-            states,
+            support,
             types::{Cache, Error, Result},
         };
         use ndarray::prelude::*;
@@ -48,8 +48,8 @@ mod tests {
             let initial_cims = vec![
                 CatCIM::new(
                     // P(Hungry | Eating, FullStomach)
-                    states![("Hungry", ["no", "yes"])],
-                    states![("Eating", ["no", "yes"]), ("FullStomach", ["no", "yes"])],
+                    support![("Hungry", ["no", "yes"])],
+                    support![("Eating", ["no", "yes"]), ("FullStomach", ["no", "yes"])],
                     array![
                         [[-E, E], [E, -E]],
                         [[-E, E], [E, -E]],
@@ -59,8 +59,8 @@ mod tests {
                 )?,
                 CatCIM::new(
                     // P(Eating | FullStomach, Hungry)
-                    states![("Eating", ["no", "yes"])],
-                    states![("FullStomach", ["no", "yes"]), ("Hungry", ["no", "yes"])],
+                    support![("Eating", ["no", "yes"])],
+                    support![("FullStomach", ["no", "yes"]), ("Hungry", ["no", "yes"])],
                     array![
                         [[-E, E], [E, -E]],
                         [[-E, E], [E, -E]],
@@ -70,8 +70,8 @@ mod tests {
                 )?,
                 CatCIM::new(
                     // P(FullStomach | Eating, Hungry)
-                    states![("FullStomach", ["no", "yes"])],
-                    states![("Eating", ["no", "yes"]), ("Hungry", ["no", "yes"])],
+                    support![("FullStomach", ["no", "yes"])],
+                    support![("Eating", ["no", "yes"]), ("Hungry", ["no", "yes"])],
                     array![
                         [[-E, E], [E, -E]],
                         [[-E, E], [E, -E]],

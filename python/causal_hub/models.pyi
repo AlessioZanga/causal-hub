@@ -390,14 +390,14 @@ class CatCIM:
             A reference to the label.
         """
 
-    def states(self) -> builtins.dict[builtins.str, tuple]:
+    def support(self) -> builtins.dict[builtins.str, tuple]:
         r"""
-        Returns the states of the conditioned variable.
+        Returns the support of the conditioned variable.
 
         Returns
         -------
         dict[str, tuple[str]]
-            A reference to the states.
+            A reference to the support.
         """
 
     def shape(self) -> builtins.list[builtins.int]:
@@ -420,14 +420,14 @@ class CatCIM:
             A reference to the conditioning labels.
         """
 
-    def conditioning_states(self) -> builtins.dict[builtins.str, tuple]:
+    def conditioning_support(self) -> builtins.dict[builtins.str, tuple]:
         r"""
-        Returns the states of the conditioning variables.
+        Returns the support of the conditioning variables.
 
         Returns
         -------
         dict[str, tuple[str]]
-            The states of the conditioning variables.
+            The support of the conditioning variables.
         """
 
     def conditioning_shape(self) -> builtins.list[builtins.int]:
@@ -549,7 +549,7 @@ class CatCPD:
             A reference to the label.
         """
 
-    def states(self) -> builtins.dict[builtins.str, tuple]:
+    def support(self) -> builtins.dict[builtins.str, tuple]:
         r"""
         Returns the states of the conditioned variable.
 
@@ -579,7 +579,7 @@ class CatCPD:
             A reference to the conditioning labels.
         """
 
-    def conditioning_states(self) -> builtins.dict[builtins.str, tuple]:
+    def conditioning_support(self) -> builtins.dict[builtins.str, tuple]:
         r"""
         Returns the states of the conditioning variables.
 
@@ -648,7 +648,7 @@ class CatCPD:
     def random(
         cls,
         states: dict,
-        conditioning_states: dict,
+        conditioning_support: dict,
         alpha: builtins.float = 1.0,
         seed: builtins.int = 31,
     ) -> CatCPD:
@@ -659,8 +659,8 @@ class CatCPD:
         ----------
         states: dict[str, tuple[str, ...]]
             The states of the variable.
-        conditioning_states: dict[str, tuple[str, ...]]
-            The states of the conditioning variables.
+        conditioning_support: dict[str, tuple[str, ...]]
+            The support of the conditioning variables.
         alpha: float, default=1.0
             The parameter of the Dirichlet distribution.
         seed: int, default=31

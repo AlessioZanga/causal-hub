@@ -132,11 +132,11 @@ impl<'a, R: Rng + SeedableRng> RAWE<'a, R, CatTrjEv, CatTrj> {
                         }
                     }
                     E::UncertainNegativeInterval { p_not_states, .. } => {
-                        // Allocate the not states.
+                        // Allocate the not support.
                         let mut not_states: Set<_> = (0..p_not_states.len()).collect();
-                        // Repeat until only a subset of the not states are sampled.
+                        // Repeat until only a subset of the not support are sampled.
                         while not_states.len() == p_not_states.len() {
-                            // Sample the not states.
+                            // Sample the not support.
                             not_states = p_not_states
                                 .indexed_iter()
                                 // For each (state, p_not_state) pair ...
@@ -163,7 +163,7 @@ impl<'a, R: Rng + SeedableRng> RAWE<'a, R, CatTrjEv, CatTrj> {
             .collect::<Result<Vec<_>>>()?;
 
         // Collect the certain evidence.
-        CatTrjEv::new(self.evidence.states().clone(), certain_evidence)
+        CatTrjEv::new(self.evidence.support().clone(), certain_evidence)
     }
 
     /// Fills the evidence with the raw estimator.
@@ -178,8 +178,8 @@ impl<'a, R: Rng + SeedableRng> RAWE<'a, R, CatTrjEv, CatTrj> {
         // Set missing placeholder.
         const M: CatType = CatType::MAX;
 
-        // Get labels and states.
-        let states = self.evidence.states().clone();
+        // Get labels and support.
+        let support = self.evidence.support().clone();
 
         // Get the ending time of the last event.
         let end_time = self
@@ -210,13 +210,13 @@ impl<'a, R: Rng + SeedableRng> RAWE<'a, R, CatTrjEv, CatTrj> {
             .dedup()
             .collect();
 
-        // Allocate the matrix of events with unknown states.
-        let mut events = Array2::from_elem((times.len(), states.len()), M);
+        // Allocate the matrix of events with unknown support.
+        let mut events = Array2::from_elem((times.len(), support.len()), M);
 
         // Reduce the uncertain evidences to certain evidences.
         let evidence = self.sample_evidence()?;
 
-        // Set the states of the events given the evidence.
+        // Set the support of the events given the evidence.
         Zip::from(&times)
             .and(events.axis_iter_mut(Axis(0)))
             .par_for_each(|time, mut event| {
@@ -253,7 +253,7 @@ impl<'a, R: Rng + SeedableRng> RAWE<'a, R, CatTrjEv, CatTrj> {
         // If no evidence is present, fill it randomly.
         no_evidence.into_iter().try_for_each(|i| -> Result<()> {
             // Sample a state uniformly at random.
-            let dist = Uniform::new(0, states[i].len() as CatType)
+            let dist = Uniform::new(0, support[i].len() as CatType)
                 .map_err(|e| Error::RandDistr(&format!("Invalid uniform distribution: {}", e)))?;
             let random_state = Array1::from_shape_fn(events.nrows(), |_| self.rng.sample(dist));
             // Fill the event with the sampled state.
@@ -262,7 +262,7 @@ impl<'a, R: Rng + SeedableRng> RAWE<'a, R, CatTrjEv, CatTrj> {
             Ok(())
         })?;
 
-        // Fill the unknown states by propagating the known states.
+        // Fill the unknown support by propagating the known support.
         events
             .axis_iter_mut(Axis(1))
             .into_par_iter()
@@ -279,7 +279,7 @@ impl<'a, R: Rng + SeedableRng> RAWE<'a, R, CatTrjEv, CatTrj> {
                         .ok_or_else(|| Error::MissingState("No known state found in event"))?;
                     // Get the event to fill with.
                     let e = event[first_known];
-                    // Backward fill the unknown states.
+                    // Backward fill the unknown support.
                     event.slice_mut(s![..first_known]).fill(e);
                 }
                 // Set the first known state position as the last known state position.
@@ -301,7 +301,7 @@ impl<'a, R: Rng + SeedableRng> RAWE<'a, R, CatTrjEv, CatTrj> {
                         last_unknown.map(|last_unknown| last_unknown + first_unknown);
                     // If no last unknown state, set the end.
                     let last_unknown = last_unknown.unwrap_or(event.len());
-                    // Fill the unknown states with the last known state, or till the end if none.
+                    // Fill the unknown support with the last known state, or till the end if none.
                     event.slice_mut(s![first_unknown..last_unknown]).fill(e);
                     // Set the last known state position as the last unknown state position.
                     last_known = last_unknown;
@@ -364,15 +364,15 @@ impl<'a, R: Rng + SeedableRng> RAWE<'a, R, CatTrjEv, CatTrj> {
                 new_times.push(*t_j);
             });
 
-        // Reshape the events to the number of events and states.
+        // Reshape the events to the number of events and support.
         let events = Array::from_iter(new_events.into_iter().flatten())
-            .into_shape_with_order((new_times.len(), states.len()))
+            .into_shape_with_order((new_times.len(), support.len()))
             .map_err(Error::NdarrayShape)?;
         // Reshape the times to the number of events.
         let times = Array::from_iter(new_times);
 
         // Construct the fully observed trajectory.
-        CatTrj::new(states, events, times)
+        CatTrj::new(support, events, times)
     }
 }
 

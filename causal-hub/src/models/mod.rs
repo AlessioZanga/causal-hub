@@ -14,7 +14,7 @@ use std::fmt::Debug;
 
 pub use graphs::*;
 
-use crate::types::{Error, Labels, Result, Set};
+use crate::types::{Error, Labels, Result, Set, Support};
 
 /// A trait for models with labelled variables.
 pub trait Labelled {
@@ -181,7 +181,7 @@ where
 
 /// A trait for conditional probability distributions.
 pub trait CPD: Clone + Debug + Labelled + PartialEq + AbsDiffEq + RelativeEq {
-    /// The type of the support.
+    /// The type of the support samples.
     type Support;
     /// The type of the parameters.
     type Parameters;
@@ -195,6 +195,28 @@ pub trait CPD: Clone + Debug + Labelled + PartialEq + AbsDiffEq + RelativeEq {
     /// A reference to the conditioning labels.
     ///
     fn conditioning_labels(&self) -> &Labels;
+
+    /// Returns the support of the CPD (the set of possible values for each variable).
+    ///
+    /// For categorical CPDs this returns the discrete support. For Gaussian CPDs it returns
+    /// an empty map since the support is continuous.
+    ///
+    /// # Returns
+    ///
+    /// A reference to the support.
+    ///
+    fn support(&self) -> &Support;
+
+    /// Returns the conditioning support of the CPD.
+    ///
+    /// For categorical CPDs this returns the discrete support of the conditioning variables.
+    /// For Gaussian CPDs it returns an empty map since the support is continuous.
+    ///
+    /// # Returns
+    ///
+    /// A reference to the conditioning support.
+    ///
+    fn conditioning_support(&self) -> &Support;
 
     /// Returns the parameters.
     ///
@@ -352,7 +374,7 @@ pub trait Phi:
     ///
     /// # Arguments
     ///
-    /// * `e` - A map from variable indices to their observed states.
+    /// * `e` - A map from variable indices to their observed support.
     ///
     /// # Returns
     ///

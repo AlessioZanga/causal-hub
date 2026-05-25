@@ -7,7 +7,7 @@ use backend::{
     datasets::{CatIncTable, CatType, Dataset, IncDataset},
     models::Labelled,
     random::{Random, RngCatIncTable},
-    types::States,
+    types::Support,
 };
 use numpy::{PyArray1, PyArray2, PyArrayMethods, ToPyArray, ndarray::prelude::*};
 use pyo3::{
@@ -49,16 +49,16 @@ impl PyCatIncTable {
         Ok(self.lock().labels().iter().cloned().collect())
     }
 
-    /// Returns the states of the dataset.
+    /// Returns the support of the dataset.
     ///
     /// Returns
     /// -------
     /// dict[str, tuple[str, ...]]
     ///     A dictionary mapping each label to a tuple of its possible states.
     ///
-    pub fn states<'a>(&'a self, py: Python<'a>) -> PyResult<BTreeMap<String, Bound<'a, PyTuple>>> {
+    pub fn support<'a>(&'a self, py: Python<'a>) -> PyResult<BTreeMap<String, Bound<'a, PyTuple>>> {
         self.lock()
-            .states()
+            .support()
             .iter()
             .map(|(label, states)| {
                 // Get reference to the label and states.
@@ -187,13 +187,13 @@ impl PyCatIncTable {
         // Get labels.
         let labels: Vec<String> = df.getattr("columns")?.call_method0("to_list")?.extract()?;
         // Get categories.
-        let mut states = States::default();
+        let mut support = Support::default();
         for label in &labels {
             // Get the categories of the column.
             let categories = df.get_item(label)?.getattr("cat")?.getattr("categories")?;
             let categories: Vec<String> = categories.call_method0("to_list")?.extract()?;
-            // Add the categories to the states.
-            states.insert(label.clone(), categories.into_iter().collect());
+            // Add the categories to the support.
+            support.insert(label.clone(), categories.into_iter().collect());
         }
 
         // Get values.
@@ -214,7 +214,7 @@ impl PyCatIncTable {
         }
 
         // Construct the categorical incomplete tabular dataset.
-        CatIncTable::new(states, values)
+        CatIncTable::new(support, values)
             .map(Into::into)
             .map_err(to_pyerr)
     }
@@ -252,7 +252,7 @@ impl PyCatIncTable {
         let labels: Vec<String> = df.getattr("columns")?.extract()?;
 
         // Get categories.
-        let mut states = States::default();
+        let mut support = Support::default();
         for label in &labels {
             let column = df.call_method1("get_column", (label,))?;
             let dtype = column.getattr("dtype")?.str()?.extract::<String>()?;
@@ -267,7 +267,7 @@ impl PyCatIncTable {
                 .try_iter()?
                 .map(|x| x?.extract::<String>())
                 .collect::<PyResult<_>>()?;
-            states.insert(label.clone(), categories.into_iter().collect());
+            support.insert(label.clone(), categories.into_iter().collect());
         }
 
         // Get values.
@@ -279,7 +279,7 @@ impl PyCatIncTable {
             let column_values: Result<Vec<CatType>, _> = items
                 .into_iter()
                 .map(|x| match x {
-                    Some(x) => states[label]
+                    Some(x) => support[label]
                         .get_index_of(&x)
                         .map(|idx| idx as CatType)
                         .ok_or_else(|| {
@@ -295,7 +295,7 @@ impl PyCatIncTable {
                 .assign(&Array1::from_vec(column_values?));
         }
 
-        CatIncTable::new(states, values)
+        CatIncTable::new(support, values)
             .map(Into::into)
             .map_err(to_pyerr)
     }
@@ -313,7 +313,7 @@ impl PyCatIncTable {
         // Get reference to the inner dataset.
         let inner = self.lock();
         let labels: Vec<String> = inner.labels().iter().cloned().collect();
-        let states = inner.states();
+        let states = inner.support();
         let values = inner.values();
 
         // Construct the DataFrame from a dictionary to avoid chained assignment warnings.
@@ -358,7 +358,7 @@ impl PyCatIncTable {
 
         let inner = self.lock();
         let labels: Vec<String> = inner.labels().iter().cloned().collect();
-        let states = inner.states();
+        let states = inner.support();
         let values = inner.values();
 
         for (i, label) in labels.iter().enumerate() {

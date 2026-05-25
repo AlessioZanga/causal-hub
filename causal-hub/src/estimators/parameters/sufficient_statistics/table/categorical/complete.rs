@@ -30,7 +30,7 @@ impl CSSEstimator<CatCPDS> for SSE<'_, CatTable> {
         // Initialize the joint counts.
         let mut n_xz: Array2<usize> = Array::zeros((s_z, s_x));
 
-        // Count the occurrences of the states.
+        // Count the occurrences of the support.
         self.dataset.values().rows().into_iter().for_each(|row| {
             // Get the value of X and Z as index.
             let idx_x = m_idx_x.ravel(x.iter().map(|&i| row[i] as usize));
@@ -70,7 +70,7 @@ impl ParCSSEstimator<CatCPDS> for SSE<'_, CatTable> {
         // Initialize the joint counts.
         let n_xz: Array2<usize> = Array::zeros((s_z, s_x));
 
-        // Count the occurrences of the states.
+        // Count the occurrences of the support.
         let n_xz = self
             .dataset
             .values()
@@ -80,7 +80,7 @@ impl ParCSSEstimator<CatCPDS> for SSE<'_, CatTable> {
             .fold(
                 || n_xz.clone(),
                 |mut n_xz, values| {
-                    // Count the occurrences of the states.
+                    // Count the occurrences of the support.
                     values.rows().into_iter().for_each(|row| {
                         // Get the value of X and Z as index.
                         let idx_x = m_idx_x.ravel(x.iter().map(|&i| row[i] as usize));

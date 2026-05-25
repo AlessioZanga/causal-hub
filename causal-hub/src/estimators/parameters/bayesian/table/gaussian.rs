@@ -112,7 +112,7 @@ impl BE<'_, GaussTable, f64> {
         // Construct the CPD parameters.
         let parameters = GaussCPDP::new(a, b, s)?;
 
-        // Subset the conditioning labels, states and shape.
+        // Subset the conditioning labels, support and shape.
         let conditioning_labels = z.iter().map(|&i| labels[i].clone()).collect();
         // Get the labels of the conditioned variables.
         let labels = x.iter().map(|&i| labels[i].clone()).collect();

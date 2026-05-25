@@ -175,13 +175,13 @@ def test_parameter_learning_em() -> None:
     exp0 = result["expectations"][0]
     assert isinstance(exp0, CatWtdTrjs)
     assert exp0.labels() == ["A", "B"]
-    assert set(exp0.states().keys()) == {"A", "B"}
+    assert set(exp0.support().keys()) == {"A", "B"}
 
     weighted_trjs = exp0.values()
     assert len(weighted_trjs) > 0
     w0 = weighted_trjs[0]
     assert w0.labels() == ["A", "B"]
-    assert set(w0.states().keys()) == {"A", "B"}
+    assert set(w0.support().keys()) == {"A", "B"}
     assert w0.weight() > 0.0
 
     trj0 = w0.trajectory()
@@ -240,7 +240,7 @@ def test_structure_learning_sem() -> None:
     exp0 = sem_step0["expectations"][0]
     assert isinstance(exp0, CatWtdTrjs)
     assert exp0.labels() == ["A", "B"]
-    assert set(exp0.states().keys()) == {"A", "B"}
+    assert set(exp0.support().keys()) == {"A", "B"}
 
     weighted_trjs = exp0.values()
     assert len(weighted_trjs) > 0

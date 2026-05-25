@@ -5,7 +5,7 @@ use rayon::prelude::*;
 use crate::{
     datasets::{CatTable, CatTrjEv, CatTrjEvT, CatType, Dataset},
     models::Labelled,
-    types::{Error, Labels, Result, Set, States},
+    types::{Error, Labels, Result, Set, Support},
 };
 
 /// A multivariate trajectory.
@@ -18,7 +18,7 @@ pub struct CatTrj {
 pub struct CatTrjEvidenceIter<'a> {
     rows: ndarray::iter::LanesIter<'a, CatType, Ix1>,
     time_bounds: std::vec::IntoIter<(f64, f64)>,
-    states: &'a States,
+    support: &'a Support,
 }
 
 impl<'a> Iterator for CatTrjEvidenceIter<'a> {
@@ -38,7 +38,7 @@ impl<'a> Iterator for CatTrjEvidenceIter<'a> {
                     end_time,
                 });
 
-        Some(CatTrjEv::new(self.states.clone(), evidences))
+        Some(CatTrjEv::new(self.support.clone(), evidences))
     }
 }
 
@@ -47,7 +47,7 @@ impl CatTrj {
     ///
     /// # Arguments
     ///
-    /// * `states` - An iterator of tuples containing the state labels and their corresponding values.
+    /// * `support` - An iterator of tuples containing the state labels and their corresponding values.
     /// * `events` - A 2D array of events.
     /// * `times` - A 1D array of times.
     ///
@@ -56,7 +56,7 @@ impl CatTrj {
     /// A new instance of `CatTrj`.
     ///
     pub fn new(
-        states: States,
+        support: Support,
         mut events: Array2<CatType>,
         mut times: Array1<f64>,
     ) -> Result<Self> {
@@ -141,21 +141,21 @@ impl CatTrj {
         }
 
         // Create a new categorical dataset instance.
-        let events = CatTable::new(states, events)?;
+        let events = CatTable::new(support, events)?;
 
         // Return a new trajectory instance.
         Ok(Self { events, times })
     }
 
-    /// Returns the states of the trajectory.
+    /// Returns the support of the trajectory.
     ///
     /// # Returns
     ///
-    /// A reference to the states of the trajectory.
+    /// A reference to the support of the trajectory.
     ///
     #[inline]
-    pub const fn states(&self) -> &States {
-        self.events.states()
+    pub const fn support(&self) -> &Support {
+        self.events.support()
     }
 
     /// Returns the shape of the trajectory.
@@ -206,7 +206,7 @@ impl Dataset for CatTrj {
         CatTrjEvidenceIter {
             rows: self.values().rows().into_iter(),
             time_bounds: time_bounds.into_iter(),
-            states: self.states(),
+            support: self.support(),
         }
     }
 
@@ -218,13 +218,13 @@ impl Dataset for CatTrj {
     fn select(&self, x: &Set<usize>) -> Result<Self> {
         // Select the dataset.
         let events = self.events.select(x)?;
-        // Get states and events.
-        let states = events.states().clone();
+        // Get support and events.
+        let support = events.support().clone();
         let events = events.values().clone();
         // Select the times.
         let times = self.times.clone();
         // Return the new weighted dataset.
-        Self::new(states, events, times)
+        Self::new(support, events, times)
     }
 }
 
@@ -232,7 +232,7 @@ impl Dataset for CatTrj {
 #[derive(Clone, Debug)]
 pub struct CatTrjs {
     labels: Labels,
-    states: States,
+    support: Support,
     shape: Array1<usize>,
     values: Vec<CatTrj>,
 }
@@ -249,7 +249,7 @@ impl CatTrjs {
     /// Panics if:
     ///
     /// * The trajectories have different labels.
-    /// * The trajectories have different states.
+    /// * The trajectories have different support.
     /// * The trajectories have different shape.
     ///
     /// # Returns
@@ -272,13 +272,13 @@ impl CatTrjs {
                 "All trajectories must have the same labels.",
             ));
         }
-        // Check if every trajectory has the same states.
+        // Check if every trajectory has the same support.
         if !values
             .windows(2)
-            .all(|trjs| trjs[0].states().eq(trjs[1].states()))
+            .all(|trjs| trjs[0].support().eq(trjs[1].support()))
         {
             return Err(Error::ConstructionError(
-                "All trajectories must have the same states.",
+                "All trajectories must have the same support.",
             ));
         }
         // Check if every trajectory has the same shape.
@@ -291,29 +291,29 @@ impl CatTrjs {
             ));
         }
 
-        // Get the labels, states and shape from the first trajectory.
-        let (labels, states, shape) = match values.first() {
-            None => (Labels::default(), States::default(), Array1::default((0,))),
-            Some(x) => (x.labels().clone(), x.states().clone(), x.shape().clone()),
+        // Get the labels, support and shape from the first trajectory.
+        let (labels, support, shape) = match values.first() {
+            None => (Labels::default(), Support::default(), Array1::default((0,))),
+            Some(x) => (x.labels().clone(), x.support().clone(), x.shape().clone()),
         };
 
         Ok(Self {
             labels,
-            states,
+            support,
             shape,
             values,
         })
     }
 
-    /// Returns the states of the trajectories.
+    /// Returns the support of the trajectories.
     ///
     /// # Returns
     ///
-    /// A reference to the states of the trajectories.
+    /// A reference to the support of the trajectories.
     ///
     #[inline]
-    pub fn states(&self) -> &States {
-        &self.states
+    pub fn support(&self) -> &Support {
+        &self.support
     }
 
     /// Returns the shape of the trajectories.
@@ -337,7 +337,7 @@ impl FromIterator<CatTrj> for CatTrjs {
             // Return a minimal valid empty instance as fallback.
             Self {
                 labels: Default::default(),
-                states: Default::default(),
+                support: Default::default(),
                 values: vec![],
                 shape: Array1::zeros(2),
             }
@@ -355,7 +355,7 @@ impl FromParallelIterator<CatTrj> for CatTrjs {
             // Return a minimal valid empty instance as fallback.
             Self {
                 labels: Default::default(),
-                states: Default::default(),
+                support: Default::default(),
                 values: vec![],
                 shape: Array1::zeros(2),
             }

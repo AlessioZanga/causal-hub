@@ -13,7 +13,7 @@ use crate::{
     datasets::{CatEv, CatEvT, Dataset},
     io::CsvIO,
     models::Labelled,
-    types::{Error, Labels, Result, Set, States},
+    types::{Error, Labels, Result, Set, Support},
 };
 
 /// A type alias for a categorical variable.
@@ -25,7 +25,7 @@ pub type CatSample = Array1<CatType>;
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct CatTable {
     labels: Labels,
-    states: States,
+    support: Support,
     shape: Array1<usize>,
     values: Array2<CatType>,
 }
@@ -33,7 +33,7 @@ pub struct CatTable {
 /// Concrete iterator over categorical table evidences.
 pub struct CatTableEvidenceIter<'a> {
     rows: ndarray::iter::LanesIter<'a, CatType, Ix1>,
-    states: &'a States,
+    support: &'a Support,
 }
 
 impl<'a> Iterator for CatTableEvidenceIter<'a> {
@@ -50,7 +50,7 @@ impl<'a> Iterator for CatTableEvidenceIter<'a> {
                 state: state as usize,
             });
 
-        Some(CatEv::new(self.states.clone(), evidences))
+        Some(CatEv::new(self.support.clone(), evidences))
     }
 }
 
@@ -66,69 +66,69 @@ impl CatTable {
     ///
     /// # Arguments
     ///
-    /// * `states` - The variables states.
+    /// * `support` - The variables support.
     /// * `values` - The values of the variables.
     ///
     /// # Notes
     ///
-    /// * Labels and states will be sorted in alphabetical order.
+    /// * Labels and support will be sorted in alphabetical order.
     ///
     /// # Errors
     ///
-    /// * If the number of variable states is higher than `CatType::MAX`.
+    /// * If the number of variable support is higher than `CatType::MAX`.
     /// * If the number of variables is different from the number of values columns.
-    /// * If the variables values are not smaller than the number of states.
+    /// * If the variables values are not smaller than the number of support.
     ///
     /// # Panics
     ///
     /// * If the variable labels are not unique.
-    /// * If the variable states are not unique.
+    /// * If the variable support are not unique.
     ///
     /// # Returns
     ///
     /// A new categorical dataset instance.
     ///
-    pub fn new(mut states: States, mut values: Array2<CatType>) -> Result<Self> {
+    pub fn new(mut support: Support, mut values: Array2<CatType>) -> Result<Self> {
         // Log the creation of the categorical dataset.
         debug!(
             "Creating a new categorical dataset with {} variables and {} samples.",
-            states.len(),
+            support.len(),
             values.nrows()
         );
 
-        // Check if the number of states is less than `CatType::MAX`.
-        states.iter().try_for_each(|(label, state)| {
+        // Check if the number of support is less than `CatType::MAX`.
+        support.iter().try_for_each(|(label, state)| {
             if state.len() > CatType::MAX as usize {
                 return Err(Error::InvalidParameter(
-                    &format!("states[{label}]"),
-                    &format!("should have less than 256 states, found {}", state.len()),
+                    &format!("support[{label}]"),
+                    &format!("should have less than 256 support, found {}", state.len()),
                 ));
             }
             Ok(())
         })?;
         // Check if the number of variables is equal to the number of columns.
-        if states.len() != values.ncols() {
+        if support.len() != values.ncols() {
             return Err(Error::IncompatibleShape(
-                &format!("|states| = {}", states.len()),
+                &format!("|support| = {}", support.len()),
                 &format!("|cols| = {}", values.ncols()),
             ));
         }
-        // Check if the maximum value of the values is less than the number of states.
+        // Check if the maximum value of the values is less than the number of support.
         values
             .fold_axis(Axis(0), 0, |&a, &b| if a > b { a } else { b })
             .into_iter()
             .enumerate()
             .try_for_each(|(i, x)| {
-                let (label, states) = states
+                let (label, support) = support
                     .get_index(i)
                     .ok_or_else(|| Error::IndexOutOfBounds(i))?;
 
-                if x >= states.len() as CatType {
+                if x >= support.len() as CatType {
                     return Err(Error::InvalidParameter(
                         &format!("values[.., '{label}']"),
                         &format!(
-                            "must be less than the number of states ({}), found {x}",
-                            states.len()
+                            "must be less than the number of support ({}), found {x}",
+                            support.len()
                         ),
                     ));
                 }
@@ -136,14 +136,14 @@ impl CatTable {
             })?;
 
         // Check that the labels are sorted.
-        if !states.keys().is_sorted() {
+        if !support.keys().is_sorted() {
             // Allocate indices to sort labels.
-            let mut indices: Vec<usize> = (0..states.len()).collect();
+            let mut indices: Vec<usize> = (0..support.len()).collect();
             // Sort the indices by labels.
-            let keys: Vec<_> = states.keys().collect();
+            let keys: Vec<_> = support.keys().collect();
             indices.sort_by_key(|&i| keys[i]);
-            // Sort the states.
-            states.sort_keys();
+            // Sort the support.
+            support.sort_keys();
             // Allocate new values.
             let mut new_values = values.clone();
             // Sort the new values according to the sorted indices.
@@ -158,56 +158,56 @@ impl CatTable {
         values
             .columns_mut()
             .into_iter()
-            .zip(states.values_mut())
-            .try_for_each(|(mut col, states)| -> Result<_> {
-                // ... check if the states are sorted.
-                if !states.is_sorted() {
-                    // Clone the states.
-                    let mut new_states = states.clone();
-                    // Sort the states.
+            .zip(support.values_mut())
+            .try_for_each(|(mut col, support)| -> Result<_> {
+                // ... check if the support are sorted.
+                if !support.is_sorted() {
+                    // Clone the support.
+                    let mut new_states = support.clone();
+                    // Sort the support.
                     new_states.sort();
-                    // Map values to sorted states.
+                    // Map values to sorted support.
                     col.iter_mut().try_for_each(|value| -> Result<_> {
                         // Get the state.
-                        let state = &states[*value as usize];
-                        // Map the value to the sorted states.
+                        let state = &support[*value as usize];
+                        // Map the value to the sorted support.
                         *value = new_states
                             .get_index_of(state)
                             .ok_or_else(|| Error::MissingState(state))?
                             as CatType;
                         Ok(())
                     })?;
-                    // Update the states.
-                    *states = new_states;
+                    // Update the support.
+                    *support = new_states;
                 }
                 Ok(())
             })?;
 
         // Get the labels of the variables.
-        let labels = states.keys().cloned().collect();
-        // Get the shape of the states.
-        let shape = states.values().map(Set::len).collect();
+        let labels = support.keys().cloned().collect();
+        // Get the shape of the support.
+        let shape = support.values().map(Set::len).collect();
 
         Ok(Self {
             labels,
-            states,
+            support,
             shape,
             values,
         })
     }
 
-    /// Returns the states of the variables in the categorical distribution.
+    /// Returns the support of the variables in the categorical distribution.
     ///
     /// # Returns
     ///
-    /// A reference to the vector of states.
+    /// A reference to the vector of support.
     ///
     #[inline]
-    pub const fn states(&self) -> &States {
-        &self.states
+    pub const fn support(&self) -> &Support {
+        &self.support
     }
 
-    /// Returns the shape of the set of states in the categorical distribution.
+    /// Returns the shape of the set of support in the categorical distribution.
     ///
     /// # Returns
     ///
@@ -221,11 +221,11 @@ impl CatTable {
 
 impl Display for CatTable {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        // Get the maximum length of the labels and states.
+        // Get the maximum length of the labels and support.
         let n = self
             .labels()
             .iter()
-            .chain(self.states().values().flatten())
+            .chain(self.support().values().flatten())
             .map(|x| x.len())
             .max()
             .unwrap_or(0);
@@ -245,7 +245,7 @@ impl Display for CatTable {
             let row = row
                 .iter()
                 .enumerate()
-                .map(|(i, &x)| &self.states()[i][x as usize])
+                .map(|(i, &x)| &self.support()[i][x as usize])
                 .map(|x| format!("{x:n$}"))
                 .join(" | ");
             writeln!(f, "| {row} |")?;
@@ -268,7 +268,7 @@ impl Dataset for CatTable {
     fn evidence_iter(&self) -> Self::EvidenceIter<'_> {
         CatTableEvidenceIter {
             rows: self.values.rows().into_iter(),
-            states: &self.states,
+            support: &self.support,
         }
     }
 
@@ -286,13 +286,13 @@ impl Dataset for CatTable {
             Ok(())
         })?;
 
-        // Select the states.
-        let states: States = x
+        // Select the support.
+        let support: Support = x
             .iter()
             .map(|&i| {
-                self.states
+                self.support
                     .get_index(i)
-                    .map(|(label, states)| (label.clone(), states.clone()))
+                    .map(|(label, support)| (label.clone(), support.clone()))
                     .ok_or_else(|| Error::IndexOutOfBounds(i))
             })
             .collect::<Result<_>>()?;
@@ -307,7 +307,7 @@ impl Dataset for CatTable {
         let values = new_values;
 
         // Return the new dataset.
-        Self::new(states, values)
+        Self::new(support, values)
     }
 }
 
@@ -328,8 +328,8 @@ impl CsvIO for CatTable {
             .map(|x| x.to_owned())
             .collect();
 
-        // Get the states of the variables.
-        let mut states: States = labels
+        // Get the support of the variables.
+        let mut support: Support = labels
             .iter()
             .map(|x| (x.clone(), Default::default()))
             .collect();
@@ -340,14 +340,14 @@ impl CsvIO for CatTable {
             |mut values, (i, row)| -> Result<_> {
                 // Get the record row.
                 let row = row.map_err(|e| Error::Csv(Arc::new(e)))?;
-                // Zip the row with the states.
-                for (j, (x, states)) in row.into_iter().zip(states.values_mut()).enumerate() {
+                // Zip the row with the support.
+                for (j, (x, support)) in row.into_iter().zip(support.values_mut()).enumerate() {
                     // Check if the value is empty.
                     if x.is_empty() {
                         return Err(Error::MissingValue(i + 1, j + 1));
                     }
-                    // Insert the value into the states, if not present.
-                    let (idx, _) = states.insert_full(x.to_owned());
+                    // Insert the value into the support, if not present.
+                    let (idx, _) = support.insert_full(x.to_owned());
                     // Collect the value.
                     values.push(idx as CatType);
                 }
@@ -366,7 +366,7 @@ impl CsvIO for CatTable {
         let values = values.into_shape_with_order((nrows, ncols))?;
 
         // Construct the dataset.
-        Self::new(states, values)
+        Self::new(support, values)
     }
 
     fn to_csv_writer<W: Write>(&self, writer: W) -> Result<()> {
@@ -378,11 +378,11 @@ impl CsvIO for CatTable {
 
         // Write the records.
         for row in self.values.rows() {
-            // Map the row values to states.
+            // Map the row values to support.
             let record = row
                 .iter()
-                .zip(self.states().values())
-                .map(|(&x, states)| &states[x as usize]);
+                .zip(self.support().values())
+                .map(|(&x, support)| &support[x as usize]);
             // Write the record.
             writer.write_record(record)?;
         }

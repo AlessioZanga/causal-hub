@@ -6,7 +6,7 @@ use std::{
 use backend::{
     datasets::{CatTrj, CatTrjs, CatType, Dataset},
     models::Labelled,
-    types::{Set, States},
+    types::{Set, Support},
 };
 use numpy::{PyArray1, PyArray2, ndarray::prelude::*, prelude::*};
 use pyo3::{
@@ -45,16 +45,16 @@ impl PyCatTrj {
         Ok(self.lock().labels().iter().cloned().collect())
     }
 
-    /// Returns the states of the categorical trajectory.
+    /// Returns the support of the categorical trajectory.
     ///
     /// Returns
     /// -------
     /// dict[str, tuple[str, ...]]
-    ///     A reference to the states of the categorical trajectory.
+    ///     A reference to the support of the categorical trajectory.
     ///
-    pub fn states<'a>(&'a self, py: Python<'a>) -> PyResult<BTreeMap<String, Bound<'a, PyTuple>>> {
+    pub fn support<'a>(&'a self, py: Python<'a>) -> PyResult<BTreeMap<String, Bound<'a, PyTuple>>> {
         self.lock()
-            .states()
+            .support()
             .iter()
             .map(|(label, states)| {
                 // Get reference to the label and states.
@@ -177,30 +177,33 @@ impl PyCatTrj {
             );
         }
 
-        // Convert the columns categories to states.
-        let states: States = columns
+        // Convert the columns categories to support.
+        let support: Support = columns
             .into_iter()
             // Return the column name and the set of unique values.
             .map(|name| {
                 // Extract the column from the data frame.
                 let column = df.get_item(&name)?;
                 // Invoke the 'cat' accessory method.
-                let states = column.getattr("cat")?.getattr("categories")?;
-                // Iterate over the states and convert them to a Vec<String>.
-                let states: Set<String> = states
+                let categories = column.getattr("cat")?.getattr("categories")?;
+                // Iterate over the categories and convert them to a Vec<String>.
+                let categories: Set<String> = categories
                     .try_iter()?
                     .map(|x| x?.extract::<String>())
                     .collect::<PyResult<_>>()?;
 
-                Ok((name, states))
+                Ok((name, categories))
             })
             .collect::<PyResult<_>>()?;
 
         // Initialize the categorical variables values.
         let mut values = Array2::from_elem(shape, CatType::default());
         // Extract the categorical variables values.
-        values.columns_mut().into_iter().zip(&states).try_for_each(
-            |(mut value, (name, states))| {
+        values
+            .columns_mut()
+            .into_iter()
+            .zip(&support)
+            .try_for_each(|(mut value, (name, states))| {
                 // Extract the column from the data frame.
                 let column = df.get_item(name)?;
                 // Invoke the to_numpy method on the column.
@@ -225,11 +228,10 @@ impl PyCatTrj {
                 value.assign(&Array1::from_vec(column));
 
                 Ok::<_, PyErr>(())
-            },
-        )?;
+            })?;
 
         // Construct the categorical trajectory.
-        CatTrj::new(states, values, time)
+        CatTrj::new(support, values, time)
             .map(Into::into)
             .map_err(to_pyerr)
     }
@@ -305,8 +307,8 @@ impl PyCatTrj {
             );
         }
 
-        // Extract states.
-        let states: States = columns
+        // Extract support.
+        let support: Support = columns
             .into_iter()
             .map(|name| {
                 let column = df.call_method1("get_column", (&name,))?;
@@ -321,8 +323,11 @@ impl PyCatTrj {
 
         // Extract values.
         let mut values = Array2::from_elem(shape, CatType::default());
-        values.columns_mut().into_iter().zip(&states).try_for_each(
-            |(mut value, (name, states))| {
+        values
+            .columns_mut()
+            .into_iter()
+            .zip(&support)
+            .try_for_each(|(mut value, (name, states))| {
                 let column = df.call_method1("get_column", (name,))?;
                 let column: Vec<Option<String>> = column.call_method0("to_list")?.extract()?;
                 let column: Result<Vec<CatType>, PyErr> = column
@@ -340,10 +345,9 @@ impl PyCatTrj {
                 value.assign(&Array1::from_vec(column?));
 
                 Ok::<_, PyErr>(())
-            },
-        )?;
+            })?;
 
-        CatTrj::new(states, values, time)
+        CatTrj::new(support, values, time)
             .map(Into::into)
             .map_err(to_pyerr)
     }
@@ -369,12 +373,12 @@ impl PyCatTrj {
         let time = lock.times().to_pyarray(py);
         df.set_item("time", time)?;
 
-        // Get states and values.
-        let states = lock.states().iter();
+        // Get support and values.
+        let support = lock.support().iter();
         let values = lock.values().columns();
 
         // For each column, create a Pandas Series and insert it into the dictionary.
-        for ((label, states), values) in states.zip(values) {
+        for ((label, states), values) in support.zip(values) {
             // Map the values to the corresponding states.
             let values: Vec<_> = values.iter().map(|&x| &states[x as usize]).collect();
             // Set the categorical states.
@@ -416,9 +420,9 @@ impl PyCatTrj {
         df.set_item("time", time)?;
 
         // Add categorical columns.
-        let states = lock.states().iter();
+        let support = lock.support().iter();
         let values = lock.values().columns();
-        for ((label, states), values) in states.zip(values) {
+        for ((label, states), values) in support.zip(values) {
             let values: Vec<String> = values.iter().map(|&x| states[x as usize].clone()).collect();
             let series = pl.getattr("Series")?.call1((label.clone(), values))?;
             let series = series.call_method1("cast", (pl.getattr("Categorical")?,))?;
@@ -455,16 +459,16 @@ impl PyCatTrjs {
         Ok(self.lock().labels().iter().cloned().collect())
     }
 
-    /// Returns the states of the categorical trajectory.
+    /// Returns the support of the categorical trajectory.
     ///
     /// Returns
     /// -------
     /// dict[str, tuple[str, ...]]
-    ///     A reference to the states of the categorical trajectory.
+    ///     A reference to the support of the categorical trajectory.
     ///
-    pub fn states<'a>(&'a self, py: Python<'a>) -> PyResult<BTreeMap<String, Bound<'a, PyTuple>>> {
+    pub fn support<'a>(&'a self, py: Python<'a>) -> PyResult<BTreeMap<String, Bound<'a, PyTuple>>> {
         self.lock()
-            .states()
+            .support()
             .iter()
             .map(|(label, states)| {
                 // Get reference to the label and states.

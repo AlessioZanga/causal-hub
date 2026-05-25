@@ -3,7 +3,7 @@ use ndarray::prelude::*;
 use crate::{
     datasets::{CatEv, CatSample, CatTable, Dataset},
     models::Labelled,
-    types::{Error, Labels, Result, Set, States},
+    types::{Error, Labels, Result, Set, Support},
 };
 
 /// A type alias for a categorical weighted sample.
@@ -56,18 +56,18 @@ impl CatWtdTable {
         Ok(Self { dataset, weights })
     }
 
-    /// Returns the states of the variables in the categorical distribution.
+    /// Returns the support of the variables in the categorical distribution.
     ///
     /// # Returns
     ///
-    /// A reference to the vector of states.
+    /// A reference to the vector of support.
     ///
     #[inline]
-    pub const fn states(&self) -> &States {
-        self.dataset.states()
+    pub const fn support(&self) -> &Support {
+        self.dataset.support()
     }
 
-    /// Returns the shape of the set of states in the categorical distribution.
+    /// Returns the shape of the set of support in the categorical distribution.
     ///
     /// # Returns
     ///

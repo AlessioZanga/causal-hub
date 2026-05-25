@@ -79,7 +79,7 @@ impl<R: Rng> Random for RngCatTrjEv<'_, R, CatTrj> {
             .flatten();
 
         // Collect the evidence.
-        CatTrjEv::new(self.dataset.states().clone(), evidence)
+        CatTrjEv::new(self.dataset.support().clone(), evidence)
     }
 }
 

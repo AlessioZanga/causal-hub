@@ -18,7 +18,7 @@ use crate::{
     datasets::{CatSample, CatType},
     impl_json_io,
     models::{CPD, CatPhi, Labelled, Phi},
-    types::{EPSILON, Error, Labels, Result, Set, States},
+    types::{EPSILON, Error, Labels, Result, Set, Support},
     utils::MI,
 };
 
@@ -202,12 +202,12 @@ impl<'de> Deserialize<'de> for CatCPDS {
 pub struct CatCPD {
     // Labels of the conditioned variable.
     labels: Labels,
-    states: States,
+    support: Support,
     shape: Array1<usize>,
     multi_index: MI,
     // Labels of the conditioning variables.
     conditioning_labels: Labels,
-    conditioning_states: States,
+    conditioning_support: Support,
     conditioning_shape: Array1<usize>,
     conditioning_multi_index: MI,
     // Parameters.
@@ -223,15 +223,15 @@ impl CatCPD {
     ///
     /// # Arguments
     ///
-    /// * `states` - The variable label and states.
-    /// * `conditioning_states` - The conditioning variables labels and states.
-    /// * `parameters` - The probabilities of the states.
+    /// * `support` - The variable label and support.
+    /// * `conditioning_support` - The conditioning variables labels and support.
+    /// * `parameters` - The probabilities of the support.
     ///
     /// # Panics
     ///
     /// * If the labels and conditioning labels are not disjoint.
-    /// * If the product of the shape of the of states does not match the number of columns.
-    /// * If the product of the shape of the of conditioning states does not match the number of rows.
+    /// * If the product of the shape of the of support does not match the number of columns.
+    /// * If the product of the shape of the of conditioning support does not match the number of rows.
     /// * If the parameters do not sum to one by row, unless empty.
     ///
     /// # Returns
@@ -239,22 +239,22 @@ impl CatCPD {
     /// A new `CatCPD` instance.
     ///
     pub fn new(
-        states: States,
-        conditioning_states: States,
+        support: Support,
+        conditioning_support: Support,
         parameters: Array2<f64>,
     ) -> Result<Self> {
         // Get the labels of the variables.
-        let labels: Set<_> = states.keys().cloned().collect();
+        let labels: Set<_> = support.keys().cloned().collect();
         // Get the labels of the variables.
-        let conditioning_labels: Set<_> = conditioning_states.keys().cloned().collect();
+        let conditioning_labels: Set<_> = conditioning_support.keys().cloned().collect();
 
         // Check labels and conditioning labels are disjoint.
         if !labels.is_disjoint(&conditioning_labels) {
             return Err(Error::SetsNotDisjoint("labels", "conditioning labels"));
         }
 
-        // Get the states shape.
-        let shape = Array::from_iter(states.values().map(Set::len));
+        // Get the support shape.
+        let shape = Array::from_iter(support.values().map(Set::len));
 
         // Check that the product of the shape matches the number of columns.
         if !parameters.is_empty() && parameters.ncols() != shape.product() {
@@ -264,8 +264,8 @@ impl CatCPD {
             ));
         }
 
-        // Get the shape of the set of states.
-        let conditioning_shape = Array::from_iter(conditioning_states.values().map(Set::len));
+        // Get the shape of the set of support.
+        let conditioning_shape = Array::from_iter(conditioning_support.values().map(Set::len));
 
         // Check that the product of the conditioning shape matches the number of rows.
         if !parameters.is_empty() && parameters.nrows() != conditioning_shape.product() {
@@ -293,20 +293,21 @@ impl CatCPD {
         // Make parameters mutable.
         let mut parameters = parameters;
 
-        // Make states mutable.
+        // Make support mutable.
         let mut labels = labels;
-        let mut states = states;
+        let mut support = support;
         let mut shape = shape;
 
-        // Check if states are sorted.
-        if !states.keys().is_sorted() || !states.values().all(|x| x.iter().is_sorted()) {
-            // Compute the current states order.
-            let mut sorted_states_idx: Vec<_> = states.values().multi_cartesian_product().collect();
+        // Check if support are sorted.
+        if !support.keys().is_sorted() || !support.values().all(|x| x.iter().is_sorted()) {
+            // Compute the current support order.
+            let mut sorted_states_idx: Vec<_> =
+                support.values().multi_cartesian_product().collect();
             // Sort the labels.
             let mut sorted_labels_idx: Vec<_> = (0..labels.len()).collect();
             // Sort the labels.
             sorted_labels_idx.sort_by_key(|&i| &labels[i]);
-            // Sort the states by the labels.
+            // Sort the support by the labels.
             sorted_states_idx.iter_mut().for_each(|sorted_states_idx| {
                 *sorted_states_idx = sorted_labels_idx
                     .iter()
@@ -318,10 +319,10 @@ impl CatCPD {
             // Sort the row indices.
             sorted_row_idx.sort_by_key(|&i| &sorted_states_idx[i]);
             // Sort the labels.
-            states.sort_keys();
-            states.values_mut().for_each(Set::sort);
-            labels = states.keys().cloned().collect();
-            shape = states.values().map(|x| x.len()).collect();
+            support.sort_keys();
+            support.values_mut().for_each(Set::sort);
+            labels = support.keys().cloned().collect();
+            shape = support.values().map(|x| x.len()).collect();
             // Allocate new parameters.
             let mut new_parameters = parameters.clone();
             // Sort the values by multi indices.
@@ -337,22 +338,22 @@ impl CatCPD {
             parameters = new_parameters;
         }
 
-        // Make states immutable.
+        // Make support immutable.
         let labels = labels;
-        let states = states;
+        let support = support;
         let shape = shape;
 
-        // Make conditioning states mutable.
+        // Make conditioning support mutable.
         let mut conditioning_labels = conditioning_labels;
-        let mut conditioning_states = conditioning_states;
+        let mut conditioning_support = conditioning_support;
         let mut conditioning_shape = conditioning_shape;
 
-        // Check if conditioning states are sorted.
-        if !conditioning_states.keys().is_sorted()
-            || !conditioning_states.values().all(|x| x.iter().is_sorted())
+        // Check if conditioning support are sorted.
+        if !conditioning_support.keys().is_sorted()
+            || !conditioning_support.values().all(|x| x.iter().is_sorted())
         {
-            // Compute the current states order.
-            let mut sorted_states_idx: Vec<_> = conditioning_states
+            // Compute the current support order.
+            let mut sorted_states_idx: Vec<_> = conditioning_support
                 .values()
                 .multi_cartesian_product()
                 .collect();
@@ -360,7 +361,7 @@ impl CatCPD {
             let mut sorted_labels_idx: Vec<_> = (0..conditioning_labels.len()).collect();
             // Sort the conditioning labels.
             sorted_labels_idx.sort_by_key(|&i| &conditioning_labels[i]);
-            // Sort the conditioning states by the labels.
+            // Sort the conditioning support by the labels.
             sorted_states_idx.iter_mut().for_each(|sorted_states_idx| {
                 *sorted_states_idx = sorted_labels_idx
                     .iter()
@@ -372,10 +373,10 @@ impl CatCPD {
             // Sort the row indices.
             sorted_row_idx.sort_by_key(|&i| &sorted_states_idx[i]);
             // Sort the labels.
-            conditioning_states.sort_keys();
-            conditioning_states.values_mut().for_each(Set::sort);
-            conditioning_labels = conditioning_states.keys().cloned().collect();
-            conditioning_shape = conditioning_states.values().map(|x| x.len()).collect();
+            conditioning_support.sort_keys();
+            conditioning_support.values_mut().for_each(Set::sort);
+            conditioning_labels = conditioning_support.keys().cloned().collect();
+            conditioning_shape = conditioning_support.values().map(|x| x.len()).collect();
             // Allocate new parameters.
             let mut new_parameters = parameters.clone();
             // Sort the values by multi indices.
@@ -389,9 +390,9 @@ impl CatCPD {
             parameters = new_parameters;
         }
 
-        // Make conditioning states immutable.
+        // Make conditioning support immutable.
         let conditioning_labels = conditioning_labels;
-        let conditioning_states = conditioning_states;
+        let conditioning_support = conditioning_support;
         let conditioning_shape = conditioning_shape;
 
         // Make parameters immutable.
@@ -406,11 +407,11 @@ impl CatCPD {
 
         Ok(Self {
             labels,
-            states,
+            support,
             shape,
             multi_index,
             conditioning_labels,
-            conditioning_states,
+            conditioning_support,
             conditioning_shape,
             conditioning_multi_index,
             parameters,
@@ -420,15 +421,15 @@ impl CatCPD {
         })
     }
 
-    /// Returns the states of the conditioned variable.
+    /// Returns the support of the conditioned variable.
     ///
     /// # Returns
     ///
-    /// The states of the conditioned variable.
+    /// The support of the conditioned variable.
     ///
     #[inline]
-    pub const fn states(&self) -> &States {
-        &self.states
+    pub const fn support(&self) -> &Support {
+        &self.support
     }
 
     /// Returns the shape of the conditioned variable.
@@ -453,15 +454,15 @@ impl CatCPD {
         &self.multi_index
     }
 
-    /// Returns the states of the conditioning variables.
+    /// Returns the support of the conditioning variables.
     ///
     /// # Returns
     ///
-    /// The states of the conditioning variables.
+    /// The support of the conditioning variables.
     ///
     #[inline]
-    pub const fn conditioning_states(&self) -> &States {
-        &self.conditioning_states
+    pub const fn conditioning_support(&self) -> &Support {
+        &self.conditioning_support
     }
 
     /// Returns the shape of the conditioning variables.
@@ -526,9 +527,9 @@ impl CatCPD {
     ///
     /// # Arguments
     ///
-    /// * `states` - The variables states.
-    /// * `conditioning_states` - The conditioning variables labels and states.
-    /// * `parameters` - The probabilities of the states.
+    /// * `support` - The variables support.
+    /// * `conditioning_support` - The conditioning variables labels and support.
+    /// * `parameters` - The probabilities of the support.
     /// * `fitted_statistics` - The sufficient statistics used to fit the distribution, if any.
     /// * `fitted_log_likelihood` - The log-likelihood given the distribution, if any.
     ///
@@ -541,8 +542,8 @@ impl CatCPD {
     /// A new `CatCPD` instance.
     ///
     pub fn with_optionals(
-        states: States,
-        conditioning_states: States,
+        support: Support,
+        conditioning_support: Support,
         parameters: Array2<f64>,
         fitted_statistics: Option<CatCPDS>,
         fitted_log_likelihood: Option<f64>,
@@ -571,7 +572,7 @@ impl CatCPD {
         }
 
         // Construct the categorical CPD.
-        let mut cpd = Self::new(states, conditioning_states, parameters)?;
+        let mut cpd = Self::new(support, conditioning_support, parameters)?;
 
         // Set the optionals.
         cpd.fitted_statistics = fitted_statistics;
@@ -620,10 +621,10 @@ impl PartialEq for CatCPD {
     fn eq(&self, other: &Self) -> bool {
         // Check for equality, excluding the sample values.
         self.labels.eq(&other.labels)
-            && self.states.eq(&other.states)
+            && self.support.eq(&other.support)
             && self.shape.eq(&other.shape)
             && self.conditioning_labels.eq(&other.conditioning_labels)
-            && self.conditioning_states.eq(&other.conditioning_states)
+            && self.conditioning_support.eq(&other.conditioning_support)
             && self.conditioning_shape.eq(&other.conditioning_shape)
             && self.multi_index.eq(&other.multi_index)
             && self.parameters.eq(&other.parameters)
@@ -640,10 +641,10 @@ impl AbsDiffEq for CatCPD {
     fn abs_diff_eq(&self, other: &Self, epsilon: Self::Epsilon) -> bool {
         // Check for equality, excluding the sample values.
         self.labels.eq(&other.labels)
-            && self.states.eq(&other.states)
+            && self.support.eq(&other.support)
             && self.shape.eq(&other.shape)
             && self.conditioning_labels.eq(&other.conditioning_labels)
-            && self.conditioning_states.eq(&other.conditioning_states)
+            && self.conditioning_support.eq(&other.conditioning_support)
             && self.conditioning_shape.eq(&other.conditioning_shape)
             && self.multi_index.eq(&other.multi_index)
             && self.parameters.abs_diff_eq(&other.parameters, epsilon)
@@ -663,10 +664,10 @@ impl RelativeEq for CatCPD {
     ) -> bool {
         // Check for equality, excluding the sample values.
         self.labels.eq(&other.labels)
-            && self.states.eq(&other.states)
+            && self.support.eq(&other.support)
             && self.shape.eq(&other.shape)
             && self.conditioning_labels.eq(&other.conditioning_labels)
-            && self.conditioning_states.eq(&other.conditioning_states)
+            && self.conditioning_support.eq(&other.conditioning_support)
             && self.conditioning_shape.eq(&other.conditioning_shape)
             && self.multi_index.eq(&other.multi_index)
             && self
@@ -683,6 +684,16 @@ impl CPD for CatCPD {
     #[inline]
     fn conditioning_labels(&self) -> &Labels {
         &self.conditioning_labels
+    }
+
+    #[inline]
+    fn support(&self) -> &Support {
+        &self.support
+    }
+
+    #[inline]
+    fn conditioning_support(&self) -> &Support {
+        &self.conditioning_support
     }
 
     #[inline]
@@ -731,20 +742,20 @@ impl CPD for CatCPD {
             return Ok(1.);
         }
 
-        // Convert states to indices.
+        // Convert support to indices.
         let x = match n {
             // ... one variable.
             1 => x[0] as usize,
             // ... multiple variables.
             _ => {
-                // Convert states to indices.
+                // Convert support to indices.
                 let x = x.iter().map(|&x| x as usize);
                 // Ravel the variables.
                 self.multi_index.ravel(x)
             }
         };
 
-        // Convert conditioning states to indices.
+        // Convert conditioning support to indices.
         let z = match m {
             // ... no conditioning variables.
             0 => 0,
@@ -752,7 +763,7 @@ impl CPD for CatCPD {
             1 => z[0] as usize,
             // ... multiple conditioning variables.
             _ => {
-                // Convert conditioning states to indices.
+                // Convert conditioning support to indices.
                 let z = z.iter().map(|&z| z as usize);
                 // Ravel the conditioning variables.
                 self.conditioning_multi_index.ravel(z)
@@ -782,7 +793,7 @@ impl CPD for CatCPD {
             return Ok(array![]);
         }
 
-        // Convert conditioning states to indices.
+        // Convert conditioning support to indices.
         let z = match m {
             // ... no conditioning variables.
             0 => 0,
@@ -790,7 +801,7 @@ impl CPD for CatCPD {
             1 => z[0] as usize,
             // ... multiple conditioning variables.
             _ => {
-                // Convert conditioning states to indices.
+                // Convert conditioning support to indices.
                 let z = z.iter().map(|&z| z as usize);
                 // Ravel the conditioning variables.
                 self.conditioning_multi_index.ravel(z)
@@ -805,7 +816,7 @@ impl CPD for CatCPD {
         // Sample from the distribution.
         let x = s.sample(rng);
 
-        // Convert indices to states.
+        // Convert indices to support.
         match n {
             // ... one variable.
             1 => Ok(array![x as CatType]),
@@ -813,7 +824,7 @@ impl CPD for CatCPD {
             _ => {
                 // Unravel the sample.
                 let x = self.multi_index.unravel(x);
-                // Convert indices to states.
+                // Convert indices to support.
                 let x = x.iter().map(|&x| x as CatType);
                 // Return the sample.
                 Ok(x.collect())
@@ -829,18 +840,18 @@ impl Display for CatCPD {
             return Err(std::fmt::Error);
         }
 
-        // Determine the maximum width for formatting based on the labels and states.
+        // Determine the maximum width for formatting based on the labels and support.
         let n = std::iter::once(&self.labels()[0])
-            .chain(&self.states()[0])
+            .chain(&self.support()[0])
             .chain(self.conditioning_labels())
-            .chain(self.conditioning_states().values().flatten())
+            .chain(self.conditioning_support().values().flatten())
             .map(|x| x.len())
             .max()
             .unwrap_or(0)
             .max(8);
         // Get the number of variables to condition on.
         let z = self.conditioning_shape().len();
-        // Get the number of states for the first variable.
+        // Get the number of support for the first variable.
         let s = self.shape()[0];
 
         // Create a horizontal line for table formatting.
@@ -850,7 +861,7 @@ impl Display for CatCPD {
         // Create the header row for the table.
         let header = std::iter::repeat_n("", z) // Empty columns for the conditioning variables.
             .chain([self.labels()[0].as_str()]) // Label for the first variable.
-            .chain(std::iter::repeat_n("", s.saturating_sub(1))) // Empty columns for remaining states.
+            .chain(std::iter::repeat_n("", s.saturating_sub(1))) // Empty columns for remaining support.
             .map(|x| format!("{x:n$}")) // Format each column with fixed width.
             .join(" | ");
         writeln!(f, "| {header} |")?;
@@ -859,29 +870,29 @@ impl Display for CatCPD {
         let separator = std::iter::repeat_n("-".repeat(n), z + s).join(" | ");
         writeln!(f, "| {separator} |")?;
 
-        // Create the second header row with labels and states.
+        // Create the second header row with labels and support.
         let header = self
             .conditioning_labels()
             .iter()
-            .chain(&self.states()[0]) // Include states of the first variable.
+            .chain(&self.support()[0]) // Include support of the first variable.
             .map(|x| format!("{x:n$}")) // Format each column with fixed width.
             .join(" | ");
         writeln!(f, "| {header} |")?;
         writeln!(f, "| {separator} |")?;
 
-        // Iterate over the Cartesian product of states and parameter rows.
-        for (states, values) in self
-            .conditioning_states()
+        // Iterate over the Cartesian product of support and parameter rows.
+        for (support, values) in self
+            .conditioning_support()
             .values()
             .multi_cartesian_product()
             .zip(self.parameters().rows())
         {
-            // Format the states for the current row.
-            let states = states.iter().map(|x| format!("{x:n$}"));
+            // Format the support for the current row.
+            let support = support.iter().map(|x| format!("{x:n$}"));
             // Format the parameter values for the current row.
             let values = values.iter().map(|x| format!("{x:n$.6}"));
-            // Join the states and values for the current row.
-            let states_values = states.chain(values).join(" | ");
+            // Join the support and values for the current row.
+            let states_values = support.chain(values).join(" | ");
             writeln!(f, "| {states_values} |")?;
         }
 
@@ -905,10 +916,10 @@ impl Serialize for CatCPD {
         // Allocate the map.
         let mut map = serializer.serialize_map(Some(size))?;
 
-        // Serialize states.
-        map.serialize_entry("states", &self.states)?;
-        // Serialize conditioning states.
-        map.serialize_entry("conditioning_states", &self.conditioning_states)?;
+        // Serialize support.
+        map.serialize_entry("support", &self.support)?;
+        // Serialize conditioning support.
+        map.serialize_entry("conditioning_support", &self.conditioning_support)?;
 
         // Convert parameters to a flat format.
         let parameters: Vec<Vec<f64>> = self
@@ -945,8 +956,8 @@ impl<'de> Deserialize<'de> for CatCPD {
         #[derive(Deserialize)]
         #[serde(field_identifier, rename_all = "snake_case")]
         enum Field {
-            States,
-            ConditioningStates,
+            Support,
+            ConditioningSupport,
             Parameters,
             FittedStatistics,
             FittedLogLikelihood,
@@ -969,8 +980,8 @@ impl<'de> Deserialize<'de> for CatCPD {
                 use serde::de::Error as E;
 
                 // Allocate fields
-                let mut states = None;
-                let mut conditioning_states = None;
+                let mut support = None;
+                let mut conditioning_support = None;
                 let mut parameters = None;
                 let mut fitted_statistics = None;
                 let mut fitted_log_likelihood = None;
@@ -979,17 +990,17 @@ impl<'de> Deserialize<'de> for CatCPD {
                 // Parse the map.
                 while let Some(key) = map.next_key()? {
                     match key {
-                        Field::States => {
-                            if states.is_some() {
-                                return Err(E::duplicate_field("states"));
+                        Field::Support => {
+                            if support.is_some() {
+                                return Err(E::duplicate_field("support"));
                             }
-                            states = Some(map.next_value()?);
+                            support = Some(map.next_value()?);
                         }
-                        Field::ConditioningStates => {
-                            if conditioning_states.is_some() {
-                                return Err(E::duplicate_field("conditioning_states"));
+                        Field::ConditioningSupport => {
+                            if conditioning_support.is_some() {
+                                return Err(E::duplicate_field("conditioning_support"));
                             }
-                            conditioning_states = Some(map.next_value()?);
+                            conditioning_support = Some(map.next_value()?);
                         }
                         Field::Parameters => {
                             if parameters.is_some() {
@@ -1019,9 +1030,9 @@ impl<'de> Deserialize<'de> for CatCPD {
                 }
 
                 // Check required fields.
-                let states = states.ok_or_else(|| E::missing_field("states"))?;
-                let conditioning_states =
-                    conditioning_states.ok_or_else(|| E::missing_field("conditioning_states"))?;
+                let support = support.ok_or_else(|| E::missing_field("support"))?;
+                let conditioning_support =
+                    conditioning_support.ok_or_else(|| E::missing_field("conditioning_support"))?;
                 let parameters = parameters.ok_or_else(|| E::missing_field("parameters"))?;
 
                 // Check type is correct.
@@ -1040,8 +1051,8 @@ impl<'de> Deserialize<'de> for CatCPD {
                     .map_err(|_| E::custom("Invalid parameters shape"))?;
 
                 CatCPD::with_optionals(
-                    states,
-                    conditioning_states,
+                    support,
+                    conditioning_support,
                     parameters,
                     fitted_statistics,
                     fitted_log_likelihood,
@@ -1051,8 +1062,8 @@ impl<'de> Deserialize<'de> for CatCPD {
         }
 
         const FIELDS: &[&str] = &[
-            "states",
-            "conditioning_states",
+            "support",
+            "conditioning_support",
             "parameters",
             "fitted_statistics",
             "fitted_log_likelihood",

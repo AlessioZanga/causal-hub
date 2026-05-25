@@ -5,7 +5,7 @@ use pest_derive::Parser;
 
 use crate::{
     models::{BN, CPD, CatBN, CatCPD, DiGraph, Graph, Labelled},
-    types::{Error, Map, Result, States},
+    types::{Error, Map, Result, Support},
 };
 
 #[derive(Debug)]
@@ -25,7 +25,7 @@ struct Property {
 #[derive(Debug)]
 struct Variable {
     pub label: String,
-    pub states: Vec<String>,
+    pub support: Vec<String>,
     pub _properties: Vec<Property>,
 }
 
@@ -64,11 +64,11 @@ impl BifParser {
         let name = Some(network.name);
         let description = properties.get("description").cloned();
 
-        // Construct states.
-        let states: States = network
+        // Construct support.
+        let support: Support = network
             .variables
             .into_iter()
-            .map(|v| (v.label, v.states.into_iter().collect()))
+            .map(|v| (v.label, v.support.into_iter().collect()))
             .collect();
 
         // Construct CPDs.
@@ -77,20 +77,20 @@ impl BifParser {
             .into_iter()
             .map(|p| {
                 // Get the variable of the CPD.
-                let variable = States::from_iter([(
+                let variable = Support::from_iter([(
                     p.label.clone(),
-                    states
+                    support
                         .get(&p.label)
-                        .ok_or_else(|| Error::Parsing(&format!("Failed to get states for variable '{}'.", p.label)))?
+                        .ok_or_else(|| Error::Parsing(&format!("Failed to get support for variable '{}'.", p.label)))?
                         .clone(),
                 )]);
                 // Get the conditioning variables of the CPD.
-                let conditioning_variables: States = p
+                let conditioning_variables: Support = p
                     .parents
                     .iter()
                     .map(|x| {
-                        let states = states.get(x).ok_or_else(|| Error::Parsing(&format!("Failed to get states for variable '{}'.", x)))?;
-                        Ok((x.to_string(), states.iter().cloned().collect()))
+                        let support = support.get(x).ok_or_else(|| Error::Parsing(&format!("Failed to get support for variable '{}'.", x)))?;
+                        Ok((x.to_string(), support.iter().cloned().collect()))
                     })
                     .collect::<Result<_>>()?;
 
@@ -98,18 +98,18 @@ impl BifParser {
                 let parameters = match (p.table, p.entries) {
                     (Some(table), None) => Array1::from_vec(table).insert_axis(Axis(0)),
                     (None, Some(entries)) => {
-                        // Align the probability values with the states.
+                        // Align the probability values with the support.
                         let entries: Map<_, _> = entries.into_iter().collect();
-                        // Align the entries with the states.
+                        // Align the entries with the support.
                         let entries: Vec<_> = conditioning_variables
                             .iter()
-                            .map(|(_, states)| states)
+                            .map(|(_, support)| support)
                             .cloned()
                             .multi_cartesian_product()
-                            .map(|states| {
-                                entries.get(&states).ok_or_else(|| Error::Parsing(&format!(
+                            .map(|support| {
+                                entries.get(&support).ok_or_else(|| Error::Parsing(&format!(
                                     "Missing probability entry for configuration {:?}",
-                                    states
+                                    support
                                 )))
                             })
                             .collect::<Result<Vec<_>>>()?;
@@ -136,7 +136,7 @@ impl BifParser {
         let cpds = cpds?;
 
         // Construct the graph.
-        let mut graph = DiGraph::empty(states.keys())?;
+        let mut graph = DiGraph::empty(support.keys())?;
         cpds.iter().try_for_each(|p| {
             // Check the CPD has a single variable in the BIF file.
             if p.labels().len() != 1 {
@@ -243,7 +243,7 @@ fn parse_variable(pair: Pair<Rule>) -> Result<Variable> {
     let values_pair = inner
         .next()
         .ok_or_else(|| Error::Parsing("Expected values block"))?;
-    let states = values_pair
+    let support = values_pair
         .into_inner()
         .map(|v| v.as_str().to_string())
         .collect();
@@ -257,7 +257,7 @@ fn parse_variable(pair: Pair<Rule>) -> Result<Variable> {
 
     Ok(Variable {
         label,
-        states,
+        support,
         _properties: properties,
     })
 }

@@ -34,7 +34,7 @@ impl CSSEstimator<CatCPDS> for SSE<'_, CatWtdTable> {
         let values = self.dataset.values().values();
         let weights = self.dataset.weights();
 
-        // Count the occurrences of the states.
+        // Count the occurrences of the support.
         values
             .rows()
             .into_iter()
@@ -80,7 +80,7 @@ impl ParCSSEstimator<CatCPDS> for SSE<'_, CatWtdTable> {
         let values = self.dataset.values().values();
         let weights = self.dataset.weights();
 
-        // Count the occurrences of the states.
+        // Count the occurrences of the support.
         let n_xz = values
             .axis_chunks_iter(Axis(0), AXIS_CHUNK_LENGTH)
             .into_par_iter()
@@ -89,7 +89,7 @@ impl ParCSSEstimator<CatCPDS> for SSE<'_, CatWtdTable> {
             .fold(
                 || n_xz.clone(),
                 |mut n_xz, (values, weights)| {
-                    // Count the occurrences of the states.
+                    // Count the occurrences of the support.
                     values
                         .rows()
                         .into_iter()

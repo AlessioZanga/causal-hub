@@ -86,7 +86,7 @@ impl<R: Rng> BNSampler<CatBN> for ForwardSampler<'_, R, CatBN> {
             })?;
 
         // Construct the dataset.
-        CatTable::new(self.model.states().clone(), dataset)
+        CatTable::new(self.model.support().clone(), dataset)
     }
 }
 
@@ -118,7 +118,7 @@ impl<R: Rng + SeedableRng> ParBNSampler<CatBN> for ForwardSampler<'_, R, CatBN> 
             })?;
 
         // Construct the dataset.
-        CatTable::new(self.model.states().clone(), samples)
+        CatTable::new(self.model.support().clone(), samples)
     }
 }
 
@@ -251,7 +251,7 @@ impl<R: Rng> CTBNSampler<CatCTBN> for ForwardSampler<'_, R, CatCTBN> {
         let mut sample_events = Vec::new();
         let mut sample_times = Vec::new();
 
-        // Sample the initial states.
+        // Sample the initial support.
         let mut event = {
             let mut rng = self.rng.borrow_mut();
             let initial = self.model.initial_distribution();
@@ -315,8 +315,8 @@ impl<R: Rng> CTBNSampler<CatCTBN> for ForwardSampler<'_, R, CatCTBN> {
             time = times[i];
         }
 
-        // Get the states of the CIMs.
-        let states = self.model.states().clone();
+        // Get the support of the CIMs.
+        let support = self.model.support().clone();
 
         // Convert the events to a 2D array.
         let shape = (sample_events.len(), sample_events[0].len());
@@ -327,7 +327,7 @@ impl<R: Rng> CTBNSampler<CatCTBN> for ForwardSampler<'_, R, CatCTBN> {
         let sample_times = Array::from_iter(sample_times);
 
         // Return the trajectory.
-        CatTrj::new(states, sample_events, sample_times)
+        CatTrj::new(support, sample_events, sample_times)
     }
 
     #[inline]

@@ -23,7 +23,7 @@ mod tests {
 
             // Initialize evidence.
             let evidence = CatTrjEv::new(
-                model.states().clone(),
+                model.support().clone(),
                 [
                     E::CertainPositiveInterval {
                         event: 2, // "Hungry"

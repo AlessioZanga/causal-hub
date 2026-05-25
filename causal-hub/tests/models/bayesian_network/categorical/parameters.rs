@@ -4,23 +4,23 @@ mod tests {
     use causal_hub::{
         labels,
         models::{CPD, CatCPD, Labelled},
-        set, states,
+        set, support,
         types::Result,
     };
     use ndarray::prelude::*;
 
     #[test]
     fn new() -> Result<()> {
-        let x = states![("A", ["no", "yes"])];
-        let z = states![("B", ["no", "yes"]), ("C", ["no", "yes"])];
+        let x = support![("A", ["no", "yes"])];
+        let z = support![("B", ["no", "yes"]), ("C", ["no", "yes"])];
         let p = array![[0.1, 0.9], [0.2, 0.8], [0.3, 0.7], [0.4, 0.6]];
         let cpd = CatCPD::new(x, z, p.clone())?;
 
         assert_eq!(cpd.labels(), &labels!["A"]);
-        assert_eq!(cpd.states(), &states![("A", ["no", "yes"])]);
+        assert_eq!(cpd.support(), &support![("A", ["no", "yes"])]);
         assert_eq!(cpd.conditioning_labels(), &labels!["B", "C"]);
         assert!(
-            cpd.conditioning_states()
+            cpd.conditioning_support()
                 .values()
                 .all(|x| x.iter().eq(["no", "yes"]))
         );
@@ -31,8 +31,8 @@ mod tests {
 
     #[test]
     fn unique_labels() -> Result<()> {
-        let x = states![("A", ["no", "yes"])];
-        let z = states![("A", ["no", "yes"])];
+        let x = support![("A", ["no", "yes"])];
+        let z = support![("A", ["no", "yes"])];
         let p = array![[0.1, 0.9], [0.2, 0.8]];
         assert!(CatCPD::new(x, z, p).is_err());
 
@@ -41,8 +41,8 @@ mod tests {
 
     #[test]
     fn empty_labels() -> Result<()> {
-        let x = states![];
-        let z = states![];
+        let x = support![];
+        let z = support![];
         let p = array![[]];
         assert!(CatCPD::new(x, z, p).is_err());
 
@@ -51,8 +51,8 @@ mod tests {
 
     #[test]
     fn display() -> Result<()> {
-        let x = states![("A", ["no", "yes"])];
-        let z = states![("B", ["no", "yes"])];
+        let x = support![("A", ["no", "yes"])];
+        let z = support![("B", ["no", "yes"])];
         let p = array![[0.1, 0.9], [0.2, 0.8]];
         let cpd = CatCPD::new(x, z, p)?;
 
@@ -75,8 +75,8 @@ mod tests {
 
     #[test]
     fn marginalize_single_x() -> Result<()> {
-        let x = states![("A", ["no", "yes"]), ("B", ["no", "yes"])];
-        let z = states![("C", ["no", "yes"]), ("D", ["no", "yes"])];
+        let x = support![("A", ["no", "yes"]), ("B", ["no", "yes"])];
+        let z = support![("C", ["no", "yes"]), ("D", ["no", "yes"])];
         let p = array![
             // A0,    0,    1,    1
             // B0     1     0     1
@@ -89,8 +89,8 @@ mod tests {
 
         let pred_cpd = cpd.marginalize(&set![0], &set![])?;
 
-        let true_x = states![("B", ["no", "yes"])];
-        let true_z = states![("C", ["no", "yes"]), ("D", ["no", "yes"])];
+        let true_x = support![("B", ["no", "yes"])];
+        let true_z = support![("C", ["no", "yes"]), ("D", ["no", "yes"])];
         let true_p = array![
             // B                 0,                      1,     (C, D)
             [p[[0, 0]] + p[[0, 2]], p[[0, 1]] + p[[0, 3]]], //  (0, 0)
@@ -108,12 +108,12 @@ mod tests {
 
     #[test]
     fn marginalize_multiple_x() -> Result<()> {
-        let x = states![
+        let x = support![
             ("A", ["no", "yes"]),
             ("B", ["no", "yes"]),
             ("C", ["no", "yes"])
         ];
-        let z = states![
+        let z = support![
             ("D", ["no", "yes"]),
             ("E", ["no", "yes"]),
             ("F", ["no", "yes"])
@@ -135,8 +135,8 @@ mod tests {
 
         let pred_cpd = cpd.marginalize(&set![0, 2], &set![])?;
 
-        let true_x = states![("B", ["no", "yes"])];
-        let true_z = states![
+        let true_x = support![("B", ["no", "yes"])];
+        let true_z = support![
             ("D", ["no", "yes"]),
             ("E", ["no", "yes"]),
             ("F", ["no", "yes"])
@@ -202,8 +202,8 @@ mod tests {
 
     #[test]
     fn marginalize_single_z() -> Result<()> {
-        let x = states![("A", ["no", "yes"])];
-        let z = states![("B", ["no", "yes"]), ("C", ["no", "yes"])];
+        let x = support![("A", ["no", "yes"])];
+        let z = support![("B", ["no", "yes"]), ("C", ["no", "yes"])];
         let p = array![
             //                  (B, C)
             [0.10, 0.90], //    (0, 0)
@@ -215,8 +215,8 @@ mod tests {
 
         let pred_cpd = cpd.marginalize(&set![], &set![0])?;
 
-        let true_x = states![("A", ["no", "yes"])];
-        let true_z = states![("C", ["no", "yes"])];
+        let true_x = support![("A", ["no", "yes"])];
+        let true_z = support![("C", ["no", "yes"])];
         let true_p = array![
             //                                                      (C)
             [(p[[0, 0]] + p[[2, 0]]), (p[[0, 1]] + p[[2, 1]])], //  (0)
@@ -229,8 +229,8 @@ mod tests {
 
         let pred_cpd = cpd.marginalize(&set![], &set![1])?;
 
-        let true_x = states![("A", ["no", "yes"])];
-        let true_z = states![("B", ["no", "yes"])];
+        let true_x = support![("A", ["no", "yes"])];
+        let true_z = support![("B", ["no", "yes"])];
         let true_p = array![
             //                                                      (B)
             [(p[[0, 0]] + p[[1, 0]]), (p[[0, 1]] + p[[1, 1]])], //  (0)
@@ -246,12 +246,12 @@ mod tests {
 
     #[test]
     fn marginalize_multiple_z() -> Result<()> {
-        let x = states![
+        let x = support![
             ("A", ["no", "yes"]),
             ("B", ["no", "yes"]),
             ("C", ["no", "yes"])
         ];
-        let z = states![
+        let z = support![
             ("D", ["no", "yes"]),
             ("E", ["no", "yes"]),
             ("F", ["no", "yes"])
@@ -271,12 +271,12 @@ mod tests {
 
         let pred_cpd = cpd.marginalize(&set![], &set![0, 2])?;
 
-        let true_x = states![
+        let true_x = support![
             ("A", ["no", "yes"]),
             ("B", ["no", "yes"]),
             ("C", ["no", "yes"])
         ];
-        let true_z = states![("E", ["no", "yes"])];
+        let true_z = support![("E", ["no", "yes"])];
         let true_p = array![
             //                                                  (E)
             [
@@ -310,12 +310,12 @@ mod tests {
 
     #[test]
     fn marginalize_single_x_z() -> Result<()> {
-        let x = states![
+        let x = support![
             ("A", ["no", "yes"]),
             ("B", ["no", "yes"]),
             ("C", ["no", "yes"])
         ];
-        let z = states![
+        let z = support![
             ("D", ["no", "yes"]),
             ("E", ["no", "yes"]),
             ("F", ["no", "yes"])
@@ -337,8 +337,8 @@ mod tests {
 
         let pred_cpd = cpd.marginalize(&set![1], &set![2])?;
 
-        let true_x = states![("A", ["no", "yes"]), ("C", ["no", "yes"])];
-        let true_z = states![("D", ["no", "yes"]), ("E", ["no", "yes"])];
+        let true_x = support![("A", ["no", "yes"]), ("C", ["no", "yes"])];
+        let true_z = support![("D", ["no", "yes"]), ("E", ["no", "yes"])];
         let true_p = array![
             [
                 p[[0, 0]] + p[[0, 2]] + p[[1, 0]] + p[[1, 2]],
@@ -375,12 +375,12 @@ mod tests {
 
     #[test]
     fn marginalize_multiple_x_z() -> Result<()> {
-        let x = states![
+        let x = support![
             ("A", ["no", "yes"]),
             ("B", ["no", "yes"]),
             ("C", ["no", "yes"])
         ];
-        let z = states![
+        let z = support![
             ("D", ["no", "yes"]),
             ("E", ["no", "yes"]),
             ("F", ["no", "yes"])
@@ -401,8 +401,8 @@ mod tests {
         let cpd = CatCPD::new(x, z, p.clone())?;
 
         let pred_cpd = cpd.marginalize(&set![0, 1], &set![0, 2])?;
-        let true_x = states![("C", ["no", "yes"])];
-        let true_z = states![("E", ["no", "yes"])];
+        let true_x = support![("C", ["no", "yes"])];
+        let true_z = support![("E", ["no", "yes"])];
         let true_p = array![
             [
                 p[[0, 0]] + p[[0, 2]] + p[[0, 4]] + p[[0, 6]] + // (C0, E0)

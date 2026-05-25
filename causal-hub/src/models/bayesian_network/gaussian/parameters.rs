@@ -13,9 +13,15 @@ use crate::{
     datasets::GaussSample,
     impl_json_io,
     models::{CPD, GaussCPDS, GaussPhi, Labelled, Phi},
-    types::{EPSILON, Error, LN_2_PI, Labels, Result, Set},
+    types::{EPSILON, Error, LN_2_PI, Labels, Result, Set, Support},
     utils::PseudoInverse,
 };
+
+fn empty_support() -> &'static Support {
+    use std::sync::OnceLock;
+    static EMPTY: OnceLock<Support> = OnceLock::new();
+    EMPTY.get_or_init(Support::default)
+}
 
 /// Parameters of a Gaussian CPD.
 #[derive(Clone, Debug)]
@@ -617,6 +623,14 @@ impl CPD for GaussCPD {
     #[inline]
     fn conditioning_labels(&self) -> &Labels {
         &self.conditioning_labels
+    }
+
+    fn support(&self) -> &Support {
+        empty_support()
+    }
+
+    fn conditioning_support(&self) -> &Support {
+        empty_support()
     }
 
     #[inline]

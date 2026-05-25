@@ -4,7 +4,7 @@ mod tests {
         assets::load_eating,
         labels,
         models::{BN, CIM, CPD, CTBN, Graph, Labelled},
-        states,
+        support,
         types::Result,
     };
     use ndarray::prelude::*;
@@ -73,18 +73,18 @@ mod tests {
                 ],
             ]
         );
-        // Check the states.
+        // Check the support.
         assert_eq!(
-            model.cims()[0].states(),
-            &states![("Eating", ["no", "yes"])]
+            model.cims()[0].support(),
+            &support![("Eating", ["no", "yes"])]
         );
         assert_eq!(
-            model.cims()[1].states(),
-            &states![("FullStomach", ["no", "yes"])]
+            model.cims()[1].support(),
+            &support![("FullStomach", ["no", "yes"])]
         );
         assert_eq!(
-            model.cims()[2].states(),
-            &states![("Hungry", ["no", "yes"])]
+            model.cims()[2].support(),
+            &support![("Hungry", ["no", "yes"])]
         );
         // Check the parameters size.
         assert_eq!(model.parameters_size(), 15);
@@ -129,18 +129,18 @@ mod tests {
             initial_distribution.cpds()[2].parameters(),
             &array![[0.5, 0.5]] //
         );
-        // Check the states.
+        // Check the support.
         assert_eq!(
-            &states![("Eating", ["no", "yes"])],
-            initial_distribution.cpds()[0].states()
+            &support![("Eating", ["no", "yes"])],
+            initial_distribution.cpds()[0].support()
         );
         assert_eq!(
-            &states![("FullStomach", ["no", "yes"])],
-            initial_distribution.cpds()[1].states()
+            &support![("FullStomach", ["no", "yes"])],
+            initial_distribution.cpds()[1].support()
         );
         assert_eq!(
-            &states![("Hungry", ["no", "yes"])],
-            initial_distribution.cpds()[2].states()
+            &support![("Hungry", ["no", "yes"])],
+            initial_distribution.cpds()[2].support()
         );
         // Check the parameters size.
         assert_eq!(initial_distribution.parameters_size(), 3);

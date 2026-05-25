@@ -4,7 +4,7 @@ use rayon::prelude::*;
 use crate::{
     datasets::{CatTrj, CatTrjEv, CatType, Dataset},
     models::Labelled,
-    types::{Error, Labels, Result, Set, States},
+    types::{Error, Labels, Result, Set, Support},
 };
 
 /// A multivariate weighted trajectory.
@@ -77,15 +77,15 @@ impl CatWtdTrj {
         self.weight
     }
 
-    /// Returns the states of the trajectory.
+    /// Returns the support of the trajectory.
     ///
     /// # Returns
     ///
-    /// A reference to the states of the trajectory.
+    /// A reference to the support of the trajectory.
     ///
     #[inline]
-    pub const fn states(&self) -> &States {
-        self.trajectory.states()
+    pub const fn support(&self) -> &Support {
+        self.trajectory.support()
     }
 
     /// Returns the shape of the trajectory.
@@ -151,7 +151,7 @@ impl Dataset for CatWtdTrj {
 #[derive(Clone, Debug)]
 pub struct CatWtdTrjs {
     labels: Labels,
-    states: States,
+    support: Support,
     shape: Array1<usize>,
     values: Vec<CatWtdTrj>,
 }
@@ -192,7 +192,7 @@ impl CatWtdTrjs {
     /// Panics if:
     ///
     /// * The trajectories have different labels.
-    /// * The trajectories have different states.
+    /// * The trajectories have different support.
     /// * The trajectories have different shape.
     /// * The trajectories are empty.
     ///
@@ -214,12 +214,12 @@ impl CatWtdTrjs {
         {
             return Err(Error::IncompatibleShape("labels", "all trajectories"));
         }
-        // Check if every trajectory has the same states.
+        // Check if every trajectory has the same support.
         if !values
             .windows(2)
-            .all(|trjs| trjs[0].states().eq(trjs[1].states()))
+            .all(|trjs| trjs[0].support().eq(trjs[1].support()))
         {
-            return Err(Error::IncompatibleShape("states", "all trajectories"));
+            return Err(Error::IncompatibleShape("support", "all trajectories"));
         }
         // Check if every trajectory has the same shape.
         if !values
@@ -229,31 +229,31 @@ impl CatWtdTrjs {
             return Err(Error::IncompatibleShape("shape", "all trajectories"));
         }
 
-        // Get the labels, states and shape from the first trajectory.
+        // Get the labels, support and shape from the first trajectory.
         let trj = values
             .first()
             .ok_or_else(|| Error::EmptySet("trajectories"))?;
         let labels = trj.labels().clone();
-        let states = trj.states().clone();
+        let support = trj.support().clone();
         let shape = trj.shape().clone();
 
         Ok(Self {
             labels,
-            states,
+            support,
             shape,
             values,
         })
     }
 
-    /// Returns the states of the trajectories.
+    /// Returns the support of the trajectories.
     ///
     /// # Returns
     ///
-    /// A reference to the states of the trajectories.
+    /// A reference to the support of the trajectories.
     ///
     #[inline]
-    pub fn states(&self) -> &States {
-        &self.states
+    pub fn support(&self) -> &Support {
+        &self.support
     }
 
     /// Returns the shape of the trajectories.
@@ -277,7 +277,7 @@ impl FromIterator<CatWtdTrj> for CatWtdTrjs {
             // Return a minimal valid empty instance as fallback.
             Self {
                 labels: Default::default(),
-                states: Default::default(),
+                support: Default::default(),
                 values: vec![],
                 shape: Array1::zeros(2),
             }
@@ -295,7 +295,7 @@ impl FromParallelIterator<CatWtdTrj> for CatWtdTrjs {
             // Return a minimal valid empty instance as fallback.
             Self {
                 labels: Default::default(),
-                states: Default::default(),
+                support: Default::default(),
                 values: vec![],
                 shape: Array1::zeros(2),
             }

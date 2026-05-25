@@ -25,14 +25,14 @@ class CatEv:
             A reference to the labels of the categorical evidence.
         """
 
-    def states(self) -> builtins.dict[builtins.str, tuple]:
+    def support(self) -> builtins.dict[builtins.str, tuple]:
         r"""
-        Returns the states of the categorical evidence.
+        Returns the support of the categorical evidence.
 
         Returns
         -------
         dict[str, tuple[str, ...]]
-            A reference to the states of the categorical evidence.
+            A reference to the support of the categorical evidence.
         """
 
     @classmethod
@@ -69,9 +69,9 @@ class CatIncTable:
             A list of strings containing the labels of the dataset.
         """
 
-    def states(self) -> builtins.dict[builtins.str, tuple]:
+    def support(self) -> builtins.dict[builtins.str, tuple]:
         r"""
-        Returns the states of the dataset.
+        Returns the support of the dataset.
 
         Returns
         -------
@@ -211,9 +211,9 @@ class CatTable:
             A list of strings containing the labels of the dataset.
         """
 
-    def states(self) -> builtins.dict[builtins.str, tuple]:
+    def support(self) -> builtins.dict[builtins.str, tuple]:
         r"""
-        Returns the states of the dataset.
+        Returns the support of the dataset.
 
         Returns
         -------
@@ -312,14 +312,14 @@ class CatTrj:
             A reference to the labels of the categorical trajectory.
         """
 
-    def states(self) -> builtins.dict[builtins.str, tuple]:
+    def support(self) -> builtins.dict[builtins.str, tuple]:
         r"""
-        Returns the states of the categorical trajectory.
+        Returns the support of the categorical trajectory.
 
         Returns
         -------
         dict[str, tuple[str, ...]]
-            A reference to the states of the categorical trajectory.
+            A reference to the support of the categorical trajectory.
         """
 
     def values(self) -> numpy.typing.NDArray[numpy.uint8]:
@@ -414,14 +414,14 @@ class CatTrjEv:
             A reference to the labels of the categorical trajectory.
         """
 
-    def states(self) -> builtins.dict[builtins.str, tuple]:
+    def support(self) -> builtins.dict[builtins.str, tuple]:
         r"""
-        Returns the states of the categorical trajectory.
+        Returns the support of the categorical trajectory.
 
         Returns
         -------
         dict[str, tuple[str, ...]]
-            A reference to the states of the categorical trajectory.
+            A reference to the support of the categorical trajectory.
         """
 
     @classmethod
@@ -518,14 +518,14 @@ class CatTrjs:
             A reference to the labels of the categorical trajectory.
         """
 
-    def states(self) -> builtins.dict[builtins.str, tuple]:
+    def support(self) -> builtins.dict[builtins.str, tuple]:
         r"""
-        Returns the states of the categorical trajectory.
+        Returns the support of the categorical trajectory.
 
         Returns
         -------
         dict[str, tuple[str, ...]]
-            A reference to the states of the categorical trajectory.
+            A reference to the support of the categorical trajectory.
         """
 
     def values(self) -> builtins.list[CatTrj]:
@@ -610,14 +610,14 @@ class CatTrjsEv:
             A reference to the labels of the categorical trajectory.
         """
 
-    def states(self) -> builtins.dict[builtins.str, tuple]:
+    def support(self) -> builtins.dict[builtins.str, tuple]:
         r"""
-        Returns the states of the categorical trajectory.
+        Returns the support of the categorical trajectory.
 
         Returns
         -------
         dict[str, tuple[str, ...]]
-            A reference to the states of the categorical trajectory.
+            A reference to the support of the categorical trajectory.
         """
 
     @classmethod
@@ -734,14 +734,14 @@ class CatWtdTrj:
             The weight of the trajectory.
         """
 
-    def states(self) -> builtins.dict[builtins.str, tuple]:
+    def support(self) -> builtins.dict[builtins.str, tuple]:
         r"""
-        Returns the states of the categorical trajectory.
+        Returns the support of the categorical trajectory.
 
         Returns
         -------
         dict[str, tuple[str, ...]]
-            A reference to the states of the categorical trajectory.
+            A reference to the support of the categorical trajectory.
         """
 
     def times(self) -> numpy.typing.NDArray[numpy.float64]:
@@ -770,14 +770,14 @@ class CatWtdTrjs:
             A reference to the labels of the categorical trajectory.
         """
 
-    def states(self) -> builtins.dict[builtins.str, tuple]:
+    def support(self) -> builtins.dict[builtins.str, tuple]:
         r"""
-        Returns the states of the categorical trajectory.
+        Returns the support of the categorical trajectory.
 
         Returns
         -------
         dict[str, tuple[str, ...]]
-            A reference to the states of the categorical trajectory.
+            A reference to the support of the categorical trajectory.
         """
 
     def values(self) -> builtins.list[CatWtdTrj]:

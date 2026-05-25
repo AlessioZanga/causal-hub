@@ -35,8 +35,8 @@ def test_categorical_table() -> None:
     # Check the variables.
     assert table.labels() == ["column_1", "column_2"], "Wrong labels."
     # Check the states of the variables.
-    assert table.states()["column_1"] == ("A", "B", "C"), "Wrong states."
-    assert table.states()["column_2"] == ("X", "Y", "Z"), "Wrong states."
+    assert table.support()["column_1"] == ("A", "B", "C"), "Wrong states."
+    assert table.support()["column_2"] == ("X", "Y", "Z"), "Wrong states."
     # Check the values of the variables.
     np.testing.assert_array_equal(
         table.values(),
@@ -97,9 +97,9 @@ def test_categorical_evidence_from_dict() -> None:
     )
 
     assert ev.labels() == ["A", "B", "C"], "Wrong evidence labels."
-    assert ev.states()["A"] == ("a0", "a1"), "Wrong A states."
-    assert ev.states()["B"] == ("b0", "b1"), "Wrong B states."
-    assert ev.states()["C"] == ("c0", "c1"), "Wrong C states."
+    assert ev.support()["A"] == ("a0", "a1"), "Wrong A states."
+    assert ev.support()["B"] == ("b0", "b1"), "Wrong B states."
+    assert ev.support()["C"] == ("c0", "c1"), "Wrong C states."
 
 
 def test_gaussian_evidence_from_dict() -> None:
@@ -131,8 +131,8 @@ def test_categorical_trajectory() -> None:
     # Check the variables.
     assert trj.labels() == ["column_1", "column_2"], "Wrong labels."
     # Check the states of the variables.
-    assert trj.states()["column_1"] == ("A", "B", "C"), "Wrong states."
-    assert trj.states()["column_2"] == ("X", "Y", "Z"), "Wrong states."
+    assert trj.support()["column_1"] == ("A", "B", "C"), "Wrong states."
+    assert trj.support()["column_2"] == ("X", "Y", "Z"), "Wrong states."
     # Check the time values.
     np.testing.assert_array_equal(
         trj.times(),
@@ -189,8 +189,8 @@ def test_categorical_trajectory_with_states() -> None:
     # Check the variables.
     assert trj.labels() == ["column_1", "column_2"], "Wrong labels."
     # Check the states of the variables.
-    assert trj.states()["column_1"] == ("A", "B", "C", "D"), "Wrong states."
-    assert trj.states()["column_2"] == ("W", "X", "Y", "Z"), "Wrong states."
+    assert trj.support()["column_1"] == ("A", "B", "C", "D"), "Wrong states."
+    assert trj.support()["column_2"] == ("W", "X", "Y", "Z"), "Wrong states."
     # Check time values.
     np.testing.assert_array_equal(trj.times(), np.array([0.0, 1.0, 2.0, 3.0, 4.0]))
     # Check encoded values w.r.t. provided category order.
@@ -255,8 +255,8 @@ def test_categorical_trajectories() -> None:
     # Check the variables.
     assert trjs.labels() == ["column_1", "column_2"], "Wrong labels."
     # Check the states of the variables.
-    assert trjs.states()["column_1"] == ("A", "B", "C"), "Wrong states."
-    assert trjs.states()["column_2"] == ("X", "Y", "Z"), "Wrong states."
+    assert trjs.support()["column_1"] == ("A", "B", "C"), "Wrong states."
+    assert trjs.support()["column_2"] == ("X", "Y", "Z"), "Wrong states."
     # Check the number of trajectories.
     assert len(trjs.values()) == 2, "Wrong number of trajectories."
     # Check the time values of the first trajectory.
@@ -347,8 +347,8 @@ def test_categorical_trajectories_with_states() -> None:
     # Check the variables.
     assert trjs.labels() == ["column_1", "column_2"], "Wrong labels."
     # Check the states of the variables.
-    assert trjs.states()["column_1"] == ("A", "B", "C", "D"), "Wrong states."
-    assert trjs.states()["column_2"] == ("W", "X", "Y", "Z"), "Wrong states."
+    assert trjs.support()["column_1"] == ("A", "B", "C", "D"), "Wrong states."
+    assert trjs.support()["column_2"] == ("W", "X", "Y", "Z"), "Wrong states."
     # Check the number of trajectories.
     assert len(trjs.values()) == 2, "Wrong number of trajectories."
     # Check the time values of the first trajectory.
@@ -426,16 +426,16 @@ def test_categorical_trajectory_evidence() -> None:
     # Check the variables.
     assert trj_ev.labels() == ["A", "B", "C"], "Wrong labels."
     # Check the states of the variables.
-    assert trj_ev.states()["A"] == ("X", "Y", "Z"), "Wrong states."
-    assert trj_ev.states()["B"] == ("X", "Y", "Z"), "Wrong states."
-    assert trj_ev.states()["C"] == ("Y", "Z"), "Wrong states."
+    assert trj_ev.support()["A"] == ("X", "Y", "Z"), "Wrong states."
+    assert trj_ev.support()["B"] == ("X", "Y", "Z"), "Wrong states."
+    assert trj_ev.support()["C"] == ("Y", "Z"), "Wrong states."
 
     # Also check inferred states path (without explicit states).
     trj_ev_inferred = CatTrjEv.from_pandas(df)
     assert trj_ev_inferred.labels() == ["A", "B", "C"], "Wrong inferred labels."
-    assert trj_ev_inferred.states()["A"] == ("X",), "Wrong inferred A states."
-    assert trj_ev_inferred.states()["B"] == ("Y",), "Wrong inferred B states."
-    assert trj_ev_inferred.states()["C"] == ("Z",), "Wrong inferred C states."
+    assert trj_ev_inferred.support()["A"] == ("X",), "Wrong inferred A states."
+    assert trj_ev_inferred.support()["B"] == ("Y",), "Wrong inferred B states."
+    assert trj_ev_inferred.support()["C"] == ("Z",), "Wrong inferred C states."
 
 
 def test_categorical_incomplete_table() -> None:
@@ -456,8 +456,8 @@ def test_categorical_incomplete_table() -> None:
     # Check the variables.
     assert table.labels() == ["column_1", "column_2"], "Wrong labels."
     # Check the states of the variables.
-    assert table.states()["column_1"] == ("A", "B"), "Wrong states."
-    assert table.states()["column_2"] == ("X", "Y", "Z"), "Wrong states."
+    assert table.support()["column_1"] == ("A", "B"), "Wrong states."
+    assert table.support()["column_2"] == ("X", "Y", "Z"), "Wrong states."
 
     # Check the missing information.
     missing = table.missing()
@@ -645,14 +645,14 @@ def test_categorical_table_polars() -> None:
 
     table = CatTable.from_polars(df)
     assert table.labels() == ["column_1", "column_2"]
-    assert {"A", "B", "C"}.issubset(set(table.states()["column_1"]))
-    assert {"X", "Y", "Z"}.issubset(set(table.states()["column_2"]))
+    assert {"A", "B", "C"}.issubset(set(table.support()["column_1"]))
+    assert {"X", "Y", "Z"}.issubset(set(table.support()["column_2"]))
 
     values = table.values()
     assert values.shape == (5, 2)
     # Decode internal codes through states and verify original values.
-    decoded_col1 = [table.states()["column_1"][int(x)] for x in values[:, 0]]
-    decoded_col2 = [table.states()["column_2"][int(x)] for x in values[:, 1]]
+    decoded_col1 = [table.support()["column_1"][int(x)] for x in values[:, 0]]
+    decoded_col2 = [table.support()["column_2"][int(x)] for x in values[:, 1]]
     assert decoded_col1 == ["A", "B", "A", "C", "B"]
     assert decoded_col2 == ["X", "Y", "X", "Z", "Y"]
 
@@ -710,8 +710,8 @@ def test_categorical_incomplete_table_polars() -> None:
 
     table = CatIncTable.from_polars(df)
     assert table.labels() == ["column_1", "column_2"]
-    assert {"A", "B"}.issubset(set(table.states()["column_1"]))
-    assert {"X", "Y", "Z"}.issubset(set(table.states()["column_2"]))
+    assert {"A", "B"}.issubset(set(table.support()["column_1"]))
+    assert {"X", "Y", "Z"}.issubset(set(table.support()["column_2"]))
 
     values = table.values()
     assert values.shape == (5, 2)
@@ -733,11 +733,11 @@ def test_categorical_incomplete_table_polars() -> None:
 
     # Decode non-missing values through states and verify round-trip semantics.
     decoded_col1 = [
-        None if int(x) == 255 else table.states()["column_1"][int(x)]
+        None if int(x) == 255 else table.support()["column_1"][int(x)]
         for x in values[:, 0]
     ]
     decoded_col2 = [
-        None if int(x) == 255 else table.states()["column_2"][int(x)]
+        None if int(x) == 255 else table.support()["column_2"][int(x)]
         for x in values[:, 1]
     ]
     assert decoded_col1 == ["A", "B", "A", None, "B"]
@@ -817,8 +817,8 @@ def test_categorical_trajectory_polars() -> None:
 
     values = trj.values()
     assert values.shape == (5, 2)
-    decoded_col1 = [trj.states()["column_1"][int(x)] for x in values[:, 0]]
-    decoded_col2 = [trj.states()["column_2"][int(x)] for x in values[:, 1]]
+    decoded_col1 = [trj.support()["column_1"][int(x)] for x in values[:, 0]]
+    decoded_col2 = [trj.support()["column_2"][int(x)] for x in values[:, 1]]
     assert decoded_col1 == ["A", "A", "B", "C", "C"]
     assert decoded_col2 == ["X", "Y", "Y", "Y", "Z"]
 
@@ -858,10 +858,10 @@ def test_categorical_trajectories_polars() -> None:
 
     v0 = values[0].values()
     v1 = values[1].values()
-    dec0_a = [values[0].states()["A"][int(x)] for x in v0[:, 0]]
-    dec0_b = [values[0].states()["B"][int(x)] for x in v0[:, 1]]
-    dec1_a = [values[1].states()["A"][int(x)] for x in v1[:, 0]]
-    dec1_b = [values[1].states()["B"][int(x)] for x in v1[:, 1]]
+    dec0_a = [values[0].support()["A"][int(x)] for x in v0[:, 0]]
+    dec0_b = [values[0].support()["B"][int(x)] for x in v0[:, 1]]
+    dec1_a = [values[1].support()["A"][int(x)] for x in v1[:, 0]]
+    dec1_b = [values[1].support()["B"][int(x)] for x in v1[:, 1]]
     assert dec0_a == ["a0", "a1", "a1"]
     assert dec0_b == ["b0", "b0", "b1"]
     assert dec1_a == ["a1", "a1", "a0"]
@@ -897,9 +897,9 @@ def test_categorical_trajectory_evidence_polars() -> None:
     }
     trj_ev = CatTrjEv.from_polars(df, with_states=states)
     assert trj_ev.labels() == ["A", "B", "C"]
-    assert trj_ev.states()["A"] == ("X", "Y", "Z")
-    assert trj_ev.states()["B"] == ("X", "Y", "Z")
-    assert trj_ev.states()["C"] == ("Y", "Z")
+    assert trj_ev.support()["A"] == ("X", "Y", "Z")
+    assert trj_ev.support()["B"] == ("X", "Y", "Z")
+    assert trj_ev.support()["C"] == ("Y", "Z")
 
 
 def test_categorical_trajectories_evidence_polars() -> None:
@@ -929,6 +929,6 @@ def test_categorical_trajectories_evidence_polars() -> None:
     }
     trjs_ev = CatTrjsEv.from_polars([df1, df2], with_states=with_states)
     assert set(trjs_ev.labels()) == {"A", "B", "C"}
-    assert trjs_ev.states()["A"] == ("X", "Y", "Z")
-    assert trjs_ev.states()["B"] == ("X", "Y", "Z")
-    assert trjs_ev.states()["C"] == ("X", "Y", "Z")
+    assert trjs_ev.support()["A"] == ("X", "Y", "Z")
+    assert trjs_ev.support()["B"] == ("X", "Y", "Z")
+    assert trjs_ev.support()["C"] == ("X", "Y", "Z")

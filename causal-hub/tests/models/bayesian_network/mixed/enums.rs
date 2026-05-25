@@ -11,7 +11,7 @@ mod tests {
             CatCPDS, GaussCPDS, Labelled, MixedCPDS, MixedEv, MixedIncTable, MixedSample,
             MixedTable, MixedWtdTable,
         },
-        states,
+        support,
         types::Result,
     };
     use ndarray::prelude::*;
@@ -20,9 +20,9 @@ mod tests {
 
     #[test]
     fn from_categorical_evidence() -> Result<()> {
-        let states = states![("X", ["a", "b"]), ("Y", ["0", "1"]),];
+        let support = support![("X", ["a", "b"]), ("Y", ["0", "1"]),];
         let values = vec![CatEvT::CertainPositive { event: 0, state: 1 }];
-        let ev = CatEv::new(states, values)?;
+        let ev = CatEv::new(support, values)?;
         let mixed = MixedEv::from(ev);
 
         match mixed {
@@ -53,7 +53,7 @@ mod tests {
 
     #[test]
     fn from_categorical_table() -> Result<()> {
-        let table = CatTable::new(states![("A", ["no", "yes"])], array![[0], [1], [0]])?;
+        let table = CatTable::new(support![("A", ["no", "yes"])], array![[0], [1], [0]])?;
         let mixed = MixedTable::from(table);
 
         match mixed {
@@ -82,7 +82,8 @@ mod tests {
 
     #[test]
     fn from_categorical_incomplete_table() -> Result<()> {
-        let inc_table = CatIncTable::new(states![("A", ["no", "yes"])], array![[0], [M_CAT], [1]])?;
+        let inc_table =
+            CatIncTable::new(support![("A", ["no", "yes"])], array![[0], [M_CAT], [1]])?;
         let mixed = MixedIncTable::from(inc_table);
 
         match mixed {
@@ -108,7 +109,7 @@ mod tests {
 
     #[test]
     fn from_categorical_weighted_table() -> Result<()> {
-        let table = CatTable::new(states![("A", ["no", "yes"])], array![[0], [1], [0]])?;
+        let table = CatTable::new(support![("A", ["no", "yes"])], array![[0], [1], [0]])?;
         let weights = array![1.0, 2.0, 1.0];
         let wtd = CatWtdTable::new(table, weights)?;
         let mixed = MixedWtdTable::from(wtd);
@@ -214,7 +215,7 @@ mod tests {
     #[test]
     fn cross_variant_rejection() -> Result<()> {
         // Construct a categorical CPD and verify it doesn't accidentally match Gaussian
-        let table = CatTable::new(states![("A", ["no", "yes"])], array![[0], [1]])?;
+        let table = CatTable::new(support![("A", ["no", "yes"])], array![[0], [1]])?;
         let mixed = MixedTable::from(table);
 
         match mixed {

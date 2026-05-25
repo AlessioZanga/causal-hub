@@ -6,7 +6,7 @@ mod tests {
         estimators::{BE, CPDEstimator, ParCPDEstimator},
         labels,
         models::{CPD, Labelled},
-        set, states,
+        set, support,
         types::{Error, Result},
     };
     use ndarray::prelude::*;
@@ -19,7 +19,7 @@ mod tests {
 
             #[test]
             fn fit() -> Result<()> {
-                let states = states![
+                let support = support![
                     ("A", ["no", "yes"]),
                     ("B", ["no", "yes"]),
                     ("C", ["no", "yes"]),
@@ -32,7 +32,7 @@ mod tests {
                     [0, 1, 1],
                     [1, 1, 1]
                 ];
-                let dataset = CatTable::new(states, values)?;
+                let dataset = CatTable::new(support, values)?;
 
                 let estimator = BE::new(&dataset).with_prior(1);
 
@@ -40,11 +40,11 @@ mod tests {
                 let distribution = estimator.fit(&set![0], &set![])?;
 
                 assert_eq!(distribution.labels(), &labels!["A"]);
-                assert_eq!(distribution.states(), &states![("A", ["no", "yes"])]);
+                assert_eq!(distribution.support(), &support![("A", ["no", "yes"])]);
                 assert_eq!(distribution.conditioning_labels(), &labels![]);
                 assert!(
                     distribution
-                        .conditioning_states()
+                        .conditioning_support()
                         .values()
                         .all(|x| x.iter().eq(["no", "yes"]))
                 );
@@ -86,11 +86,11 @@ mod tests {
                 let distribution = estimator.fit(&set![0], &set![1, 2])?;
 
                 assert_eq!(distribution.labels(), &labels!["A"]);
-                assert_eq!(distribution.states(), &states![("A", ["no", "yes"])]);
+                assert_eq!(distribution.support(), &support![("A", ["no", "yes"])]);
                 assert_eq!(distribution.conditioning_labels(), &labels!["B", "C"]);
                 assert!(
                     distribution
-                        .conditioning_states()
+                        .conditioning_support()
                         .values()
                         .all(|x| x.iter().eq(["no", "yes"]))
                 );
@@ -139,7 +139,7 @@ mod tests {
 
             #[test]
             fn par_fit() -> Result<()> {
-                let states = states![
+                let support = support![
                     ("A", ["no", "yes"]),
                     ("B", ["no", "yes"]),
                     ("C", ["no", "yes"]),
@@ -152,7 +152,7 @@ mod tests {
                     [0, 1, 1],
                     [1, 1, 1]
                 ];
-                let dataset = CatTable::new(states, values)?;
+                let dataset = CatTable::new(support, values)?;
 
                 let estimator = BE::new(&dataset).with_prior(1);
 
@@ -172,7 +172,7 @@ mod tests {
 
             #[test]
             fn unique_variables() -> Result<()> {
-                let states = states![
+                let support = support![
                     ("A", ["no", "yes"]),
                     ("B", ["no", "yes"]),
                     ("C", ["no", "yes"]),
@@ -185,7 +185,7 @@ mod tests {
                     [0, 1, 1],
                     [1, 1, 1]
                 ];
-                let dataset = CatTable::new(states, values)?;
+                let dataset = CatTable::new(support, values)?;
 
                 let estimator = BE::new(&dataset).with_prior(1);
 

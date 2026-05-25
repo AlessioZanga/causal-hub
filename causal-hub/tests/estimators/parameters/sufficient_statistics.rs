@@ -7,7 +7,7 @@ mod tests {
         estimators::{CSSEstimator, SSE},
         labels,
         models::{CatCPDS, GaussCPDS, Labelled},
-        set, states,
+        set, support,
         types::{Error, Result},
     };
     use ndarray::prelude::*;
@@ -20,8 +20,8 @@ mod tests {
             // Define the missing value.
             const M: u8 = CatIncTable::MISSING;
 
-            // Define states.
-            let states = states![("X", ["0", "1"]), ("Y", ["0", "1"])];
+            // Define support.
+            let support = support![("X", ["0", "1"]), ("Y", ["0", "1"])];
 
             // Define values (incomplete).
             let values = array![
@@ -35,7 +35,7 @@ mod tests {
             .mapv(|x| x);
 
             // Create dataset.
-            let d = CatIncTable::new(states, values)?;
+            let d = CatIncTable::new(support, values)?;
 
             // Define missing mechanism. R_X (idx 0) depends on Y (idx 1). R_Y (idx 1) depends on nothing.
             let mut missing_mechanism =
@@ -76,8 +76,8 @@ mod tests {
             // Define the missing value.
             const M: u8 = CatIncTable::MISSING;
 
-            // Define states.
-            let states = states![("X", ["0", "1"]), ("Y", ["0", "1"])];
+            // Define support.
+            let support = support![("X", ["0", "1"]), ("Y", ["0", "1"])];
 
             // Define values (incomplete).
             let values = array![
@@ -91,7 +91,7 @@ mod tests {
             .mapv(|x| x);
 
             // Create dataset.
-            let d = CatIncTable::new(states, values)?;
+            let d = CatIncTable::new(support, values)?;
 
             // Define missing mechanism. R_X (idx 0) depends on Y (idx 1). R_Y (idx 1) depends on nothing.
             let mut missing_mechanism =

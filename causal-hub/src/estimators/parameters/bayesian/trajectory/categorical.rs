@@ -6,13 +6,13 @@ use crate::{
     datasets::{CatTrj, CatTrjs, CatWtdTrj, CatWtdTrjs},
     estimators::{BE, CPDEstimator, CSSEstimator, ParCPDEstimator, ParCSSEstimator, SSE},
     models::{CatCIM, CatCIMS},
-    types::{Error, Result, Set, States},
+    types::{Error, Result, Set, Support},
 };
 
 impl BE<'_, CatTrj, (usize, f64)> {
     // Fit a CIM given sufficient statistics.
     fn fit(
-        states: &States,
+        support: &Support,
         x: &Set<usize>,
         z: &Set<usize>,
         sample_statistics: CatCIMS,
@@ -78,21 +78,21 @@ impl BE<'_, CatTrj, (usize, f64)> {
             ll_q_xz + ll_p_xz
         });
 
-        // Subset the conditioning labels, states and shape.
-        let conditioning_states = z
+        // Subset the conditioning labels, support and shape.
+        let conditioning_support = z
             .iter()
             .map(|&i| {
-                let (k, v) = states
+                let (k, v) = support
                     .get_index(i)
                     .ok_or_else(|| Error::IndexOutOfBounds(i))?;
                 Ok((k.clone(), v.clone()))
             })
             .collect::<Result<_>>()?;
         // Get the labels of the conditioned variables.
-        let states = x
+        let support = x
             .iter()
             .map(|&i| {
-                let (k, v) = states
+                let (k, v) = support
                     .get_index(i)
                     .ok_or_else(|| Error::IndexOutOfBounds(i))?;
                 Ok((k.clone(), v.clone()))
@@ -104,8 +104,8 @@ impl BE<'_, CatTrj, (usize, f64)> {
 
         // Construct the CIM.
         CatCIM::with_optionals(
-            states,
-            conditioning_states,
+            support,
+            conditioning_support,
             parameters,
             sample_statistics,
             sample_log_likelihood,
@@ -127,8 +127,8 @@ macro_for!($type in [CatTrj, CatWtdTrj, CatTrjs, CatWtdTrjs] {
     impl CPDEstimator<CatCIM> for BE<'_, $type, (usize, f64)> {
         #[inline]
         fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> Result<CatCIM> {
-            // Get (states, prior).
-            let (states, prior) = (self.dataset.states(), self.prior);
+            // Get (support, prior).
+            let (support, prior) = (self.dataset.support(), self.prior);
             // Set sufficient statistics estimator.
             let sample_statistics = SSE::new(self.dataset);
             // Set missing handling method, if any.
@@ -139,7 +139,7 @@ macro_for!($type in [CatTrj, CatWtdTrj, CatTrjs, CatWtdTrjs] {
             // Compute sufficient statistics.
             let sample_statistics = sample_statistics.fit(x, z)?;
             // Fit the CIM given the sufficient statistics.
-            BE::<'_, CatTrj, _>::fit(states, x, z, sample_statistics, prior)
+            BE::<'_, CatTrj, _>::fit(support, x, z, sample_statistics, prior)
         }
     }
 
@@ -159,8 +159,8 @@ macro_for!($type in [CatTrjs, CatWtdTrjs] {
     impl ParCPDEstimator<CatCIM> for BE<'_, $type, (usize, f64)> {
         #[inline]
         fn par_fit(&self, x: &Set<usize>, z: &Set<usize>) -> Result<CatCIM> {
-            // Get (states, prior).
-            let (states, prior) = (self.dataset.states(), self.prior);
+            // Get (support, prior).
+            let (support, prior) = (self.dataset.support(), self.prior);
             // Set sufficient statistics estimator.
             let sample_statistics = SSE::new(self.dataset);
             // Set missing handling method, if any.
@@ -171,7 +171,7 @@ macro_for!($type in [CatTrjs, CatWtdTrjs] {
             // Compute sufficient statistics in parallel.
             let sample_statistics = sample_statistics.par_fit(x, z)?;
             // Fit the CIM given the sufficient statistics.
-            BE::<'_, CatTrj, _>::fit(states, x, z, sample_statistics, prior)
+            BE::<'_, CatTrj, _>::fit(support, x, z, sample_statistics, prior)
         }
     }
 

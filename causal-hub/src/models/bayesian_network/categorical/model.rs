@@ -16,7 +16,7 @@ use crate::{
     io::{BifIO, BifParser},
     models::{BN, CPD, CatCPD, DiGraph, Graph, Labelled},
     set,
-    types::{Error, Labels, Map, Result, Set, States},
+    types::{Error, Labels, Map, Result, Set, Support},
 };
 
 /// A categorical Bayesian network.
@@ -28,8 +28,8 @@ pub struct CatBN {
     description: Option<String>,
     /// The labels of the variables.
     labels: Labels,
-    /// The states of the variables.
-    states: States,
+    /// The support of the variables.
+    support: Support,
     /// The shape of the variables.
     shape: Array1<usize>,
     /// The graph of the model.
@@ -41,15 +41,15 @@ pub struct CatBN {
 }
 
 impl CatBN {
-    /// Returns the states of the variables.
+    /// Returns the support of the variables.
     ///
     /// # Returns
     ///
-    /// A reference to the states of the variables.
+    /// A reference to the support of the variables.
     ///
     #[inline]
-    pub const fn states(&self) -> &States {
-        &self.states
+    pub const fn support(&self) -> &Support {
+        &self.support
     }
 
     /// Returns the shape of the variables.
@@ -67,7 +67,7 @@ impl CatBN {
 impl PartialEq for CatBN {
     fn eq(&self, other: &Self) -> bool {
         self.labels.eq(&other.labels)
-            && self.states.eq(&other.states)
+            && self.support.eq(&other.support)
             && self.shape.eq(&other.shape)
             && self.graph.eq(&other.graph)
             && self.topological_order.eq(&other.topological_order)
@@ -84,7 +84,7 @@ impl AbsDiffEq for CatBN {
 
     fn abs_diff_eq(&self, other: &Self, epsilon: Self::Epsilon) -> bool {
         self.labels.eq(&other.labels)
-            && self.states.eq(&other.states)
+            && self.support.eq(&other.support)
             && self.shape.eq(&other.shape)
             && self.graph.eq(&other.graph)
             && self.topological_order.eq(&other.topological_order)
@@ -110,7 +110,7 @@ impl RelativeEq for CatBN {
         max_relative: Self::Epsilon,
     ) -> bool {
         self.labels.eq(&other.labels)
-            && self.states.eq(&other.states)
+            && self.support.eq(&other.support)
             && self.shape.eq(&other.shape)
             && self.graph.eq(&other.graph)
             && self.topological_order.eq(&other.topological_order)
@@ -164,37 +164,37 @@ impl BN for CatBN {
             return Err(Error::LabelMismatch("graph labels", "distributions labels"));
         }
 
-        // Allocate the states of the variables.
-        let mut states: States = Default::default();
-        // Insert the states of the variables into the map to check if they are the same.
+        // Allocate the support of the variables.
+        let mut support: Support = Default::default();
+        // Insert the support of the variables into the map to check if they are the same.
         cpds.values().try_for_each(|cpd| {
-            cpd.states()
+            cpd.support()
                 .iter()
-                .chain(cpd.conditioning_states())
+                .chain(cpd.conditioning_support())
                 .try_for_each(|(l, s)| {
-                    // Check if the states are already in the map.
-                    if let Some(existing_states) = states.get(l) {
-                        // Check if the states are the same.
+                    // Check if the support are already in the map.
+                    if let Some(existing_states) = support.get(l) {
+                        // Check if the support are the same.
                         if existing_states != s {
                             return Err(Error::InvalidParameter(
                                 "cpds",
-                                &format!("States of `{l}` must be the same across CPDs."),
+                                &format!("Support of `{l}` must be the same across CPDs."),
                             ));
                         }
                     } else {
-                        // Insert the states into the map.
-                        states.insert(l.to_owned(), s.clone());
+                        // Insert the support into the map.
+                        support.insert(l.to_owned(), s.clone());
                     }
                     Ok(())
                 })
         })?;
-        // Sort the states of the variables.
-        states.sort_keys();
+        // Sort the support of the variables.
+        support.sort_keys();
 
         // Get the labels of the variables.
-        let labels: Labels = states.keys().cloned().collect();
+        let labels: Labels = support.keys().cloned().collect();
         // Get the shape of the variables.
-        let shape: Array1<usize> = states.values().map(|s| s.len()).collect();
+        let shape: Array1<usize> = support.values().map(|s| s.len()).collect();
 
         // Check if all vertices have the same labels as their parents.
         graph.vertices().into_iter().try_for_each(|i| {
@@ -220,7 +220,7 @@ impl BN for CatBN {
             name: None,
             description: None,
             labels,
-            states,
+            support,
             shape,
             graph,
             cpds,
@@ -486,12 +486,12 @@ impl BifIO for CatBN {
         // Write variables.
         for label in self.labels() {
             writeln!(f, "variable {} {{", label).map_err(|e| Error::Parsing(&e.to_string()))?;
-            let states = &self.states()[label];
-            let states_str = states.iter().map(|x| x.to_string()).join(", ");
+            let support = &self.support()[label];
+            let states_str = support.iter().map(|x| x.to_string()).join(", ");
             writeln!(
                 f,
                 "  type discrete [ {} ] {{ {} }};",
-                states.len(),
+                support.len(),
                 states_str
             )
             .map_err(|e| Error::Parsing(&e.to_string()))?;
@@ -516,14 +516,14 @@ impl BifIO for CatBN {
                 writeln!(f, "  table {};", values).map_err(|e| Error::Parsing(&e.to_string()))?;
             } else {
                 // Write conditional table.
-                let conditioning_states = cpd.conditioning_states();
+                let conditioning_support = cpd.conditioning_support();
                 let combinations = parents
                     .iter()
-                    .map(|p| &conditioning_states[p])
+                    .map(|p| &conditioning_support[p])
                     .multi_cartesian_product();
 
-                for (i, states) in combinations.enumerate() {
-                    let states_str = states.iter().map(|x| x.to_string()).join(", ");
+                for (i, support) in combinations.enumerate() {
+                    let states_str = support.iter().map(|x| x.to_string()).join(", ");
                     let probs_str = cpd
                         .parameters()
                         .row(i)

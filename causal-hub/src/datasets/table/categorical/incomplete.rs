@@ -14,15 +14,15 @@ use crate::{
     estimators::{BE, CPDEstimator},
     io::CsvIO,
     models::{CPD, Labelled},
-    set, states,
-    types::{Error, Labels, Result, Set, States},
+    set, support,
+    types::{Error, Labels, Result, Set, Support},
 };
 
 /// A struct representing an incomplete categorical dataset.
 #[derive(Clone, Debug)]
 pub struct CatIncTable {
     labels: Labels,
-    states: States,
+    support: Support,
     shape: Array1<usize>,
     values: Array2<CatType>,
     missing: MissingTable,
@@ -31,7 +31,7 @@ pub struct CatIncTable {
 /// Concrete iterator over incomplete categorical table evidences.
 pub struct CatIncTableEvidenceIter<'a> {
     rows: ndarray::iter::LanesIter<'a, CatType, Ix1>,
-    states: &'a States,
+    support: &'a Support,
     missing: CatType,
 }
 
@@ -48,7 +48,7 @@ impl<'a> Iterator for CatIncTableEvidenceIter<'a> {
             })
         });
 
-        Some(CatEv::new(self.states.clone(), evidences))
+        Some(CatEv::new(self.support.clone(), evidences))
     }
 }
 
@@ -64,47 +64,47 @@ impl CatIncTable {
     ///
     /// # Arguments
     ///
-    /// * `states` - The variables states.
+    /// * `support` - The variables support.
     /// * `values` - The values of the variables.
     ///
     /// # Notes
     ///
-    /// * Labels and states will be sorted in alphabetical order.
+    /// * Labels and support will be sorted in alphabetical order.
     ///
     /// # Errors
     ///
-    /// * If the number of variable states is higher than `CatType::MAX`.
+    /// * If the number of variable support is higher than `CatType::MAX`.
     /// * If the number of variables is different from the number of values columns.
-    /// * If the variables values are not smaller than the number of states.
+    /// * If the variables values are not smaller than the number of support.
     ///
     /// # Panics
     ///
     /// * If the variable labels are not unique.
-    /// * If the variable states are not unique.
+    /// * If the variable support are not unique.
     ///
     /// # Returns
     ///
     /// A new categorical incomplete tabular data instance.
     ///
-    pub fn new(mut states: States, mut values: Array2<CatType>) -> Result<Self> {
-        // Check if the number of states is less than `CatType::MAX`.
-        states.iter().try_for_each(|(label, state)| {
+    pub fn new(mut support: Support, mut values: Array2<CatType>) -> Result<Self> {
+        // Check if the number of support is less than `CatType::MAX`.
+        support.iter().try_for_each(|(label, state)| {
             if state.len() > CatType::MAX as usize {
                 return Err(Error::InvalidParameter(
                     label,
-                    &format!("should have less than 256 states, found {}", state.len()),
+                    &format!("should have less than 256 support, found {}", state.len()),
                 ));
             }
             Ok(())
         })?;
         // Check if the number of variables is equal to the number of columns.
-        if states.len() != values.ncols() {
+        if support.len() != values.ncols() {
             return Err(Error::IncompatibleShape(
-                &states.len().to_string(),
+                &support.len().to_string(),
                 &values.ncols().to_string(),
             ));
         }
-        // Check if the maximum value of the values is less than the number of states.
+        // Check if the maximum value of the values is less than the number of support.
         let max_values = values.fold_axis(
             Axis(0),
             0,
@@ -112,25 +112,25 @@ impl CatIncTable {
             |&a, &b| if a > b || b == Self::MISSING { a } else { b },
         );
         max_values.into_iter().enumerate().try_for_each(|(i, x)| {
-            if x >= states[i].len() as CatType {
+            if x >= support[i].len() as CatType {
                 return Err(Error::IndexOutOfBounds(x as usize));
             }
             Ok(())
         })?;
 
         // Check that the labels are sorted.
-        if !states.keys().is_sorted() {
+        if !support.keys().is_sorted() {
             // Allocate indices to sort labels.
-            let mut indices: Vec<usize> = (0..states.len()).collect();
+            let mut indices: Vec<usize> = (0..support.len()).collect();
             // Sort the indices by labels.
             indices.sort_by(|&i, &j| {
-                states
+                support
                     .get_index(i)
                     .map(|(l, _)| l)
-                    .cmp(&states.get_index(j).map(|(l, _)| l))
+                    .cmp(&support.get_index(j).map(|(l, _)| l))
             });
-            // Sort the states.
-            states.sort_keys();
+            // Sort the support.
+            support.sort_keys();
             // Allocate new values.
             let mut new_values = values.clone();
             // Sort the new values according to the sorted indices.
@@ -145,36 +145,36 @@ impl CatIncTable {
         values
             .columns_mut()
             .into_iter()
-            .zip(states.values_mut())
-            .try_for_each(|(mut col, states)| -> Result<_> {
-                // ... check if the states are sorted.
-                if !states.is_sorted() {
-                    // Clone the states.
-                    let mut new_states = states.clone();
-                    // Sort the states.
+            .zip(support.values_mut())
+            .try_for_each(|(mut col, support)| -> Result<_> {
+                // ... check if the support are sorted.
+                if !support.is_sorted() {
+                    // Clone the support.
+                    let mut new_states = support.clone();
+                    // Sort the support.
                     new_states.sort();
-                    // Map values to sorted states.
+                    // Map values to sorted support.
                     col.iter_mut().try_for_each(|value| -> Result<_> {
                         // If the value is not missing ...
                         if *value != Self::MISSING {
                             // ... map it to the new state index.
                             *value = new_states
-                                .get_index_of(&states[*value as usize])
-                                .ok_or_else(|| Error::MissingState(&states[*value as usize]))?
+                                .get_index_of(&support[*value as usize])
+                                .ok_or_else(|| Error::MissingState(&support[*value as usize]))?
                                 as CatType;
                         }
                         Ok(())
                     })?;
-                    // Update the states.
-                    *states = new_states;
+                    // Update the support.
+                    *support = new_states;
                 }
                 Ok(())
             })?;
 
         // Get the labels of the variables.
-        let labels: Labels = states.keys().cloned().collect();
-        // Get the shape of the states.
-        let shape = states.values().map(Set::len).collect();
+        let labels: Labels = support.keys().cloned().collect();
+        // Get the shape of the support.
+        let shape = support.values().map(Set::len).collect();
 
         // Create the missing mask.
         let missing_mask = values.mapv(|x| x == Self::MISSING);
@@ -183,25 +183,25 @@ impl CatIncTable {
 
         Ok(Self {
             labels,
-            states,
+            support,
             shape,
             values,
             missing,
         })
     }
 
-    /// Returns the states of the variables in the categorical distribution.
+    /// Returns the support of the variables in the categorical distribution.
     ///
     /// # Returns
     ///
-    /// A reference to the vector of states.
+    /// A reference to the vector of support.
     ///
     #[inline]
-    pub const fn states(&self) -> &States {
-        &self.states
+    pub const fn support(&self) -> &Support {
+        &self.support
     }
 
-    /// Returns the shape of the set of states in the categorical distribution.
+    /// Returns the shape of the set of support in the categorical distribution.
     ///
     /// # Returns
     ///
@@ -226,7 +226,7 @@ impl Dataset for CatIncTable {
     fn evidence_iter(&self) -> Self::EvidenceIter<'_> {
         CatIncTableEvidenceIter {
             rows: self.values.rows().into_iter(),
-            states: &self.states,
+            support: &self.support,
             missing: Self::MISSING,
         }
     }
@@ -245,13 +245,13 @@ impl Dataset for CatIncTable {
             Ok(())
         })?;
 
-        // Select the states.
-        let states: States = x
+        // Select the support.
+        let support: Support = x
             .iter()
             .map(|&i| {
-                self.states
+                self.support
                     .get_index(i)
-                    .map(|(label, states)| (label.clone(), states.clone()))
+                    .map(|(label, support)| (label.clone(), support.clone()))
                     .ok_or_else(|| Error::IndexOutOfBounds(i))
             })
             .collect::<Result<_>>()?;
@@ -266,7 +266,7 @@ impl Dataset for CatIncTable {
         let values = new_values;
 
         // Return the new dataset.
-        Self::new(states, values)
+        Self::new(support, values)
     }
 }
 
@@ -366,13 +366,13 @@ impl IncDataset for CatIncTable {
             .for_each(|(row, mut new_row)| new_row.assign(&row));
 
         // Return new complete dataset.
-        Self::Complete::new(self.states.clone(), new_values)
+        Self::Complete::new(self.support.clone(), new_values)
     }
 
     fn pw_deletion(&self, x: &Set<usize>) -> Result<Self::Complete> {
         // If no columns are specified, return an empty dataset.
         if x.is_empty() {
-            let s = states![];
+            let s = support![];
             let v = Array::default((0, 0));
             return Self::Complete::new(s, v);
         }
@@ -413,11 +413,11 @@ impl IncDataset for CatIncTable {
             |(i, j)| self.values[[rows[i], cols[j]]],
         );
 
-        // Select the states for the specified columns.
+        // Select the support for the specified columns.
         let new_states = cols
             .iter()
             .map(|&j| {
-                self.states
+                self.support
                     .get_index(j)
                     .map(|(label, state)| (label.clone(), state.clone()))
                     .ok_or_else(|| Error::IndexOutOfBounds(j))
@@ -431,7 +431,7 @@ impl IncDataset for CatIncTable {
     fn ipw_deletion(&self, x: &Set<usize>, pr: &MissingMechanism) -> Result<Self::Weighted> {
         // If no columns are specified, return an empty dataset.
         if x.is_empty() {
-            let s = states![];
+            let s = support![];
             let v = Array::default((0, 0));
             let w = Array::default(0);
             return Self::Weighted::new(Self::Complete::new(s, v)?, w);
@@ -497,7 +497,7 @@ impl IncDataset for CatIncTable {
     fn aipw_deletion(&self, x: &Set<usize>, pr: &MissingMechanism) -> Result<Self::Weighted> {
         // If no columns are specified, return an empty dataset.
         if x.is_empty() {
-            let s = states![];
+            let s = support![];
             let v = Array::default((0, 0));
             let w = Array::default(0);
             return Self::Weighted::new(Self::Complete::new(s, v)?, w);
@@ -573,8 +573,8 @@ impl CsvIO for CatIncTable {
             .map(|x| x.to_owned())
             .collect();
 
-        // Get the states of the variables.
-        let mut states: States = labels
+        // Get the support of the variables.
+        let mut support: Support = labels
             .iter()
             .map(|x| (x.clone(), Default::default()))
             .collect();
@@ -587,17 +587,21 @@ impl CsvIO for CatIncTable {
                     // Get the record row.
                     let row = row.map_err(|e| Error::Csv(Arc::new(e)))?;
                     // Get the record values and convert to indices.
-                    values.extend(row.into_iter().zip(states.values_mut()).map(|(x, states)| {
-                        // Check if the value is missing.
-                        if x.is_empty() {
-                            Self::MISSING
-                        } else {
-                            // Insert the value into the states, if not present.
-                            let (x, _) = states.insert_full(x.to_owned());
-                            // Cast the value.
-                            x as CatType
-                        }
-                    }));
+                    values.extend(
+                        row.into_iter()
+                            .zip(support.values_mut())
+                            .map(|(x, support)| {
+                                // Check if the value is missing.
+                                if x.is_empty() {
+                                    Self::MISSING
+                                } else {
+                                    // Insert the value into the support, if not present.
+                                    let (x, _) = support.insert_full(x.to_owned());
+                                    // Cast the value.
+                                    x as CatType
+                                }
+                            }),
+                    );
 
                     Ok(values)
                 })?;
@@ -609,7 +613,7 @@ impl CsvIO for CatIncTable {
         let values = Array1::from_vec(values).into_shape_with_order((nrows, ncols))?;
 
         // Construct the dataset.
-        Self::new(states, values)
+        Self::new(support, values)
     }
 
     fn to_csv_writer<W: Write>(&self, writer: W) -> Result<()> {
@@ -624,16 +628,16 @@ impl CsvIO for CatIncTable {
 
         // Write the records.
         for row in self.values.rows() {
-            // Zip the row with the states.
-            let record = row.iter().zip(self.states().values());
-            // Map the row values to states.
-            let record = record.map(|(&x, states)| {
+            // Zip the row with the support.
+            let record = row.iter().zip(self.support().values());
+            // Map the row values to support.
+            let record = record.map(|(&x, support)| {
                 // Check if the value is missing.
                 if x == Self::MISSING {
                     return &missing;
                 }
                 // Return the state label.
-                &states[x as usize]
+                &support[x as usize]
             });
             // Write the record.
             writer.write_record(record)?;

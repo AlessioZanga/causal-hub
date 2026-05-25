@@ -20,7 +20,7 @@ mod tests {
         let model = load_eating()?;
         // Initialize the evidence.
         let evidence = CatTrjEv::new(
-            model.states().clone(),
+            model.support().clone(),
             [
                 E::CertainPositiveInterval {
                     event: 2, // "Hungry"
@@ -74,7 +74,7 @@ mod tests {
         let model = load_eating()?;
         // Initialize the evidence.
         let evidence = CatTrjEv::new(
-            model.states().clone(),
+            model.support().clone(),
             [
                 E::CertainPositiveInterval {
                     event: 2, // "Hungry"

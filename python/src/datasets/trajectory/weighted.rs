@@ -60,16 +60,16 @@ impl PyCatWtdTrj {
         self.lock().weight()
     }
 
-    /// Returns the states of the categorical trajectory.
+    /// Returns the support of the categorical trajectory.
     ///
     /// Returns
     /// -------
     /// dict[str, tuple[str, ...]]
-    ///     A reference to the states of the categorical trajectory.
+    ///     A reference to the support of the categorical trajectory.
     ///
-    pub fn states<'a>(&'a self, py: Python<'a>) -> PyResult<BTreeMap<String, Bound<'a, PyTuple>>> {
+    pub fn support<'a>(&'a self, py: Python<'a>) -> PyResult<BTreeMap<String, Bound<'a, PyTuple>>> {
         self.lock()
-            .states()
+            .support()
             .iter()
             .map(|(label, states)| {
                 // Get reference to the label and states.
@@ -120,16 +120,16 @@ impl PyCatWtdTrjs {
         Ok(self.lock().labels().iter().cloned().collect())
     }
 
-    /// Returns the states of the categorical trajectory.
+    /// Returns the support of the categorical trajectory.
     ///
     /// Returns
     /// -------
     /// dict[str, tuple[str, ...]]
-    ///     A reference to the states of the categorical trajectory.
+    ///     A reference to the support of the categorical trajectory.
     ///
-    pub fn states<'a>(&'a self, py: Python<'a>) -> PyResult<BTreeMap<String, Bound<'a, PyTuple>>> {
+    pub fn support<'a>(&'a self, py: Python<'a>) -> PyResult<BTreeMap<String, Bound<'a, PyTuple>>> {
         self.lock()
-            .states()
+            .support()
             .iter()
             .map(|(label, states)| {
                 // Get reference to the label and states.

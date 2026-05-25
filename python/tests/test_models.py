@@ -577,8 +577,8 @@ def test_inference_accuracy(  # noqa: PLR0913
         return idx
 
     # Get states mapping
-    t_states = est_cpd.states()
-    c_states = est_cpd.conditioning_states()
+    t_states = est_cpd.support()
+    c_states = est_cpd.conditioning_support()
 
     # Calculate indices
     # Conditioning index (rows)

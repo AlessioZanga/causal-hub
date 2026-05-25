@@ -30,7 +30,7 @@ mod tests {
                 // Set the evidence.
                 let evidence = CatTrjsEv::new([
                     // A single empty evidence.
-                    CatTrjEv::new(model.states().clone(), [])?,
+                    CatTrjEv::new(model.support().clone(), [])?,
                 ])?;
 
                 // Define the expectation step.
@@ -67,7 +67,7 @@ mod tests {
                 // Set the evidence.
                 let evidence = CatTrjsEv::new(vec![
                     // A thousands empty evidence.
-                    CatTrjEv::new(model.states().clone(), [])?;
+                    CatTrjEv::new(model.support().clone(), [])?;
                     10_000
                 ])?;
 

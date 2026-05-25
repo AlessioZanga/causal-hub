@@ -44,14 +44,14 @@ def test_cat_cpd_random() -> None:
     """Test generating a random Categorical CPD."""
     # Define states and conditioning states.
     states = {"A": ("0", "1")}
-    conditioning_states = {"B": ("0", "1"), "C": ("0", "1", "2")}
+    conditioning_support = {"B": ("0", "1"), "C": ("0", "1", "2")}
     # Generate a random CPD.
-    cpd = CatCPD.random(states, conditioning_states, alpha=1.0, seed=42)
+    cpd = CatCPD.random(states, conditioning_support, alpha=1.0, seed=42)
 
     # Check the states.
-    assert cpd.states() == states, "Wrong states in the CPD."
+    assert cpd.support() == states, "Wrong states in the CPD."
     assert (
-        cpd.conditioning_states() == conditioning_states
+        cpd.conditioning_support() == conditioning_support
     ), "Wrong conditioning states in the CPD."
 
 
@@ -218,7 +218,7 @@ def test_cat_inc_table_random() -> None:
     # Valid Generation
     sample = CatIncTable.random(dataset, mechanism, p_min=0.1, p_max=0.2, seed=42)
     assert sample.labels() == dataset.labels()
-    assert sample.states() == dataset.states()
+    assert sample.support() == dataset.support()
 
     # Invalid Parameters
     with pytest.raises(Exception):

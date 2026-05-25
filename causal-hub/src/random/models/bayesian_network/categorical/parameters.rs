@@ -5,7 +5,7 @@ use rand_distr::Gamma;
 use crate::{
     models::CatCPD,
     random::Random,
-    types::{Error, Result, States},
+    types::{Error, Result, Support},
 };
 
 /// A struct for random categorical CPD generation.
@@ -14,8 +14,8 @@ where
     R: Rng,
 {
     rng: &'a mut R,
-    states: &'a States,
-    conditioning_states: &'a States,
+    support: &'a Support,
+    conditioning_support: &'a Support,
     alpha: f64,
 }
 
@@ -28,8 +28,8 @@ where
     /// # Arguments
     ///
     /// * `rng` - A mutable reference to a random number generator.
-    /// * `states` - The states of the target variable.
-    /// * `conditioning_states` - The states of the conditioning variables.
+    /// * `support` - The support of the target variable.
+    /// * `conditioning_support` - The support of the conditioning variables.
     /// * `alpha` - The parameter of the Dirichlet distribution.
     ///
     /// # Errors
@@ -42,8 +42,8 @@ where
     ///
     pub fn new(
         rng: &'a mut R,
-        states: &'a States,
-        conditioning_states: &'a States,
+        support: &'a Support,
+        conditioning_support: &'a Support,
         alpha: f64,
     ) -> Result<Self> {
         // Check if alpha is positive.
@@ -53,8 +53,8 @@ where
 
         Ok(Self {
             rng,
-            states,
-            conditioning_states,
+            support,
+            conditioning_support,
             alpha,
         })
     }
@@ -68,8 +68,12 @@ where
 
     fn random(&mut self) -> Self::Output {
         // Get the inner state sizes.
-        let m = self.states.values().map(|v| v.len()).product();
-        let n = self.conditioning_states.values().map(|v| v.len()).product();
+        let m = self.support.values().map(|v| v.len()).product();
+        let n = self
+            .conditioning_support
+            .values()
+            .map(|v| v.len())
+            .product();
 
         // Create the Gamma distribution.
         let gamma = Gamma::new(self.alpha, 1.0)
@@ -82,8 +86,8 @@ where
 
         // Return the categorical CPD.
         CatCPD::new(
-            self.states.clone(),
-            self.conditioning_states.clone(),
+            self.support.clone(),
+            self.conditioning_support.clone(),
             parameters,
         )
     }

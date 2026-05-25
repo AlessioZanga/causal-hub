@@ -3,7 +3,7 @@ mod tests {
     use causal_hub::{
         labels,
         models::{BN, CPD, CatBN, CatCPD, DiGraph, Graph, Labelled},
-        states,
+        support,
         types::Result,
     };
     use ndarray::prelude::*;
@@ -20,14 +20,14 @@ mod tests {
         let cpds = [
             CatCPD::new(
                 // P(A)
-                states![("A", ["no", "yes"])], //
-                states![],                     //
-                array![[0.1, 0.9]],            //
+                support![("A", ["no", "yes"])], //
+                support![],                     //
+                array![[0.1, 0.9]],             //
             )?,
             CatCPD::new(
                 // P(B | A)
-                states![("B", ["no", "yes"])], //
-                states![("A", ["no", "yes"])],
+                support![("B", ["no", "yes"])], //
+                support![("A", ["no", "yes"])],
                 array![
                     [0.2, 0.8], //
                     [0.4, 0.6], //
@@ -35,8 +35,8 @@ mod tests {
             )?,
             CatCPD::new(
                 // P(C | A, B)
-                states![("C", ["no", "yes"])],
-                states![("A", ["no", "yes"]), ("B", ["no", "yes"])],
+                support![("C", ["no", "yes"])],
+                support![("A", ["no", "yes"]), ("B", ["no", "yes"])],
                 array![
                     [0.1, 0.9], //
                     [0.3, 0.7], //
@@ -66,7 +66,7 @@ mod tests {
         assert_eq!(model.cpds()[1].conditioning_labels(), &labels!["A"]);
         assert_eq!(model.cpds()[2].conditioning_labels(), &labels!["A", "B"]);
 
-        // Check the states.
+        // Check the support.
         assert_eq!(
             model.cpds()[0].parameters(),
             &array![[0.1, 0.9]] //
@@ -105,14 +105,14 @@ mod tests {
         let cpds = [
             CatCPD::new(
                 // P(A)
-                states![("A", ["no", "yes"])],
-                states![],
+                support![("A", ["no", "yes"])],
+                support![],
                 array![[0.1, 0.9]],
             )?,
             CatCPD::new(
                 // P(B | A)
-                states![("B", ["no", "yes"])],
-                states![("A", ["no", "yes"])],
+                support![("B", ["no", "yes"])],
+                support![("A", ["no", "yes"])],
                 array![[0.2, 0.8], [0.4, 0.6]],
             )?,
         ];
@@ -133,20 +133,20 @@ mod tests {
         let cpds = [
             CatCPD::new(
                 // P(A)
-                states![("A", ["no", "yes"])],
-                states![],
+                support![("A", ["no", "yes"])],
+                support![],
                 array![[0.1, 0.9]],
             )?,
             CatCPD::new(
                 // P(A)
-                states![("A", ["no", "yes"])],
-                states![],
+                support![("A", ["no", "yes"])],
+                support![],
                 array![[0.1, 0.9]],
             )?,
             CatCPD::new(
                 // P(B | A)
-                states![("B", ["no", "yes"])],
-                states![("A", ["no", "yes"])],
+                support![("B", ["no", "yes"])],
+                support![("A", ["no", "yes"])],
                 array![[0.2, 0.8], [0.4, 0.6]],
             )?,
         ];
@@ -166,20 +166,20 @@ mod tests {
         let cpds = [
             CatCPD::new(
                 // P(A)
-                states![("A", ["no", "yes"])],
-                states![],
+                support![("A", ["no", "yes"])],
+                support![],
                 array![[0.1, 0.9]],
             )?,
             CatCPD::new(
                 // P(B | A)
-                states![("B", ["no", "yes"])],
-                states![("A", ["no", "yes"])],
+                support![("B", ["no", "yes"])],
+                support![("A", ["no", "yes"])],
                 array![[0.2, 0.8], [0.4, 0.6]],
             )?,
             CatCPD::new(
                 // P(C | A, B)
-                states![("C", ["no", "yes"])],
-                states![("A", ["no", "yes"]), ("B", ["no", "yes"])],
+                support![("C", ["no", "yes"])],
+                support![("A", ["no", "yes"]), ("B", ["no", "yes"])],
                 array![[0.1, 0.9], [0.3, 0.7], [0.5, 0.5], [0.6, 0.4],],
             )?,
         ];

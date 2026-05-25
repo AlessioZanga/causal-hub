@@ -7,14 +7,14 @@ use ndarray::prelude::*;
 use crate::{
     datasets::{CatEv, CatEvT},
     models::{CPD, CatCPD, Labelled, Phi},
-    types::{Error, Labels, Result, Set, States},
+    types::{Error, Labels, Result, Set, Support},
 };
 
 /// A categorical potential.
 #[derive(Clone, Debug)]
 pub struct CatPhi {
     labels: Labels,
-    states: States,
+    support: Support,
     shape: Array1<usize>,
     parameters: ArrayD<f64>,
 }
@@ -29,7 +29,7 @@ impl Labelled for CatPhi {
 impl PartialEq for CatPhi {
     fn eq(&self, other: &Self) -> bool {
         self.labels.eq(&other.labels)
-            && self.states.eq(&other.states)
+            && self.support.eq(&other.support)
             && self.shape.eq(&other.shape)
             && self.parameters.eq(&other.parameters)
     }
@@ -44,7 +44,7 @@ impl AbsDiffEq for CatPhi {
 
     fn abs_diff_eq(&self, other: &Self, epsilon: Self::Epsilon) -> bool {
         self.labels.eq(&other.labels)
-            && self.states.eq(&other.states)
+            && self.support.eq(&other.support)
             && self.shape.eq(&other.shape)
             && self.parameters.abs_diff_eq(&other.parameters, epsilon)
     }
@@ -62,7 +62,7 @@ impl RelativeEq for CatPhi {
         max_relative: Self::Epsilon,
     ) -> bool {
         self.labels.eq(&other.labels)
-            && self.states.eq(&other.states)
+            && self.support.eq(&other.support)
             && self.shape.eq(&other.shape)
             && self
                 .parameters
@@ -72,42 +72,42 @@ impl RelativeEq for CatPhi {
 
 impl MulAssign<&CatPhi> for CatPhi {
     fn mul_assign(&mut self, rhs: &CatPhi) {
-        // Get the union of the states.
-        let mut states = self.states.clone();
-        states.extend(rhs.states.clone());
-        // Sort the states by labels.
-        states.sort_keys();
+        // Get the union of the support.
+        let mut support = self.support.clone();
+        support.extend(rhs.support.clone());
+        // Sort the support by labels.
+        support.sort_keys();
 
-        // Order LHS axes w.r.t. new states.
-        let mut lhs_axes: Vec<_> = (0..self.states.len()).collect();
+        // Order LHS axes w.r.t. new support.
+        let mut lhs_axes: Vec<_> = (0..self.support.len()).collect();
         lhs_axes.sort_by(|&i, &j| {
-            self.states
+            self.support
                 .get_index(i)
                 .map(|(l, _)| l)
-                .cmp(&self.states.get_index(j).map(|(l, _)| l))
+                .cmp(&self.support.get_index(j).map(|(l, _)| l))
         });
         let mut lhs_parameters = self.parameters.clone().permuted_axes(lhs_axes);
         // Get the axes to insert for LHS broadcasting.
-        let lhs_axes = states.keys().enumerate();
-        let lhs_axes = lhs_axes.filter_map(|(i, k)| (!self.states.contains_key(k)).then_some(i));
+        let lhs_axes = support.keys().enumerate();
+        let lhs_axes = lhs_axes.filter_map(|(i, k)| (!self.support.contains_key(k)).then_some(i));
         let lhs_axes: Vec<_> = lhs_axes.sorted().collect();
         // Insert axes in sorted order for LHS broadcasting.
         lhs_axes.into_iter().for_each(|i| {
             lhs_parameters.insert_axis_inplace(Axis(i));
         });
 
-        // Order RHS axes w.r.t. new states.
-        let mut rhs_axes: Vec<_> = (0..rhs.states.len()).collect();
+        // Order RHS axes w.r.t. new support.
+        let mut rhs_axes: Vec<_> = (0..rhs.support.len()).collect();
         rhs_axes.sort_by(|&i, &j| {
-            rhs.states
+            rhs.support
                 .get_index(i)
                 .map(|(l, _)| l)
-                .cmp(&rhs.states.get_index(j).map(|(l, _)| l))
+                .cmp(&rhs.support.get_index(j).map(|(l, _)| l))
         });
         let mut rhs_parameters = rhs.parameters.clone().permuted_axes(rhs_axes);
         // Get the axes to insert for RHS broadcasting.
-        let rhs_axes = states.keys().enumerate();
-        let rhs_axes = rhs_axes.filter_map(|(i, k)| (!rhs.states.contains_key(k)).then_some(i));
+        let rhs_axes = support.keys().enumerate();
+        let rhs_axes = rhs_axes.filter_map(|(i, k)| (!rhs.support.contains_key(k)).then_some(i));
         let rhs_axes: Vec<_> = rhs_axes.sorted().collect();
         // Insert axes in sorted order for RHS broadcasting.
         rhs_axes.into_iter().for_each(|i| {
@@ -118,12 +118,12 @@ impl MulAssign<&CatPhi> for CatPhi {
         let parameters = lhs_parameters * rhs_parameters;
 
         // Get new labels.
-        let labels: Labels = states.keys().cloned().collect();
+        let labels: Labels = support.keys().cloned().collect();
         // Get new shape.
-        let shape = Array::from_iter(states.values().map(Set::len));
+        let shape = Array::from_iter(support.values().map(Set::len));
 
         // Update self.
-        self.states = states;
+        self.support = support;
         self.labels = labels;
         self.shape = shape;
         self.parameters = parameters;
@@ -143,30 +143,30 @@ impl Mul<&CatPhi> for &CatPhi {
 
 impl DivAssign<&CatPhi> for CatPhi {
     fn div_assign(&mut self, rhs: &CatPhi) {
-        // Check that RHS states are a subset of LHS states.
-        if !rhs.states.keys().all(|k| self.states.contains_key(k)) {
+        // Check that RHS support are a subset of LHS support.
+        if !rhs.support.keys().all(|k| self.support.contains_key(k)) {
             panic!(
-                "Failed to divide potentials: RHS states must be a subset of LHS states, \
-                found LHS states = {:?}, RHS states = {:?}",
-                self.states, rhs.states,
+                "Failed to divide potentials: RHS support must be a subset of LHS support, \
+                found LHS support = {:?}, RHS support = {:?}",
+                self.support, rhs.support,
             );
         }
 
         // Add a small constant to ensure 0 / 0 = 0.
         let rhs_parameters = &rhs.parameters + f64::MIN_POSITIVE;
 
-        // Order RHS axes w.r.t. new states.
-        let mut rhs_axes: Vec<_> = (0..rhs.states.len()).collect();
+        // Order RHS axes w.r.t. new support.
+        let mut rhs_axes: Vec<_> = (0..rhs.support.len()).collect();
         rhs_axes.sort_by(|&i, &j| {
-            rhs.states
+            rhs.support
                 .get_index(i)
                 .map(|(l, _)| l)
-                .cmp(&rhs.states.get_index(j).map(|(l, _)| l))
+                .cmp(&rhs.support.get_index(j).map(|(l, _)| l))
         });
         let mut rhs_parameters = rhs_parameters.permuted_axes(rhs_axes);
         // Get the axes to insert for RHS broadcasting.
-        let rhs_axes = self.states.keys().enumerate();
-        let rhs_axes = rhs_axes.filter_map(|(i, k)| (!rhs.states.contains_key(k)).then_some(i));
+        let rhs_axes = self.support.keys().enumerate();
+        let rhs_axes = rhs_axes.filter_map(|(i, k)| (!rhs.support.contains_key(k)).then_some(i));
         let rhs_axes: Vec<_> = rhs_axes.sorted().collect();
         // Insert axes in sorted order for RHS broadcasting.
         rhs_axes.into_iter().for_each(|i| {
@@ -204,17 +204,17 @@ impl Phi for CatPhi {
     }
 
     fn condition(&self, e: &Self::Evidence) -> Result<Self> {
-        // Check that the evidence states match the potential states.
-        if e.states() != self.states() {
+        // Check that the evidence support match the potential support.
+        if e.support() != self.support() {
             return Err(Error::InvalidParameter(
                 "evidence",
                 &format!(
                     "Failed to condition on evidence: \n\
-                    \t expected:    evidence states to match potential states , \n\
-                    \t found:       potential states = {:?} , \n\
-                    \t              evidence  states = {:?} .",
-                    self.states(),
-                    e.states(),
+                    \t expected:    evidence support to match potential support , \n\
+                    \t found:       potential support = {:?} , \n\
+                    \t              evidence  support = {:?} .",
+                    self.support(),
+                    e.support(),
                 ),
             ));
         }
@@ -233,20 +233,20 @@ impl Phi for CatPhi {
             )),
         });
 
-        // Get states and parameters.
-        let mut states = self.states.clone();
+        // Get support and parameters.
+        let mut support = self.support.clone();
         let mut parameters = self.parameters.clone();
 
         // Condition in reverse order to avoid axis shifting.
         e.rev().try_for_each(|e| -> Result<_> {
             let (&event, &state) = e?;
             parameters.index_axis_inplace(Axis(event), state);
-            states.shift_remove_index(event);
+            support.shift_remove_index(event);
             Ok(())
         })?;
 
         // Return self.
-        Self::new(states, parameters)
+        Self::new(support, parameters)
     }
 
     fn marginalize(&self, x: &Set<usize>) -> Result<Self> {
@@ -263,14 +263,14 @@ impl Phi for CatPhi {
             Ok(())
         })?;
 
-        // Get the states and the parameters.
-        let states = self.states.clone();
+        // Get the support and the parameters.
+        let support = self.support.clone();
         let mut parameters = self.parameters.clone();
 
-        // Filter the states.
-        let states = states.into_iter().enumerate();
-        let states = states.filter_map(|(i, s)| (!x.contains(&i)).then_some(s));
-        let states = states.collect();
+        // Filter the support.
+        let support = support.into_iter().enumerate();
+        let support = support.filter_map(|(i, s)| (!x.contains(&i)).then_some(s));
+        let support = support.collect();
 
         // Sum over the axes in reverse order to avoid shifting.
         x.iter().sorted().rev().for_each(|&i| {
@@ -278,7 +278,7 @@ impl Phi for CatPhi {
         });
 
         // Return the new potential.
-        Self::new(states, parameters)
+        Self::new(support, parameters)
     }
 
     #[inline]
@@ -288,15 +288,15 @@ impl Phi for CatPhi {
         // Normalize the parameters.
         parameters /= parameters.sum();
         // Return the new potential.
-        Self::new(self.states.clone(), parameters)
+        Self::new(self.support.clone(), parameters)
     }
 
     fn from_cpd(cpd: Self::CPD) -> Result<Self> {
-        // Merge conditioning states and states in this order.
-        let mut states = cpd.conditioning_states().clone();
-        states.extend(cpd.states().clone());
+        // Merge conditioning support and support in this order.
+        let mut support = cpd.conditioning_support().clone();
+        support.extend(cpd.support().clone());
         // Get n-dimensional shape.
-        let shape: Vec<_> = states.values().map(Set::len).collect();
+        let shape: Vec<_> = support.values().map(Set::len).collect();
         // Reshape the parameters to match the new shape.
         let parameters = cpd.parameters().clone();
         let parameters = parameters
@@ -305,20 +305,20 @@ impl Phi for CatPhi {
             .map_err(Error::NdarrayShape)?;
 
         // Get the new axes order w.r.t. sorted labels.
-        let mut axes: Vec<_> = (0..states.len()).collect();
+        let mut axes: Vec<_> = (0..support.len()).collect();
         axes.sort_by(|&i, &j| {
-            states
+            support
                 .get_index(i)
                 .map(|(l, _)| l)
-                .cmp(&states.get_index(j).map(|(l, _)| l))
+                .cmp(&support.get_index(j).map(|(l, _)| l))
         });
-        // Sort the states by labels.
-        states.sort_keys();
+        // Sort the support by labels.
+        support.sort_keys();
         // Swap axes to match the new order.
         let parameters = parameters.permuted_axes(axes);
 
         // Return the new potential.
-        Self::new(states, parameters)
+        Self::new(support, parameters)
     }
 
     fn into_cpd(self, x: &Set<usize>, z: &Set<usize>) -> Result<Self::CPD> {
@@ -337,20 +337,20 @@ impl Phi for CatPhi {
             ));
         }
 
-        // Split states into states and conditioning states.
-        let states_x: States = x
+        // Split support into support and conditioning support.
+        let states_x: Support = x
             .iter()
             .map(|&i| {
-                self.states
+                self.support
                     .get_index(i)
                     .map(|(k, v)| (k.clone(), v.clone()))
                     .ok_or_else(|| Error::IndexOutOfBounds(i))
             })
             .collect::<Result<_>>()?;
-        let states_z: States = z
+        let states_z: Support = z
             .iter()
             .map(|&i| {
-                self.states
+                self.support
                     .get_index(i)
                     .map(|(k, v)| (k.clone(), v.clone()))
                     .ok_or_else(|| Error::IndexOutOfBounds(i))
@@ -384,25 +384,25 @@ impl CatPhi {
     ///
     /// # Arguments
     ///
-    /// * `states` - A map from variable names to their possible states.
+    /// * `support` - A map from variable names to their possible support.
     /// * `parameters` - A multi-dimensional array of parameters.
     ///
     /// # Returns
     ///
     /// A new categorical potential instance.
     ///
-    pub fn new(mut states: States, mut parameters: ArrayD<f64>) -> Result<Self> {
+    pub fn new(mut support: Support, mut parameters: ArrayD<f64>) -> Result<Self> {
         // Get labels.
-        let mut labels: Labels = states.keys().cloned().collect();
+        let mut labels: Labels = support.keys().cloned().collect();
         // Get shape.
-        let mut shape = Array::from_iter(states.values().map(Set::len));
-        // Validate parameters shape matches states shape.
+        let mut shape = Array::from_iter(support.values().map(Set::len));
+        // Validate parameters shape matches support shape.
         let shape_slice = shape.as_slice().ok_or_else(|| {
             Error::Shape("Failed to convert shape array to slice: shape is not contiguous")
         })?;
         if parameters.shape() != shape_slice {
             return Err(Error::Shape(&format!(
-                "Parameters shape does not match states shape: \n\
+                "Parameters shape does not match support shape: \n\
                 \t expected:    {:?} , \n\
                 \t found:       {:?} .",
                 shape_slice,
@@ -410,43 +410,43 @@ impl CatPhi {
             )));
         }
 
-        // Sort states if not sorted and permute parameters accordingly.
-        if !states.keys().is_sorted() {
+        // Sort support if not sorted and permute parameters accordingly.
+        if !support.keys().is_sorted() {
             // Get the new axes order w.r.t. sorted labels.
-            let mut axes: Vec<_> = (0..states.len()).collect();
+            let mut axes: Vec<_> = (0..support.len()).collect();
             axes.sort_by(|&i, &j| {
-                states
+                support
                     .get_index(i)
                     .map(|(l, _)| l)
-                    .cmp(&states.get_index(j).map(|(l, _)| l))
+                    .cmp(&support.get_index(j).map(|(l, _)| l))
             });
-            // Sort the states by labels.
-            states.sort_keys();
+            // Sort the support by labels.
+            support.sort_keys();
             // Permute the parameters to match the new order.
             parameters = parameters.permuted_axes(axes);
             // Update the labels.
-            labels = states.keys().cloned().collect();
+            labels = support.keys().cloned().collect();
             // Update the shape.
-            shape = states.values().map(Set::len).collect();
+            shape = support.values().map(Set::len).collect();
         }
 
         Ok(Self {
             labels,
-            states,
+            support,
             shape,
             parameters,
         })
     }
 
-    /// States of the potential.
+    /// Support of the potential.
     ///
     /// # Returns
     ///
-    /// A reference to the states.
+    /// A reference to the support.
     ///
     #[inline]
-    pub const fn states(&self) -> &States {
-        &self.states
+    pub const fn support(&self) -> &Support {
+        &self.support
     }
 
     /// Shape of the potential.

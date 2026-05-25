@@ -6,7 +6,7 @@ use std::{
 use backend::{
     datasets::{CatEv, CatEvT},
     models::Labelled,
-    types::{Set, States},
+    types::{Set, Support},
 };
 use pyo3::{
     exceptions::PyTypeError,
@@ -37,7 +37,7 @@ impl PyCatEv {
     /// Accepted inputs are:
     /// - `CatEv`
     /// - `dict[str, str]`
-    pub fn from_any(evidence: &Bound<'_, PyAny>, with_states: &States) -> PyResult<Self> {
+    pub fn from_any(evidence: &Bound<'_, PyAny>, with_states: &Support) -> PyResult<Self> {
         if let Ok(evidence) = evidence.extract::<PyCatEv>() {
             Ok(evidence)
         } else if let Ok(evidence) = evidence.cast::<PyDict>() {
@@ -90,16 +90,16 @@ impl PyCatEv {
         Ok(self.lock().labels().iter().cloned().collect())
     }
 
-    /// Returns the states of the categorical evidence.
+    /// Returns the support of the categorical evidence.
     ///
     /// Returns
     /// -------
     /// dict[str, tuple[str, ...]]
-    ///     A reference to the states of the categorical evidence.
+    ///     A reference to the support of the categorical evidence.
     ///
-    pub fn states<'a>(&'a self, py: Python<'a>) -> PyResult<BTreeMap<String, Bound<'a, PyTuple>>> {
+    pub fn support<'a>(&'a self, py: Python<'a>) -> PyResult<BTreeMap<String, Bound<'a, PyTuple>>> {
         self.lock()
-            .states()
+            .support()
             .iter()
             .map(|(label, states)| {
                 // Get reference to the label and states.
@@ -133,8 +133,8 @@ impl PyCatEv {
         evidence: &Bound<'_, PyDict>,
         with_states: &Bound<'_, PyDict>,
     ) -> PyResult<Self> {
-        // Convert the states dictionary.
-        let mut states: States = with_states
+        // Convert the support dictionary.
+        let mut support: Support = with_states
             .items()
             .into_iter()
             .map(|key_value| {
@@ -149,10 +149,10 @@ impl PyCatEv {
             })
             .collect::<PyResult<_>>()?;
 
-        // Sort states.
-        states.sort_keys();
-        states.values_mut().for_each(Set::sort);
+        // Sort support.
+        support.sort_keys();
+        support.values_mut().for_each(Set::sort);
 
-        Self::from_any(evidence.as_any(), &states)
+        Self::from_any(evidence.as_any(), &support)
     }
 }

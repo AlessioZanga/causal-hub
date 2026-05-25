@@ -4,7 +4,7 @@ mod tests {
     use causal_hub::{
         labels,
         models::{CPD, CatCPD, GaussCPD, GaussCPDP, Labelled, MixedCPD, MixedSample},
-        states,
+        support,
         types::Result,
     };
     use ndarray::prelude::*;
@@ -14,8 +14,8 @@ mod tests {
     fn from_categorical() -> Result<()> {
         let cat = CatCPD::new(
             // P(A | B, C)
-            states![("A", ["no", "yes"])],                       //
-            states![("B", ["no", "yes"]), ("C", ["no", "yes"])], //
+            support![("A", ["no", "yes"])],                       //
+            support![("B", ["no", "yes"]), ("C", ["no", "yes"])], //
             array![
                 [0.1, 0.9], // (B=0, C=0)
                 [0.2, 0.8], // (B=0, C=1)
@@ -36,8 +36,8 @@ mod tests {
     fn pf_categorical() -> Result<()> {
         let mixed = MixedCPD::from(CatCPD::new(
             // P(A | B)
-            states![("A", ["no", "yes"])], //
-            states![("B", ["no", "yes"])], //
+            support![("A", ["no", "yes"])], //
+            support![("B", ["no", "yes"])], //
             array![
                 [0.1, 0.9], // B=0
                 [0.2, 0.8], // B=1
@@ -65,9 +65,9 @@ mod tests {
     fn sample_categorical() -> Result<()> {
         let mixed = MixedCPD::from(CatCPD::new(
             // P(A), deterministic A=1
-            states![("A", ["no", "yes"])], //
-            states![],                     //
-            array![[0.0, 1.0]],            //
+            support![("A", ["no", "yes"])], //
+            support![],                     //
+            array![[0.0, 1.0]],             //
         )?);
 
         let mut rng = rand::rngs::Xoshiro256PlusPlus::seed_from_u64(42);
@@ -138,9 +138,9 @@ mod tests {
     fn type_mismatch_error() -> Result<()> {
         let mixed = MixedCPD::from(CatCPD::new(
             // P(A)
-            states![("A", ["no", "yes"])], //
-            states![],                     //
-            array![[0.1, 0.9]],            //
+            support![("A", ["no", "yes"])], //
+            support![],                     //
+            array![[0.1, 0.9]],             //
         )?);
 
         // Passing Gaussian sample to a categorical CPD should fail.
@@ -157,15 +157,15 @@ mod tests {
     fn equality() -> Result<()> {
         let a = MixedCPD::from(CatCPD::new(
             // P(A)
-            states![("A", ["no", "yes"])], //
-            states![],                     //
-            array![[0.1, 0.9]],            //
+            support![("A", ["no", "yes"])], //
+            support![],                     //
+            array![[0.1, 0.9]],             //
         )?);
         let b = MixedCPD::from(CatCPD::new(
             // P(A)
-            states![("A", ["no", "yes"])], //
-            states![],                     //
-            array![[0.1, 0.9]],            //
+            support![("A", ["no", "yes"])], //
+            support![],                     //
+            array![[0.1, 0.9]],             //
         )?);
 
         assert_eq!(a, b);

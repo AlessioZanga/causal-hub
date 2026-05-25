@@ -5,15 +5,15 @@ mod tests {
         datasets::{CatEv, CatEvT},
         labels,
         models::{CatCPD, CatPhi, Labelled, Phi},
-        set, states,
+        set, support,
         types::Result,
     };
     use ndarray::prelude::*;
 
     #[test]
     fn new() -> Result<()> {
-        // Set the states.
-        let s = states![
+        // Set the support.
+        let s = support![
             ("A", ["a1", "a2", "a3"]),
             ("B", ["b1", "b2"]),
             ("C", ["c1", "c2"]),
@@ -29,8 +29,8 @@ mod tests {
 
         // Assert the labels.
         assert_eq!(phi.labels(), &labels!["A", "B", "C"]);
-        // Assert the states.
-        assert_eq!(phi.states(), &s);
+        // Assert the support.
+        assert_eq!(phi.support(), &s);
         // Assert the shape.
         assert_eq!(phi.shape(), &array![3, 2, 2]);
         // Assert the parameters.
@@ -41,8 +41,8 @@ mod tests {
 
     #[test]
     fn condition() -> Result<()> {
-        // Set the states.
-        let s = states![
+        // Set the support.
+        let s = support![
             ("A", ["a1", "a2", "a3"]),
             ("B", ["b1", "b2"]),
             ("C", ["c1", "c2"]),
@@ -61,7 +61,7 @@ mod tests {
         let pred_phi = phi.condition(&e)?;
 
         // Set the true potential.
-        let true_s = states![("A", ["a1", "a2", "a3"]), ("B", ["b1", "b2"]),];
+        let true_s = support![("A", ["a1", "a2", "a3"]), ("B", ["b1", "b2"]),];
         let true_p = array![0.25, 0.08, 0.05, 0., 0.15, 0.09]
             .into_shape_with_order((3, 2))?
             .into_dyn();
@@ -75,8 +75,8 @@ mod tests {
 
     #[test]
     fn marginalize() -> Result<()> {
-        // Set the states.
-        let s = states![
+        // Set the support.
+        let s = support![
             ("A", ["a1", "a2", "a3"]),
             ("B", ["b1", "b2"]),
             ("C", ["c1", "c2"]),
@@ -94,7 +94,7 @@ mod tests {
         let pred_phi = phi.marginalize(&set![1])?;
 
         // Set the true potential.
-        let true_s = states![("A", ["a1", "a2", "a3"]), ("C", ["c1", "c2"]),];
+        let true_s = support![("A", ["a1", "a2", "a3"]), ("C", ["c1", "c2"]),];
         let true_p = array![0.33, 0.51, 0.05, 0.07, 0.24, 0.39]
             .into_shape_with_order((3, 2))?
             .into_dyn();
@@ -108,8 +108,8 @@ mod tests {
 
     #[test]
     fn normalize() -> Result<()> {
-        // Set the states.
-        let s = states![
+        // Set the support.
+        let s = support![
             ("A", ["a1", "a2", "a3"]),
             ("B", ["b1", "b2"]),
             ("C", ["c1", "c2"]),
@@ -139,9 +139,9 @@ mod tests {
 
     #[test]
     fn multiply() -> Result<()> {
-        // Set the states.
-        let s_1 = states![("A", ["a1", "a2", "a3"]), ("B", ["b1", "b2"]),];
-        let s_2 = states![("B", ["b1", "b2"]), ("C", ["c1", "c2"]),];
+        // Set the support.
+        let s_1 = support![("A", ["a1", "a2", "a3"]), ("B", ["b1", "b2"]),];
+        let s_2 = support![("B", ["b1", "b2"]), ("C", ["c1", "c2"]),];
         // Set the parameters.
         let p_1 = array![0.5, 0.8, 0.1, 0., 0.3, 0.9]
             .into_shape_with_order((3, 2))?
@@ -157,7 +157,7 @@ mod tests {
         let pred_phi = &phi_1 * &phi_2;
 
         // Set the true potential.
-        let true_s = states![
+        let true_s = support![
             ("A", ["a1", "a2", "a3"]),
             ("B", ["b1", "b2"]),
             ("C", ["c1", "c2"]),
@@ -182,9 +182,9 @@ mod tests {
 
     #[test]
     fn divide() -> Result<()> {
-        // Set the states.
-        let s_1 = states![("A", ["a1", "a2", "a3"]), ("B", ["b1", "b2"]),];
-        let s_2 = states![("A", ["a1", "a2", "a3"]),];
+        // Set the support.
+        let s_1 = support![("A", ["a1", "a2", "a3"]), ("B", ["b1", "b2"]),];
+        let s_2 = support![("A", ["a1", "a2", "a3"]),];
         // Set the parameters.
         let p_1 = array![0.5, 0.2, 0., 0., 0.3, 0.45]
             .into_shape_with_order((3, 2))?
@@ -198,7 +198,7 @@ mod tests {
         let pred_phi = &phi_1 / &phi_2;
 
         // Set the true potential.
-        let true_s = states![("A", ["a1", "a2", "a3"]), ("B", ["b1", "b2"]),];
+        let true_s = support![("A", ["a1", "a2", "a3"]), ("B", ["b1", "b2"]),];
         let true_p = array![0.625, 0.25, 0., 0., 0.5, 0.75]
             .into_shape_with_order((3, 2))?
             .into_dyn();
@@ -217,9 +217,9 @@ mod tests {
 
     #[test]
     fn from_cpd() -> Result<()> {
-        // Set the states.
-        let x = states![("A", ["a1", "a2", "a3"]),];
-        let z = states![("B", ["b1", "b2"]), ("C", ["c1", "c2"]),];
+        // Set the support.
+        let x = support![("A", ["a1", "a2", "a3"]),];
+        let z = support![("B", ["b1", "b2"]), ("C", ["c1", "c2"]),];
         // Set the parameters.
         let p = array![
             [0.25, 0.35, 0.40],
@@ -234,7 +234,7 @@ mod tests {
         let pred_phi = CatPhi::from_cpd(cpd)?;
 
         // Set the true potential.
-        let true_s = states![
+        let true_s = support![
             ("A", ["a1", "a2", "a3"]),
             ("B", ["b1", "b2"]),
             ("C", ["c1", "c2"]),
@@ -255,7 +255,7 @@ mod tests {
     #[test]
     fn into_cpd() -> Result<()> {
         // Set the true potential.
-        let s = states![
+        let s = support![
             ("A", ["a1", "a2", "a3"]),
             ("B", ["b1", "b2"]),
             ("C", ["c1", "c2"]),
@@ -271,8 +271,8 @@ mod tests {
         let pred_cpd = phi.into_cpd(&set![0], &set![2, 1])?;
 
         // Set the true CPD.
-        let true_x = states![("A", ["a1", "a2", "a3"])];
-        let true_z = states![("B", ["b1", "b2"]), ("C", ["c1", "c2"])];
+        let true_x = support![("A", ["a1", "a2", "a3"])];
+        let true_z = support![("B", ["b1", "b2"]), ("C", ["c1", "c2"])];
         let true_p = array![
             [0.25, 0.35, 0.40],
             [0.05, 0.15, 0.80],

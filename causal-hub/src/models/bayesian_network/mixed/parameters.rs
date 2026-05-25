@@ -4,7 +4,7 @@ use rand::Rng;
 use crate::{
     datasets::{CatSample, GaussSample},
     models::{CPD, CatCPD, CatCPDS, GaussCPD, GaussCPDS, Labelled},
-    types::{Error, Labels, Result},
+    types::{Error, Labels, Result, Support},
 };
 
 /// The parameters of a mixed CPD.
@@ -142,6 +142,20 @@ impl CPD for MixedCPD {
         match self {
             Self::Categorical(cpd) => cpd.conditioning_labels(),
             Self::Gaussian(cpd) => cpd.conditioning_labels(),
+        }
+    }
+
+    fn support(&self) -> &Support {
+        match self {
+            Self::Categorical(cpd) => cpd.support(),
+            Self::Gaussian(cpd) => cpd.support(),
+        }
+    }
+
+    fn conditioning_support(&self) -> &Support {
+        match self {
+            Self::Categorical(cpd) => cpd.conditioning_support(),
+            Self::Gaussian(cpd) => cpd.conditioning_support(),
         }
     }
 

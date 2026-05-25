@@ -14,7 +14,7 @@ use backend::{
     models::{BN, CatBN, DiGraph, Labelled},
     random::{Random, RngCatBN},
     samplers::{BNSampler, ForwardSampler, ParBNSampler},
-    types::States,
+    types::Support,
 };
 use pyo3::{
     exceptions::PyValueError,
@@ -372,7 +372,7 @@ impl PyCatBN {
         let z = indices_from!(z, lock)?;
         // Get the evidence.
         let w = w
-            .map(|w| PyCatEv::from_any(w, lock.states()).map(Into::into))
+            .map(|w| PyCatEv::from_any(w, lock.support()).map(Into::into))
             .transpose()?;
         // Initialize the random number generator.
         let mut rng = Xoshiro256PlusPlus::seed_from_u64(seed);
@@ -510,7 +510,7 @@ impl PyCatBN {
         let z = indices_from!(z, lock)?;
         // Get the evidence.
         let w = w
-            .map(|w| PyCatEv::from_any(w, lock.states()).map(Into::into))
+            .map(|w| PyCatEv::from_any(w, lock.support()).map(Into::into))
             .transpose()?;
         // Initialize the random number generator.
         let mut rng = Xoshiro256PlusPlus::seed_from_u64(seed);
@@ -615,8 +615,8 @@ impl PyCatBN {
         p: f64,
         seed: u64,
     ) -> PyResult<Self> {
-        // Convert the PyDict to a States.
-        let mut inner_states = States::default();
+        // Convert the PyDict to a Support.
+        let mut inner_states = Support::default();
         for (label, states) in states {
             let label = label.extract::<String>()?;
             let states = states.extract::<Vec<String>>()?;

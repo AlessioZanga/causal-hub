@@ -11,7 +11,7 @@ use crate::{
     impl_json_io,
     models::{BN, CIM, CTBN, CatBN, CatCIM, CatCPD, DiGraph, Graph, Labelled},
     set,
-    types::{Error, Labels, Map, Result, Set, States},
+    types::{Error, Labels, Map, Result, Set, Support},
 };
 
 /// A categorical continuous time Bayesian network.
@@ -23,8 +23,8 @@ pub struct CatCTBN {
     description: Option<String>,
     /// The labels of the variables.
     labels: Labels,
-    /// The states of the variables.
-    states: States,
+    /// The support of the variables.
+    support: Support,
     /// The shape of the variables.
     shape: Array1<usize>,
     /// The initial distribution.
@@ -58,22 +58,22 @@ impl CatCTBN {
         self.description.as_deref()
     }
 
-    /// Returns the states of the variables.
+    /// Returns the support of the variables.
     ///
     /// # Returns
     ///
-    /// A reference to the states of the variables.
+    /// A reference to the support of the variables.
     ///
     #[inline]
-    pub const fn states(&self) -> &States {
-        self.initial_distribution.states()
+    pub const fn support(&self) -> &Support {
+        self.initial_distribution.support()
     }
 }
 
 impl PartialEq for CatCTBN {
     fn eq(&self, other: &Self) -> bool {
         self.labels.eq(&other.labels)
-            && self.states.eq(&other.states)
+            && self.support.eq(&other.support)
             && self.shape.eq(&other.shape)
             && self.initial_distribution.eq(&other.initial_distribution)
             && self.graph.eq(&other.graph)
@@ -90,7 +90,7 @@ impl AbsDiffEq for CatCTBN {
 
     fn abs_diff_eq(&self, other: &Self, epsilon: Self::Epsilon) -> bool {
         self.labels.eq(&other.labels)
-            && self.states.eq(&other.states)
+            && self.support.eq(&other.support)
             && self.shape.eq(&other.shape)
             && self.initial_distribution.eq(&other.initial_distribution)
             && self.graph.eq(&other.graph)
@@ -116,7 +116,7 @@ impl RelativeEq for CatCTBN {
         max_relative: Self::Epsilon,
     ) -> bool {
         self.labels.eq(&other.labels)
-            && self.states.eq(&other.states)
+            && self.support.eq(&other.support)
             && self.shape.eq(&other.shape)
             && self.initial_distribution.eq(&other.initial_distribution)
             && self.graph.eq(&other.graph)
@@ -164,37 +164,37 @@ impl CTBN for CatCTBN {
         // Sort the CIMs by their labels.
         cims.sort_keys();
 
-        // Allocate the states of the variables.
-        let mut states: States = Default::default();
-        // Insert the states of the variables into the map to check if they are the same.
+        // Allocate the support of the variables.
+        let mut support: Support = Default::default();
+        // Insert the support of the variables into the map to check if they are the same.
         cims.values().try_for_each(|cim| {
-            cim.states()
+            cim.support()
                 .iter()
-                .chain(cim.conditioning_states())
+                .chain(cim.conditioning_support())
                 .try_for_each(|(l, s)| {
-                    // Check if the states are already in the map.
-                    if let Some(existing_states) = states.get(l) {
-                        // Check if the states are the same.
+                    // Check if the support are already in the map.
+                    if let Some(existing_states) = support.get(l) {
+                        // Check if the support are the same.
                         if existing_states != s {
                             return Err(Error::InvalidParameter(
                                 "cims",
-                                &format!("States of `{l}` must be the same across CIMs."),
+                                &format!("Support of `{l}` must be the same across CIMs."),
                             ));
                         }
                     } else {
-                        // Insert the states into the map.
-                        states.insert(l.to_owned(), s.clone());
+                        // Insert the support into the map.
+                        support.insert(l.to_owned(), s.clone());
                     }
                     Ok(())
                 })
         })?;
-        // Sort the states of the variables.
-        states.sort_keys();
+        // Sort the support of the variables.
+        support.sort_keys();
 
         // Get the labels of the variables.
-        let labels: Labels = states.keys().cloned().collect();
+        let labels: Labels = support.keys().cloned().collect();
         // Get the shape of the variables.
-        let shape = Array::from_iter(states.values().map(Set::len));
+        let shape = Array::from_iter(support.values().map(Set::len));
 
         // Check same number of graph labels and CIMs.
         if !graph.labels().iter().eq(cims.keys()) {
@@ -224,16 +224,16 @@ impl CTBN for CatCTBN {
         let initial_cpds: Vec<_> = cims
             .values()
             .map(|cim| {
-                // Get label and states of the CIM.
-                let states = cim.states().clone();
-                // Set empty conditioning states.
-                let conditioning_states = States::default();
+                // Get label and support of the CIM.
+                let support = cim.support().clone();
+                // Set empty conditioning support.
+                let conditioning_support = Support::default();
                 // Set uniform parameters.
                 let alpha = cim.shape().product();
                 let parameters = Array::from_vec(vec![1. / alpha as f64; alpha]);
                 let parameters = parameters.insert_axis(Axis(0));
                 // Construct the CPD.
-                CatCPD::new(states, conditioning_states, parameters)
+                CatCPD::new(support, conditioning_support, parameters)
             })
             .collect::<Result<_>>()?;
         // Initialize a uniform initial distribution.
@@ -243,7 +243,7 @@ impl CTBN for CatCTBN {
             name: None,
             description: None,
             labels,
-            states,
+            support,
             shape,
             initial_distribution,
             graph,
@@ -307,16 +307,16 @@ impl CTBN for CatCTBN {
                 "cims labels",
             ));
         }
-        // Check the initial distribution has same states.
+        // Check the initial distribution has same support.
         if !initial_distribution
             .cpds()
             .into_iter()
             .zip(ctbn.cims())
-            .all(|((_, cpd), (_, cim))| cpd.states().eq(cim.states()))
+            .all(|((_, cpd), (_, cim))| cpd.support().eq(cim.support()))
         {
             return Err(Error::InvalidParameter(
                 "initial distribution",
-                "Initial distribution states must be the same as the CIMs states.",
+                "Initial distribution support must be the same as the CIMs support.",
             ));
         }
 
