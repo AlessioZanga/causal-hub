@@ -8,6 +8,8 @@ mod tests {
         types::Result,
     };
     use ndarray::prelude::*;
+    use rand::SeedableRng;
+    use rand_xoshiro::Xoshiro256PlusPlus;
 
     #[test]
     fn new() -> Result<()> {
@@ -449,6 +451,107 @@ mod tests {
                 .collect::<Vec<_>>(),
             vec![vec!["no", "yes"], vec!["no", "yes"]]
         );
+
+        Ok(())
+    }
+
+    #[test]
+    fn parameters_size() -> Result<()> {
+        let x = support![("A", ["no", "yes"])];
+        let z = support![("B", ["no", "yes"]), ("C", ["no", "yes"])];
+        // 4 rows (B,C combinations) x 2 columns (A states) = 4 independent params (1 per row)
+        let p = array![[0.1, 0.9], [0.2, 0.8], [0.3, 0.7], [0.4, 0.6]];
+        let cpd = CatCPD::new(x, z, p)?;
+        assert_eq!(cpd.parameters_size(), 4);
+        Ok(())
+    }
+
+    #[test]
+    fn pf() -> Result<()> {
+        let x = support![("A", ["no", "yes"])];
+        let z = support![];
+        let p = array![[0.25, 0.75]];
+        let cpd = CatCPD::new(x, z, p)?;
+
+        let prob = cpd.pf(&array![0], &array![])?;
+        assert_relative_eq!(prob, 0.25);
+        let prob = cpd.pf(&array![1], &array![])?;
+        assert_relative_eq!(prob, 0.75);
+
+        Ok(())
+    }
+
+    #[test]
+    fn pf_conditional() -> Result<()> {
+        let x = support![("A", ["no", "yes"])];
+        let z = support![("B", ["no", "yes"])];
+        let p = array![[0.1, 0.9], [0.4, 0.6]];
+        let cpd = CatCPD::new(x, z, p)?;
+
+        let prob = cpd.pf(&array![0], &array![0])?;
+        assert_relative_eq!(prob, 0.1);
+        let prob = cpd.pf(&array![1], &array![0])?;
+        assert_relative_eq!(prob, 0.9);
+        let prob = cpd.pf(&array![0], &array![1])?;
+        assert_relative_eq!(prob, 0.4);
+        let prob = cpd.pf(&array![1], &array![1])?;
+        assert_relative_eq!(prob, 0.6);
+
+        Ok(())
+    }
+
+    #[test]
+    fn pf_wrong_size() -> Result<()> {
+        let x = support![("A", ["no", "yes"])];
+        let z = support![];
+        let p = array![[0.25, 0.75]];
+        let cpd = CatCPD::new(x, z, p)?;
+
+        // Wrong number of x values
+        assert!(cpd.pf(&array![0, 1], &array![]).is_err());
+        // Wrong number of z values
+        assert!(cpd.pf(&array![0], &array![0, 1]).is_err());
+        Ok(())
+    }
+
+    #[test]
+    fn sample() -> Result<()> {
+        let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
+        let x = support![("A", ["no", "yes"])];
+        let z = support![];
+        let p = array![[0.25, 0.75]];
+        let cpd = CatCPD::new(x, z, p)?;
+
+        let sample = cpd.sample(&mut rng, &array![])?;
+        assert_eq!(sample.len(), 1);
+        assert!(sample[0] == 0 || sample[0] == 1);
+
+        Ok(())
+    }
+
+    #[test]
+    fn sample_conditional() -> Result<()> {
+        let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
+        let x = support![("A", ["no", "yes"])];
+        let z = support![("B", ["no", "yes"])];
+        let p = array![[0.1, 0.9], [0.4, 0.6]];
+        let cpd = CatCPD::new(x, z, p)?;
+
+        let sample = cpd.sample(&mut rng, &array![0])?;
+        assert_eq!(sample.len(), 1);
+
+        Ok(())
+    }
+
+    #[test]
+    fn fitted_statistics_none() -> Result<()> {
+        let x = support![("A", ["no", "yes"])];
+        let z = support![];
+        let p = array![[0.25, 0.75]];
+        let cpd = CatCPD::new(x, z, p)?;
+
+        assert!(cpd.fitted_statistics().is_none());
+        assert!(cpd.fitted_log_likelihood().is_none());
 
         Ok(())
     }

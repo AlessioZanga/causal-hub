@@ -7,7 +7,7 @@ mod tests {
             assets::load_eating,
             datasets::{CatTrjEv, CatTrjEvT as E, Dataset},
             models::Labelled,
-            samplers::{ImportanceSampler, ParCTBNSampler},
+            samplers::{CTBNSampler, ImportanceSampler, ParCTBNSampler},
             types::{Error, Result},
         };
         use ndarray::prelude::*;
@@ -68,6 +68,64 @@ mod tests {
             assert!(trajectory.labels().eq(model.labels()));
             // Check sample size.
             assert_eq!(trajectory.sample_size(), 10.);
+
+            Ok(())
+        }
+
+        #[test]
+        fn importance_sampling_by_time() -> Result<()> {
+            // Initialize RNG.
+            let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
+            // Initialize the model.
+            let model = load_eating()?;
+
+            // Initialize evidence.
+            let evidence = CatTrjEv::new(
+                model.support().clone(),
+                [E::CertainPositiveInterval {
+                    event: 2,
+                    state: 0,
+                    start_time: 0.,
+                    end_time: 0.2,
+                }],
+            )?;
+
+            // Initialize sampler.
+            let importance = ImportanceSampler::new(&mut rng, &model, &evidence)?;
+            // Sample from CTBN by time.
+            let weighted_trajectory = importance.par_sample_n_by_time(10.0, 10)?;
+
+            // Check labels.
+            assert!(weighted_trajectory.labels().eq(model.labels()));
+
+            Ok(())
+        }
+
+        #[test]
+        fn importance_sampling_sequential_by_length() -> Result<()> {
+            // Initialize RNG.
+            let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
+            // Initialize the model.
+            let model = load_eating()?;
+
+            // Initialize evidence.
+            let evidence = CatTrjEv::new(
+                model.support().clone(),
+                [E::CertainPositiveInterval {
+                    event: 1,
+                    state: 1,
+                    start_time: 0.,
+                    end_time: 0.3,
+                }],
+            )?;
+
+            // Initialize sampler.
+            let importance = ImportanceSampler::new(&mut rng, &model, &evidence)?;
+            // Sequential sample from CTBN.
+            let weighted_trajectory = importance.sample_n_by_length(10, 10)?;
+
+            // Check labels.
+            assert!(weighted_trajectory.labels().eq(model.labels()));
 
             Ok(())
         }

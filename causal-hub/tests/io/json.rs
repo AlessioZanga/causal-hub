@@ -5,7 +5,7 @@ mod tests {
         assets::*,
         estimators::{BE, BNEstimator, CTBNEstimator, MLE},
         io::JsonIO,
-        models::{BN, CTBN, CatBN, CatCTBN, GaussBN},
+        models::{BN, CTBN, CatBN, CatCTBN, CatPhi, GaussBN, GaussPhi, Phi},
         samplers::{BNSampler, CTBNSampler, ForwardSampler},
         types::Result,
     };
@@ -251,6 +251,69 @@ mod tests {
 
                     Ok(())
                 }
+            }
+        }
+    }
+
+    mod potentials {
+        use super::*;
+
+        mod categorical {
+            use super::*;
+
+            #[test]
+            fn catphi_from_json_asia() -> Result<()> {
+                let model = load_asia()?;
+                let cpd = model.cpds()["asia"].clone();
+                let true_phi = CatPhi::from_cpd(cpd)?;
+                let json = true_phi.to_json_string()?;
+                let pred_phi = CatPhi::from_json_string(json.as_str())?;
+                assert_relative_eq!(true_phi, pred_phi);
+                Ok(())
+            }
+
+            #[test]
+            fn catphi_to_json_asia() -> Result<()> {
+                let model = load_asia()?;
+                let cpd = model.cpds()["asia"].clone();
+                let phi = CatPhi::from_cpd(cpd)?;
+                let json = phi.to_json_string()?;
+                assert_eq!(
+                    json,
+                    r#"{"support":{"asia":["no","yes"]},"shape":[2],"parameters":[0.99,0.01],"type":"catphi"}"#
+                );
+                Ok(())
+            }
+
+            #[test]
+            fn catphi_from_json_with_conditioning() -> Result<()> {
+                let model = load_asia()?;
+                let cpd = model.cpds()["bronc"].clone();
+                let true_phi = CatPhi::from_cpd(cpd)?;
+                let json = true_phi.to_json_string()?;
+                let pred_phi = CatPhi::from_json_string(json.as_str())?;
+                assert_relative_eq!(true_phi, pred_phi);
+                Ok(())
+            }
+        }
+
+        mod gaussian {
+            use super::*;
+
+            #[test]
+            fn gaussphi_from_json_first_cpd_of_ecoli70() -> Result<()> {
+                let model = load_ecoli70()?;
+                let cpd = model
+                    .cpds()
+                    .clone()
+                    .into_values()
+                    .next()
+                    .ok_or(causal_hub::types::Error::InvalidParameter("cpds", "empty"))?;
+                let true_phi = GaussPhi::from_cpd(cpd)?;
+                let json = true_phi.to_json_string()?;
+                let pred_phi = GaussPhi::from_json_string(json.as_str())?;
+                assert_relative_eq!(true_phi, pred_phi);
+                Ok(())
             }
         }
     }

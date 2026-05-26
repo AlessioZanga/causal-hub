@@ -6,9 +6,15 @@ use std::{
 use approx::{AbsDiffEq, RelativeEq};
 use itertools::Itertools;
 use ndarray::prelude::*;
+use serde::{
+    Deserialize, Deserializer, Serialize, Serializer,
+    de::{MapAccess, Visitor},
+    ser::SerializeMap,
+};
 
 use crate::{
     datasets::{CatEv, CatEvT},
+    impl_json_io,
     models::{CPD, CatCPD, CatSupport, Labelled, Phi},
     types::{Error, Labels, Result, Set},
 };
@@ -469,3 +475,128 @@ impl Phi for CatPhi {
         CatCPD::new(states_x, states_z, parameters)
     }
 }
+
+impl Serialize for CatPhi {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        // Allocate the map.
+        let mut map = serializer.serialize_map(Some(4))?;
+
+        // Serialize support.
+        map.serialize_entry("support", &self.support)?;
+
+        // Convert shape to a flat format.
+        let shape: Vec<usize> = self.shape.to_vec();
+        // Serialize shape.
+        map.serialize_entry("shape", &shape)?;
+
+        // Convert parameters to a flat format.
+        let parameters: Vec<f64> = self.parameters.iter().cloned().collect();
+        // Serialize parameters.
+        map.serialize_entry("parameters", &parameters)?;
+
+        // Serialize type.
+        map.serialize_entry("type", "catphi")?;
+
+        // Finalize the map serialization.
+        map.end()
+    }
+}
+
+impl<'de> Deserialize<'de> for CatPhi {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        #[derive(Deserialize)]
+        #[serde(field_identifier, rename_all = "snake_case")]
+        enum Field {
+            Support,
+            Shape,
+            Parameters,
+            Type,
+        }
+
+        struct CatPhiVisitor;
+
+        impl<'de> Visitor<'de> for CatPhiVisitor {
+            type Value = CatPhi;
+
+            fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+                formatter.write_str("struct CatPhi")
+            }
+
+            fn visit_map<V>(self, mut map: V) -> std::result::Result<CatPhi, V::Error>
+            where
+                V: MapAccess<'de>,
+            {
+                use serde::de::Error as E;
+
+                // Allocate the fields.
+                let mut support = None;
+                let mut shape = None;
+                let mut parameters = None;
+                let mut type_ = None;
+
+                // Parse the map.
+                while let Some(key) = map.next_key()? {
+                    match key {
+                        Field::Support => {
+                            if support.is_some() {
+                                return Err(E::duplicate_field("support"));
+                            }
+                            support = Some(map.next_value()?);
+                        }
+                        Field::Shape => {
+                            if shape.is_some() {
+                                return Err(E::duplicate_field("shape"));
+                            }
+                            shape = Some(map.next_value()?);
+                        }
+                        Field::Parameters => {
+                            if parameters.is_some() {
+                                return Err(E::duplicate_field("parameters"));
+                            }
+                            parameters = Some(map.next_value()?);
+                        }
+                        Field::Type => {
+                            if type_.is_some() {
+                                return Err(E::duplicate_field("type"));
+                            }
+                            type_ = Some(map.next_value()?);
+                        }
+                    }
+                }
+
+                // Check required fields.
+                let support = support.ok_or_else(|| E::missing_field("support"))?;
+                let shape: Vec<usize> = shape.ok_or_else(|| E::missing_field("shape"))?;
+                let parameters: Vec<f64> =
+                    parameters.ok_or_else(|| E::missing_field("parameters"))?;
+
+                // Check type is correct.
+                let type_: String = type_.ok_or_else(|| E::missing_field("type"))?;
+                if type_ != "catphi" {
+                    return Err(E::custom(format!(
+                        "Invalid type for CatPhi: expected 'catphi', found '{type_}'"
+                    )));
+                }
+
+                // Convert parameters to ndarray.
+                let parameters = ArrayD::from_shape_vec(shape, parameters)
+                    .map_err(|e| E::custom(format!("Invalid parameters shape: {e}")))?;
+
+                CatPhi::new(support, parameters).map_err(E::custom)
+            }
+        }
+
+        const FIELDS: &[&str] = &["support", "shape", "parameters", "type"];
+
+        deserializer.deserialize_struct("CatPhi", FIELDS, CatPhiVisitor)
+    }
+}
+
+// Implement `JsonIO` for `CatPhi`.
+impl_json_io!(CatPhi);

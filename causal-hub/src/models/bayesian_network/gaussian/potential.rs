@@ -7,9 +7,15 @@ use approx::{AbsDiffEq, RelativeEq};
 use itertools::Itertools;
 use ndarray::prelude::*;
 use ndarray_linalg::Determinant;
+use serde::{
+    Deserialize, Deserializer, Serialize, Serializer,
+    de::{MapAccess, Visitor},
+    ser::SerializeMap,
+};
 
 use crate::{
     datasets::{GaussEv, GaussEvT},
+    impl_json_io,
     models::{CPD, GaussCPD, GaussCPDP, GaussSupport, Labelled, Phi},
     types::{Error, LN_2_PI, Labels, Result, Set},
     utils::PseudoInverse,
@@ -716,3 +722,224 @@ impl Phi for GaussPhi {
         GaussCPD::new(labels_x, labels_z, parameters)
     }
 }
+
+impl Serialize for GaussPhiK {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        // Allocate the map.
+        let mut map = serializer.serialize_map(Some(3))?;
+
+        // Convert the precision matrix to a flat format.
+        let precision_matrix: Vec<Vec<f64>> =
+            self.k.rows().into_iter().map(|x| x.to_vec()).collect();
+        // Serialize precision matrix.
+        map.serialize_entry("precision_matrix", &precision_matrix)?;
+
+        // Convert the information vector to a flat format.
+        let information_vector = self.h.to_vec();
+        // Serialize information vector.
+        map.serialize_entry("information_vector", &information_vector)?;
+
+        // Serialize log-normalization constant.
+        map.serialize_entry("log_normalization_constant", &self.g)?;
+
+        // End the map.
+        map.end()
+    }
+}
+
+impl<'de> Deserialize<'de> for GaussPhiK {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        #[derive(Deserialize)]
+        #[serde(field_identifier, rename_all = "snake_case")]
+        enum Field {
+            PrecisionMatrix,
+            InformationVector,
+            LogNormalizationConstant,
+        }
+
+        struct GaussPhiKVisitor;
+
+        impl<'de> Visitor<'de> for GaussPhiKVisitor {
+            type Value = GaussPhiK;
+
+            fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+                formatter.write_str("struct GaussPhiK")
+            }
+
+            fn visit_map<V>(self, mut map: V) -> std::result::Result<GaussPhiK, V::Error>
+            where
+                V: MapAccess<'de>,
+            {
+                use serde::de::Error as E;
+
+                // Allocate the fields.
+                let mut precision_matrix = None;
+                let mut information_vector = None;
+                let mut log_normalization_constant = None;
+
+                // Parse the map.
+                while let Some(key) = map.next_key()? {
+                    match key {
+                        Field::PrecisionMatrix => {
+                            if precision_matrix.is_some() {
+                                return Err(E::duplicate_field("precision_matrix"));
+                            }
+                            precision_matrix = Some(map.next_value()?);
+                        }
+                        Field::InformationVector => {
+                            if information_vector.is_some() {
+                                return Err(E::duplicate_field("information_vector"));
+                            }
+                            information_vector = Some(map.next_value()?);
+                        }
+                        Field::LogNormalizationConstant => {
+                            if log_normalization_constant.is_some() {
+                                return Err(E::duplicate_field("log_normalization_constant"));
+                            }
+                            log_normalization_constant = Some(map.next_value()?);
+                        }
+                    }
+                }
+
+                // Extract the fields.
+                let precision_matrix: Vec<Vec<f64>> =
+                    precision_matrix.ok_or_else(|| E::missing_field("precision_matrix"))?;
+                let information_vector: Vec<f64> =
+                    information_vector.ok_or_else(|| E::missing_field("information_vector"))?;
+                let log_normalization_constant: f64 = log_normalization_constant
+                    .ok_or_else(|| E::missing_field("log_normalization_constant"))?;
+
+                // Convert precision matrix to array.
+                let shape = (precision_matrix.len(), precision_matrix[0].len());
+                let k = Array::from_iter(precision_matrix.into_iter().flatten())
+                    .into_shape_with_order(shape)
+                    .map_err(|_| E::custom("Invalid precision matrix shape"))?;
+                // Convert information vector to array.
+                let h = Array1::from_vec(information_vector);
+
+                GaussPhiK::new(k, h, log_normalization_constant).map_err(E::custom)
+            }
+        }
+
+        const FIELDS: &[&str] = &[
+            "precision_matrix",
+            "information_vector",
+            "log_normalization_constant",
+        ];
+
+        deserializer.deserialize_struct("GaussPhiK", FIELDS, GaussPhiKVisitor)
+    }
+}
+
+impl Serialize for GaussPhi {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        // Allocate the map.
+        let mut map = serializer.serialize_map(Some(3))?;
+
+        // Serialize labels.
+        let labels: Vec<&str> = self.labels.iter().map(|l| l.as_str()).collect();
+        map.serialize_entry("labels", &labels)?;
+
+        // Serialize parameters.
+        map.serialize_entry("parameters", &self.parameters)?;
+
+        // Serialize type.
+        map.serialize_entry("type", "gaussphi")?;
+
+        // Finalize the map serialization.
+        map.end()
+    }
+}
+
+impl<'de> Deserialize<'de> for GaussPhi {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        #[derive(Deserialize)]
+        #[serde(field_identifier, rename_all = "snake_case")]
+        enum Field {
+            Labels,
+            Parameters,
+            Type,
+        }
+
+        struct GaussPhiVisitor;
+
+        impl<'de> Visitor<'de> for GaussPhiVisitor {
+            type Value = GaussPhi;
+
+            fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+                formatter.write_str("struct GaussPhi")
+            }
+
+            fn visit_map<V>(self, mut map: V) -> std::result::Result<GaussPhi, V::Error>
+            where
+                V: MapAccess<'de>,
+            {
+                use serde::de::Error as E;
+
+                // Allocate the fields.
+                let mut labels = None;
+                let mut parameters = None;
+                let mut type_ = None;
+
+                // Parse the map.
+                while let Some(key) = map.next_key()? {
+                    match key {
+                        Field::Labels => {
+                            if labels.is_some() {
+                                return Err(E::duplicate_field("labels"));
+                            }
+                            labels = Some(map.next_value()?);
+                        }
+                        Field::Parameters => {
+                            if parameters.is_some() {
+                                return Err(E::duplicate_field("parameters"));
+                            }
+                            parameters = Some(map.next_value()?);
+                        }
+                        Field::Type => {
+                            if type_.is_some() {
+                                return Err(E::duplicate_field("type"));
+                            }
+                            type_ = Some(map.next_value()?);
+                        }
+                    }
+                }
+
+                // Check required fields.
+                let labels: Vec<String> = labels.ok_or_else(|| E::missing_field("labels"))?;
+                let parameters: GaussPhiK =
+                    parameters.ok_or_else(|| E::missing_field("parameters"))?;
+
+                // Check type is correct.
+                let type_: String = type_.ok_or_else(|| E::missing_field("type"))?;
+                if type_ != "gaussphi" {
+                    return Err(E::custom(format!(
+                        "Invalid type for GaussPhi: expected 'gaussphi', found '{type_}'"
+                    )));
+                }
+
+                let labels: Labels = labels.into_iter().collect();
+                GaussPhi::new(labels, parameters).map_err(E::custom)
+            }
+        }
+
+        const FIELDS: &[&str] = &["labels", "parameters", "type"];
+
+        deserializer.deserialize_struct("GaussPhi", FIELDS, GaussPhiVisitor)
+    }
+}
+
+// Implement `JsonIO` for `GaussPhi`.
+impl_json_io!(GaussPhi);

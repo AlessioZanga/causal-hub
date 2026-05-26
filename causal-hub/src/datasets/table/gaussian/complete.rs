@@ -6,6 +6,7 @@ use std::{
 
 use csv::{ReaderBuilder, WriterBuilder};
 use ndarray::prelude::*;
+use serde::{Deserialize, Serialize};
 
 use crate::{
     datasets::{Dataset, GaussEv, GaussEvT},
@@ -20,7 +21,7 @@ pub type GaussType = f64;
 pub type GaussSample = Array1<GaussType>;
 
 /// A struct representing a gaussian dataset.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct GaussTable {
     labels: Labels,
     values: Array2<GaussType>,

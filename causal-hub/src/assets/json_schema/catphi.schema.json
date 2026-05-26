@@ -1,0 +1,39 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "catphi.schema.json",
+    "type": "object",
+    "properties": {
+        "support": {
+            "type": "object",
+            "additionalProperties": {
+                "type": "array",
+                "items": {
+                    "type": "string"
+                }
+            }
+        },
+        "shape": {
+            "type": "array",
+            "items": {
+                "type": "integer",
+                "minimum": 1
+            }
+        },
+        "parameters": {
+            "type": "array",
+            "items": {
+                "type": "number"
+            }
+        },
+        "type": {
+            "type": "string",
+            "const": "catphi"
+        }
+    },
+    "required": [
+        "support",
+        "shape",
+        "parameters",
+        "type"
+    ]
+}

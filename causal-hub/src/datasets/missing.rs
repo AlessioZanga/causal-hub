@@ -152,7 +152,7 @@ impl Display for MissingType {
 }
 
 /// A struct for missing information in a tabular dataset.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct MissingTable {
     labels: Labels,
     fully_observed: Set<usize>,

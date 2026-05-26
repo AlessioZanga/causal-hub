@@ -13,7 +13,7 @@ from causal_hub.assets import (
     load_sachs,
     load_survey,
 )
-from causal_hub.datasets import GaussIncTable
+from causal_hub.datasets import CatTrjs, GaussIncTable
 from causal_hub.estimators import EstimatorMethod
 from causal_hub.models import CatBN, CatCTBN, DiGraph, GaussBN
 
@@ -612,6 +612,30 @@ def test_inference_accuracy(  # noqa: PLR0913
 
     print(f"Computed: {prob}, Expected: {expected}")
     assert abs(prob - expected) < tol
+
+
+def test_cat_ctbn_sample_by_length_and_time() -> None:
+    """Test CTBN sampling with both max_len and max_time."""
+    from causal_hub.assets import load_eating
+
+    eating = load_eating()
+    sampled = eating.sample(n=2, max_len=10, max_time=5.0, seed=42)
+    assert isinstance(sampled, CatTrjs)
+    sdfs = sampled.to_pandas()
+    assert len(sdfs) == 2
+    for trj in sdfs:
+        assert len(trj) <= 10
+        assert trj["time"].max() <= 5.0
+
+
+def test_cat_ctbn_sample_error_no_limit() -> None:
+    """Test CTBN sample errors when neither max_len nor max_time is set."""
+    import pytest
+    from causal_hub.assets import load_eating
+
+    eating = load_eating()
+    with pytest.raises(ValueError, match="At least one"):
+        eating.sample(n=2, seed=42)
 
 
 def test_inference_with_evidence_dict() -> None:

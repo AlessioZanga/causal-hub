@@ -109,6 +109,9 @@ mod causal_hub {
             m.add_class::<crate::datasets::PyCatTrjsEv>()?;
             m.add_class::<crate::datasets::PyCatWtdTrj>()?;
             m.add_class::<crate::datasets::PyCatWtdTrjs>()?;
+            m.add_class::<crate::datasets::PyMixedEv>()?;
+            m.add_class::<crate::datasets::PyMixedTable>()?;
+            m.add_class::<crate::datasets::PyMixedIncTable>()?;
 
             Ok(())
         }
@@ -159,6 +162,9 @@ mod causal_hub {
             m.add_class::<crate::models::PyCatCIM>()?;
             m.add_class::<crate::models::PyCatPhi>()?;
             m.add_class::<crate::models::PyGaussPhi>()?;
+            m.add_class::<crate::models::PyMixedPhi>()?;
+            m.add_class::<crate::models::PyMixedCPD>()?;
+            m.add_class::<crate::models::PyMixedBN>()?;
             m.add_class::<crate::models::PyDiGraph>()?;
 
             Ok(())

@@ -6,6 +6,10 @@ pub use gaussian::*;
 
 mod missing;
 pub use missing::*;
+
+mod mixed;
+pub use mixed::*;
+
 use pyo3::prelude::*;
 use pyo3_stub_gen_derive::gen_stub_pyclass_enum;
 

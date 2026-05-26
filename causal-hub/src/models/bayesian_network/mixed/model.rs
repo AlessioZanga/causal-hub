@@ -1,12 +1,18 @@
 use std::borrow::Cow;
 
 use approx::{AbsDiffEq, RelativeEq};
+use serde::{
+    Deserialize, Deserializer, Serialize, Serializer,
+    de::{MapAccess, Visitor},
+    ser::SerializeMap,
+};
 
 use crate::{
     datasets::{
         CatEv, CatIncTable, CatTable, CatWtdTable, GaussEv, GaussIncTable, GaussTable,
         GaussWtdTable,
     },
+    impl_json_io,
     inference::TopologicalOrder,
     models::{BN, CPD, DiGraph, Graph, Labelled, MixedCPD, MixedSample, MixedSupport},
     set,
@@ -15,7 +21,8 @@ use crate::{
 
 /// A unified evidence type for mixed Bayesian networks.
 #[non_exhaustive]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(tag = "type")]
 pub enum MixedEv {
     /// Categorical evidence.
     Categorical(CatEv),
@@ -25,7 +32,8 @@ pub enum MixedEv {
 
 /// A unified complete dataset type for mixed Bayesian networks.
 #[non_exhaustive]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(tag = "type")]
 pub enum MixedTable {
     /// Categorical table.
     Categorical(CatTable),
@@ -35,7 +43,8 @@ pub enum MixedTable {
 
 /// A unified incomplete dataset type for mixed Bayesian networks.
 #[non_exhaustive]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(tag = "type")]
 pub enum MixedIncTable {
     /// Categorical incomplete table.
     Categorical(CatIncTable),
@@ -45,12 +54,23 @@ pub enum MixedIncTable {
 
 /// A unified weighted dataset type for mixed Bayesian networks.
 #[non_exhaustive]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(tag = "type")]
 pub enum MixedWtdTable {
     /// Categorical weighted table.
     Categorical(CatWtdTable),
     /// Gaussian weighted table.
     Gaussian(GaussWtdTable),
+}
+
+impl MixedEv {
+    /// Return the events indices where evidence is present.
+    pub fn events(&self) -> Set<usize> {
+        match self {
+            Self::Categorical(ev) => ev.evidences().iter().flatten().map(|e| e.event()).collect(),
+            Self::Gaussian(ev) => ev.evidences().iter().flatten().map(|e| e.event()).collect(),
+        }
+    }
 }
 
 impl From<CatEv> for MixedEv {
@@ -106,6 +126,16 @@ impl From<GaussWtdTable> for MixedWtdTable {
     #[inline]
     fn from(table: GaussWtdTable) -> Self {
         Self::Gaussian(table)
+    }
+}
+
+impl From<MixedTable> for MixedWtdTable {
+    #[inline]
+    fn from(table: MixedTable) -> Self {
+        match table {
+            MixedTable::Categorical(t) => MixedWtdTable::Categorical(t.into()),
+            MixedTable::Gaussian(t) => MixedWtdTable::Gaussian(t.into()),
+        }
     }
 }
 
@@ -210,7 +240,6 @@ impl BN for MixedBN {
     where
         I: IntoIterator<Item = Self::CPD>,
     {
-        // Collect the CPDs into a map.
         let mut cpds: Map<_, _> = cpds
             .into_iter()
             .map(|x| {
@@ -223,25 +252,18 @@ impl BN for MixedBN {
                 Ok((x.labels()[0].to_owned(), x))
             })
             .collect::<Result<_>>()?;
-        // Sort the CPDs by their labels.
         cpds.sort_keys();
 
-        // Check same number of graph labels and CPDs.
         if !graph.labels().iter().eq(cpds.keys()) {
             return Err(Error::LabelMismatch("graph labels", "distributions labels"));
         }
 
-        // Get the labels of the variables.
         let labels: Labels = graph.labels().clone();
 
-        // Check if all vertices have the same labels as their parents.
         graph.vertices().into_iter().try_for_each(|i| {
-            // Get the parents of the vertex.
             let pa_i = graph.parents(&set![i])?.into_iter();
             let pa_i: &Labels = &pa_i.map(|j| labels[j].to_owned()).collect();
-            // Get the conditioning labels of the CPD.
             let pa_j = cpds[&labels[i]].conditioning_labels();
-            // Check they are the same.
             if pa_i != pa_j {
                 return Err(Error::LabelMismatch(
                     &format!("{pa_i:?}"),
@@ -251,7 +273,6 @@ impl BN for MixedBN {
             Ok(())
         })?;
 
-        // Check the graph is acyclic.
         let topological_order = graph.topological_order().ok_or_else(|| Error::NotADag())?;
 
         Ok(Self {
@@ -293,7 +314,6 @@ impl BN for MixedBN {
     where
         Self: Sized,
     {
-        // Check that the variables are in bounds.
         x.iter().try_for_each(|&i| {
             if i >= self.labels.len() {
                 return Err(Error::IndexOutOfBounds(i));
@@ -301,23 +321,13 @@ impl BN for MixedBN {
             Ok(())
         })?;
 
-        // Sort the indices.
         let mut x = x.clone();
         x.sort();
 
-        // Construct the subgraph.
         let graph = self.graph.select(&x)?;
-        // Select the CPDs.
         let cpds = x.iter().map(|&i| self.cpds[i].clone());
 
-        // Construct the submodel.
-        Self::with_optionals(
-            // Clone the optionals.
-            self.name.clone(),
-            self.description.clone(),
-            graph,
-            cpds,
-        )
+        Self::with_optionals(self.name.clone(), self.description.clone(), graph, cpds)
     }
 
     #[inline]
@@ -334,26 +344,145 @@ impl BN for MixedBN {
     where
         I: IntoIterator<Item = Self::CPD>,
     {
-        // Check name is not empty string.
         if let Some(name) = &name
             && name.is_empty()
         {
             return Err(Error::InvalidParameter("name", "cannot be empty"));
         }
-        // Check description is not empty string.
         if let Some(description) = &description
             && description.is_empty()
         {
             return Err(Error::InvalidParameter("description", "cannot be empty"));
         }
 
-        // Construct the BN.
         let mut bn = Self::new(graph, cpds)?;
-
-        // Set the optional fields.
         bn.name = name;
         bn.description = description;
 
         Ok(bn)
     }
 }
+
+// ── Serde for MixedBN ──────────────────────────────────────────
+
+impl Serialize for MixedBN {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let mut size = 3usize;
+        size += self.name.is_some() as usize;
+        size += self.description.is_some() as usize;
+
+        let mut map = serializer.serialize_map(Some(size))?;
+
+        if let Some(name) = &self.name {
+            map.serialize_entry("name", name)?;
+        }
+        if let Some(description) = &self.description {
+            map.serialize_entry("description", description)?;
+        }
+        map.serialize_entry("graph", &self.graph)?;
+
+        let cpds: Vec<_> = self.cpds.values().cloned().collect();
+        map.serialize_entry("cpds", &cpds)?;
+
+        map.serialize_entry("type", "mixedbn")?;
+
+        map.end()
+    }
+}
+
+impl<'de> Deserialize<'de> for MixedBN {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        #[derive(Deserialize)]
+        #[serde(field_identifier, rename_all = "snake_case")]
+        enum Field {
+            Name,
+            Description,
+            Graph,
+            Cpds,
+            Type,
+        }
+
+        struct MixedBNVisitor;
+
+        impl<'de> Visitor<'de> for MixedBNVisitor {
+            type Value = MixedBN;
+
+            fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+                formatter.write_str("struct MixedBN")
+            }
+
+            fn visit_map<V>(self, mut map: V) -> std::result::Result<MixedBN, V::Error>
+            where
+                V: MapAccess<'de>,
+            {
+                use serde::de::Error as E;
+
+                let mut name = None;
+                let mut description = None;
+                let mut graph = None;
+                let mut cpds = None;
+                let mut type_ = None;
+
+                while let Some(key) = map.next_key()? {
+                    match key {
+                        Field::Name => {
+                            if name.is_some() {
+                                return Err(E::duplicate_field("name"));
+                            }
+                            name = Some(map.next_value()?);
+                        }
+                        Field::Description => {
+                            if description.is_some() {
+                                return Err(E::duplicate_field("description"));
+                            }
+                            description = Some(map.next_value()?);
+                        }
+                        Field::Graph => {
+                            if graph.is_some() {
+                                return Err(E::duplicate_field("graph"));
+                            }
+                            graph = Some(map.next_value()?);
+                        }
+                        Field::Cpds => {
+                            if cpds.is_some() {
+                                return Err(E::duplicate_field("cpds"));
+                            }
+                            cpds = Some(map.next_value::<Vec<MixedCPD>>()?);
+                        }
+                        Field::Type => {
+                            if type_.is_some() {
+                                return Err(E::duplicate_field("type"));
+                            }
+                            type_ = Some(map.next_value()?);
+                        }
+                    }
+                }
+
+                let graph = graph.ok_or_else(|| E::missing_field("graph"))?;
+                let cpds = cpds.ok_or_else(|| E::missing_field("cpds"))?;
+
+                let type_: String = type_.ok_or_else(|| E::missing_field("type"))?;
+                if type_ != "mixedbn" {
+                    return Err(E::custom(format!(
+                        "Invalid type for MixedBN: expected 'mixedbn', found '{type_}'"
+                    )));
+                }
+
+                MixedBN::with_optionals(name, description, graph, cpds)
+                    .map_err(serde::de::Error::custom)
+            }
+        }
+
+        const FIELDS: &[&str] = &["name", "description", "graph", "cpds", "type"];
+
+        deserializer.deserialize_struct("MixedBN", FIELDS, MixedBNVisitor)
+    }
+}
+
+impl_json_io!(MixedBN);

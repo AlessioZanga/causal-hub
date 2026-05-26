@@ -9,6 +9,7 @@ use csv::{ReaderBuilder, WriterBuilder};
 use itertools::Itertools;
 use log::debug;
 use ndarray::prelude::*;
+use serde::{Deserialize, Serialize};
 
 use crate::{
     datasets::{CatEv, CatEvT, Dataset},
@@ -23,7 +24,7 @@ pub type CatType = u8;
 pub type CatSample = Array1<CatType>;
 
 /// A struct representing a categorical dataset.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CatTable {
     labels: Labels,
     support: CatSupport,

@@ -1,9 +1,8 @@
-"""Tests for CatPhi and GaussPhi potential bindings."""
+"""Tests for CatPhi, GaussPhi, and MixedPhi potential bindings."""
 
 import numpy as np
 from causal_hub.assets import load_asia, load_ecoli70
-from causal_hub.models import CatPhi, GaussPhi
-
+from causal_hub.models import CatPhi, GaussPhi, MixedPhi
 
 # ── CatPhi tests ──────────────────────────────────────────────
 
@@ -159,6 +158,36 @@ def test_cat_phi_joint_asia_smoke() -> None:
     )
 
 
+def test_cat_phi_json_roundtrip() -> None:
+    """Test CatPhi JSON serialization round-trip."""
+    asia = load_asia()
+    cpd = asia.cpds()["asia"]
+    phi = CatPhi.from_cpd(cpd)
+    json_str = phi.to_json_string()
+    phi2 = CatPhi.from_json_string(json_str)
+    assert phi == phi2
+
+
+def test_cat_phi_json_roundtrip_with_conditioning() -> None:
+    """Test CatPhi JSON round-trip for a CPD with conditioning."""
+    asia = load_asia()
+    cpd = asia.cpds()["bronc"]
+    phi = CatPhi.from_cpd(cpd)
+    json_str = phi.to_json_string()
+    phi2 = CatPhi.from_json_string(json_str)
+    assert phi == phi2
+
+
+def test_cat_phi_to_json_asia() -> None:
+    """Test CatPhi to_json_string produces expected output."""
+    asia = load_asia()
+    cpd = asia.cpds()["asia"]
+    phi = CatPhi.from_cpd(cpd)
+    json_str = phi.to_json_string()
+    expected = '{"support":{"asia":["no","yes"]},"shape":[2],"parameters":[0.99,0.01],"type":"catphi"}'
+    assert json_str == expected
+
+
 # ── GaussPhi tests ─────────────────────────────────────────────
 
 
@@ -271,3 +300,75 @@ def test_gauss_phi_first_cpds() -> None:
         if tested >= 3:
             break
     assert tested > 0, "No GaussCPD could be converted to GaussPhi"
+
+
+def test_gauss_phi_json_roundtrip() -> None:
+    """Test GaussPhi JSON serialization round-trip."""
+    ecoli = load_ecoli70()
+    cpd = list(ecoli.cpds().values())[0]
+    phi = GaussPhi.from_cpd(cpd)
+    json_str = phi.to_json_string()
+    phi2 = GaussPhi.from_json_string(json_str)
+    assert phi.labels() == phi2.labels()
+    np.testing.assert_allclose(phi.precision_matrix(), phi2.precision_matrix())
+    np.testing.assert_allclose(phi.information_vector(), phi2.information_vector())
+    np.testing.assert_allclose(
+        phi.log_normalization_constant(), phi2.log_normalization_constant()
+    )
+
+
+# ── MixedPhi tests ─────────────────────────────────────────────
+
+
+def test_mixed_phi_from_cat_cpd() -> None:
+    """Test creating a MixedPhi from a CatCPD."""
+    asia = load_asia()
+    cpd = asia.cpds()["asia"]
+    mixed = MixedPhi.from_cat_cpd(cpd)
+    assert mixed.is_categorical()
+    assert not mixed.is_gaussian()
+    cat_phi = mixed.as_catphi()
+    assert cat_phi is not None
+    assert cat_phi.labels() == ["asia"]
+    assert mixed.labels() == ["asia"]
+
+
+def test_mixed_phi_from_gauss_cpd() -> None:
+    """Test creating a MixedPhi from a GaussCPD."""
+    ecoli = load_ecoli70()
+    cpd = list(ecoli.cpds().values())[0]
+    mixed = MixedPhi.from_gauss_cpd(cpd)
+    assert mixed.is_gaussian()
+    assert not mixed.is_categorical()
+    gauss_phi = mixed.as_gaussphi()
+    assert gauss_phi is not None
+    assert mixed.labels() is not None
+
+
+def test_mixed_phi_eq() -> None:
+    """Test MixedPhi equality."""
+    asia = load_asia()
+    cpd = asia.cpds()["asia"]
+    mixed1 = MixedPhi.from_cat_cpd(cpd)
+    mixed2 = MixedPhi.from_cat_cpd(cpd)
+    assert mixed1 == mixed2
+
+
+def test_mixed_phi_json_roundtrip_cat() -> None:
+    """Test MixedPhi JSON round-trip for categorical."""
+    asia = load_asia()
+    cpd = asia.cpds()["asia"]
+    mixed = MixedPhi.from_cat_cpd(cpd)
+    json_str = mixed.to_json_string()
+    mixed2 = MixedPhi.from_json_string(json_str)
+    assert mixed == mixed2
+
+
+def test_mixed_phi_json_roundtrip_gauss() -> None:
+    """Test MixedPhi JSON round-trip for Gaussian."""
+    ecoli = load_ecoli70()
+    cpd = list(ecoli.cpds().values())[0]
+    mixed = MixedPhi.from_gauss_cpd(cpd)
+    json_str = mixed.to_json_string()
+    mixed2 = MixedPhi.from_json_string(json_str)
+    assert mixed.labels() == mixed2.labels()

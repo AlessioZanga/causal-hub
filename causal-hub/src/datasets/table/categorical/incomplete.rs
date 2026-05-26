@@ -6,6 +6,7 @@ use std::{
 
 use csv::{ReaderBuilder, WriterBuilder};
 use ndarray::prelude::*;
+use serde::{Deserialize, Serialize};
 
 use crate::{
     datasets::{
@@ -20,7 +21,7 @@ use crate::{
 };
 
 /// A struct representing an incomplete categorical dataset.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct CatIncTable {
     labels: Labels,
     support: CatSupport,

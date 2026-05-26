@@ -1,10 +1,11 @@
 #[cfg(test)]
 mod tests {
+    use approx::assert_relative_eq;
     use causal_hub::{
-        datasets::{CatTrj, CatTrjEv, CatTrjEvT as E, Dataset},
+        datasets::{CatTrj, CatTrjEv, CatTrjEvT as E, CatWtdTrj, Dataset},
         labels,
         models::Labelled,
-        support,
+        set, support,
         types::Result,
     };
     use ndarray::prelude::*;
@@ -379,6 +380,82 @@ mod tests {
                     },
                 ],
             )?;
+
+            Ok(())
+        }
+    }
+
+    mod categorical_weighted {
+        use super::*;
+
+        #[test]
+        fn new_weighted_trajectory() -> Result<()> {
+            let support = support![("A", ["0", "1"]), ("B", ["0", "1"])];
+            let events = array![[0, 0], [1, 0], [1, 1]];
+            let times = array![0.0, 0.1, 0.2];
+            let trj = CatTrj::new(support, events, times)?;
+            let wtd_trj = CatWtdTrj::new(trj, 0.5)?;
+
+            assert_eq!(wtd_trj.labels(), &labels!["A", "B"]);
+            assert_eq!(wtd_trj.weight(), 0.5);
+            assert_relative_eq!(wtd_trj.sample_size(), 1.5);
+
+            Ok(())
+        }
+
+        #[test]
+        fn new_invalid_weight_too_large() -> Result<()> {
+            let support = support![("A", ["0", "1"])];
+            let events = array![[0], [1]];
+            let times = array![0.0, 0.1];
+            let trj = CatTrj::new(support, events, times)?;
+            assert!(CatWtdTrj::new(trj, 1.5).is_err());
+            Ok(())
+        }
+
+        #[test]
+        fn new_invalid_weight_negative() -> Result<()> {
+            let support = support![("A", ["0", "1"])];
+            let events = array![[0]];
+            let times = array![0.0];
+            let trj = CatTrj::new(support, events, times)?;
+            assert!(CatWtdTrj::new(trj, -0.1).is_err());
+            Ok(())
+        }
+
+        #[test]
+        fn zero_weight() -> Result<()> {
+            let support = support![("A", ["0", "1"])];
+            let events = array![[0]];
+            let times = array![0.0];
+            let trj = CatTrj::new(support, events, times)?;
+            let wtd_trj = CatWtdTrj::new(trj, 0.0)?;
+            assert_relative_eq!(wtd_trj.sample_size(), 0.0);
+            Ok(())
+        }
+
+        #[test]
+        fn from_trajectory_tuple() -> Result<()> {
+            let support = support![("A", ["0", "1"])];
+            let events = array![[0]];
+            let times = array![0.0];
+            let trj = CatTrj::new(support, events, times)?;
+            let wtd_trj = CatWtdTrj::try_from((trj, 0.3))?;
+            assert_relative_eq!(wtd_trj.weight(), 0.3);
+            Ok(())
+        }
+
+        #[test]
+        fn select_subset() -> Result<()> {
+            let support = support![("A", ["0", "1"]), ("B", ["0", "1"])];
+            let events = array![[0, 0], [1, 0]];
+            let times = array![0.0, 0.1];
+            let trj = CatTrj::new(support, events, times)?;
+            let wtd_trj = CatWtdTrj::new(trj, 0.5)?;
+
+            let sub = wtd_trj.select(&set![0])?;
+            assert_eq!(sub.labels(), &labels!["A"]);
+            assert_relative_eq!(sub.sample_size(), 1.0);
 
             Ok(())
         }

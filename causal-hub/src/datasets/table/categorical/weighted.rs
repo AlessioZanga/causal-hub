@@ -1,6 +1,7 @@
 use std::borrow::Cow;
 
 use ndarray::prelude::*;
+use serde::{Deserialize, Serialize};
 
 use crate::{
     datasets::{CatEv, CatSample, CatTable, Dataset},
@@ -12,7 +13,7 @@ use crate::{
 pub type CatWtdSample = (CatSample, f64);
 
 /// A multivariate categorical weighted dataset.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct CatWtdTable {
     dataset: CatTable,
     weights: Array1<f64>,

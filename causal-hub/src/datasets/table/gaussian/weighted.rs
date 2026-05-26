@@ -1,6 +1,7 @@
 use std::borrow::Cow;
 
 use ndarray::prelude::*;
+use serde::{Deserialize, Serialize};
 
 use crate::{
     datasets::{Dataset, GaussEv, GaussSample, GaussTable},
@@ -12,7 +13,7 @@ use crate::{
 pub type GaussWtdSample = (GaussSample, f64);
 
 /// A multivariate Gaussian weighted dataset.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct GaussWtdTable {
     dataset: GaussTable,
     weights: Array1<f64>,

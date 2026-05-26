@@ -1,6 +1,9 @@
 use std::sync::{Arc, RwLock};
 
-use backend::models::{GaussPhi, Labelled, Phi};
+use backend::{
+    io::JsonIO,
+    models::{GaussPhi, Labelled, Phi},
+};
 use numpy::{PyArray1, PyArray2, prelude::*};
 use pyo3::{prelude::*, types::PyType};
 use pyo3_stub_gen::derive::*;
@@ -131,5 +134,31 @@ impl PyGaussPhi {
         let other = other.lock().clone();
         *lock /= &other;
         Ok(())
+    }
+
+    /// Read instance from a JSON string.
+    #[classmethod]
+    pub fn from_json_string(_cls: &Bound<'_, PyType>, json: &str) -> PyResult<Self> {
+        GaussPhi::from_json_string(json)
+            .map(Into::into)
+            .map_err(to_pyerr)
+    }
+
+    /// Write instance to a JSON string.
+    pub fn to_json_string(&self) -> PyResult<String> {
+        self.lock().to_json_string().map_err(to_pyerr)
+    }
+
+    /// Read instance from a JSON file.
+    #[classmethod]
+    pub fn from_json_file(_cls: &Bound<'_, PyType>, path: &str) -> PyResult<Self> {
+        GaussPhi::from_json_file(path)
+            .map(Into::into)
+            .map_err(to_pyerr)
+    }
+
+    /// Write instance to a JSON file.
+    pub fn to_json_file(&self, path: &str) -> PyResult<()> {
+        self.lock().to_json_file(path).map_err(to_pyerr)
     }
 }

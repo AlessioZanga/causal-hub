@@ -2,6 +2,7 @@ use std::borrow::Cow;
 
 use approx::{AbsDiffEq, RelativeEq};
 use rand::Rng;
+use serde::{Deserialize, Serialize};
 
 use crate::{
     datasets::{CatSample, GaussSample},
@@ -11,7 +12,8 @@ use crate::{
 
 /// Unified support metadata for mixed CPDs.
 #[non_exhaustive]
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(untagged)]
 pub enum MixedSupport {
     /// Categorical support (discrete states).
     Categorical(CatSupport),
@@ -21,7 +23,8 @@ pub enum MixedSupport {
 
 /// The parameters of a mixed CPD.
 #[non_exhaustive]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(untagged)]
 pub enum MixedCPD {
     /// Categorical CPD.
     Categorical(CatCPD),
@@ -31,7 +34,8 @@ pub enum MixedCPD {
 
 /// The sufficient statistics of a mixed CPD.
 #[non_exhaustive]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(untagged)]
 pub enum MixedCPDS {
     /// Categorical sufficient statistics.
     Categorical(CatCPDS),
@@ -41,7 +45,8 @@ pub enum MixedCPDS {
 
 /// A unified sample type for mixed Bayesian networks.
 #[non_exhaustive]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(untagged)]
 pub enum MixedSample {
     /// Categorical sample.
     Categorical(CatSample),

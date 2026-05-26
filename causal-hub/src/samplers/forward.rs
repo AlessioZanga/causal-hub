@@ -12,10 +12,13 @@ use rayon::prelude::*;
 
 use crate::{
     datasets::{CatSample, CatTable, CatTrj, CatType, GaussTable},
-    models::{BN, CIM, CPD, CTBN, CatBN, CatCTBN, GaussBN, Labelled},
+    models::{
+        BN, CIM, CPD, CTBN, CatBN, CatCTBN, GaussBN, Labelled, MixedBN, MixedCPD, MixedSample,
+        MixedSupport, MixedTable,
+    },
     samplers::{BNSampler, CTBNSampler, ParBNSampler, ParCTBNSampler},
     set,
-    types::{EPSILON, Error, Result},
+    types::{EPSILON, Error, Map, Result, Set},
 };
 
 /// A forward sampler.
@@ -194,6 +197,171 @@ impl<R: Rng + SeedableRng> ParBNSampler<GaussBN> for ForwardSampler<'_, R, Gauss
 
         // Construct the dataset.
         GaussTable::new(self.model.labels().clone(), samples)
+    }
+}
+
+// ── MixedBN sampler helpers & macro ──────────────────────────────────
+
+macro_rules! mixed_pure_dispatch {
+    ($self:expr, $cat:block, $gauss:block) => {{
+        let ok = $self
+            .model
+            .cpds()
+            .values()
+            .all(|cpd| matches!(cpd, MixedCPD::Categorical(_)));
+        if ok {
+            $cat
+        } else {
+            let ok = $self
+                .model
+                .cpds()
+                .values()
+                .all(|cpd| matches!(cpd, MixedCPD::Gaussian(_)));
+            if ok {
+                $gauss
+            } else {
+                return Err(Error::InvalidParameter(
+                    "model",
+                    "mixed CPD types not yet supported for forward sampling",
+                ));
+            }
+        }
+    }};
+}
+
+fn extract_cat_support(
+    support: &crate::types::Map<String, MixedSupport>,
+) -> Map<String, Set<String>> {
+    support
+        .iter()
+        .map(|(label, mixed_supp)| match mixed_supp {
+            MixedSupport::Categorical(cpd_support) => {
+                let states = cpd_support[label].clone();
+                (label.clone(), states)
+            }
+            _ => unreachable!(),
+        })
+        .collect()
+}
+
+// ── MixedBN sampler ──────────────────────────────────────────────────
+
+impl<R: Rng> BNSampler<MixedBN> for ForwardSampler<'_, R, MixedBN> {
+    type Sample = MixedSample;
+    type Samples = MixedTable;
+
+    fn sample(&self) -> Result<Self::Sample> {
+        let mut rng = self.rng.borrow_mut();
+        let n_vars = self.model.labels().len();
+
+        mixed_pure_dispatch!(
+            self,
+            {
+                let mut sample = Array1::<CatType>::zeros(n_vars);
+                for &i in self.model.topological_order() {
+                    let cpd_i = &self.model.cpds()[i];
+                    let pa_i = self.model.graph().parents(&set![i])?;
+                    let pa_vals: Array1<CatType> = pa_i.iter().map(|&z| sample[z]).collect();
+                    let pa_sample = MixedSample::Categorical(pa_vals);
+                    let result = cpd_i.sample(&mut rng, &pa_sample)?;
+                    if let MixedSample::Categorical(v) = result {
+                        sample[i] = v[0];
+                    }
+                }
+                Ok(MixedSample::Categorical(sample))
+            },
+            {
+                let mut sample = Array1::<f64>::zeros(n_vars);
+                for &i in self.model.topological_order() {
+                    let cpd_i = &self.model.cpds()[i];
+                    let pa_i = self.model.graph().parents(&set![i])?;
+                    let pa_vals: Array1<f64> = pa_i.iter().map(|&z| sample[z]).collect();
+                    let pa_sample = MixedSample::Gaussian(pa_vals);
+                    let result = cpd_i.sample(&mut rng, &pa_sample)?;
+                    if let MixedSample::Gaussian(v) = result {
+                        sample[i] = v[0];
+                    }
+                }
+                Ok(MixedSample::Gaussian(sample))
+            }
+        )
+    }
+
+    fn sample_n(&self, n: usize) -> Result<Self::Samples> {
+        mixed_pure_dispatch!(
+            self,
+            {
+                let mut dataset = Array::zeros((n, self.model.labels().len()));
+                dataset
+                    .rows_mut()
+                    .into_iter()
+                    .try_for_each(|mut row| -> Result<_> {
+                        if let MixedSample::Categorical(s) = self.sample()? {
+                            row.assign(&s);
+                        }
+                        Ok(())
+                    })?;
+                let cat_support = extract_cat_support(&self.model.support());
+                CatTable::new(cat_support, dataset).map(MixedTable::Categorical)
+            },
+            {
+                let mut dataset = Array::zeros((n, self.model.labels().len()));
+                dataset
+                    .rows_mut()
+                    .into_iter()
+                    .try_for_each(|mut row| -> Result<_> {
+                        if let MixedSample::Gaussian(s) = self.sample()? {
+                            row.assign(&s);
+                        }
+                        Ok(())
+                    })?;
+                GaussTable::new(self.model.labels().clone(), dataset).map(MixedTable::Gaussian)
+            }
+        )
+    }
+}
+
+impl<R: Rng + SeedableRng> ParBNSampler<MixedBN> for ForwardSampler<'_, R, MixedBN> {
+    type Samples = MixedTable;
+
+    fn par_sample_n(&self, n: usize) -> Result<Self::Samples> {
+        let rng = self.rng.borrow_mut();
+        let seeds: Vec<_> = rng.random_iter().take(n).collect();
+
+        mixed_pure_dispatch!(
+            self,
+            {
+                let mut samples = Array::zeros((n, self.model.labels().len()));
+                seeds
+                    .into_par_iter()
+                    .zip(samples.axis_iter_mut(Axis(0)))
+                    .try_for_each(|(seed, mut row)| -> Result<()> {
+                        let mut rng = R::seed_from_u64(seed);
+                        let sampler = ForwardSampler::new(&mut rng, self.model)?;
+                        if let MixedSample::Categorical(s) = sampler.sample()? {
+                            row.assign(&s);
+                        }
+                        Ok(())
+                    })?;
+                let cat_support = extract_cat_support(&self.model.support());
+                CatTable::new(cat_support, samples).map(MixedTable::Categorical)
+            },
+            {
+                let mut samples = Array::zeros((n, self.model.labels().len()));
+                seeds
+                    .into_par_iter()
+                    .zip(samples.axis_iter_mut(Axis(0)))
+                    .try_for_each(|(seed, mut row)| -> Result<()> {
+                        let mut rng = R::seed_from_u64(seed);
+                        let sampler = ForwardSampler::new(&mut rng, self.model)?;
+                        if let MixedSample::Gaussian(s) = sampler.sample()? {
+                            row.assign(&s);
+                        }
+                        Ok(())
+                    })?;
+                GaussTable::new(self.model.labels().clone(), samples).map(MixedTable::Gaussian)
+            }
+        )
     }
 }
 

@@ -3,7 +3,7 @@ use dry::macro_for;
 use crate::{
     datasets::Dataset,
     inference::{BNInference, BackdoorCriterion, Modelled, ParBNInference},
-    models::{BN, CatBN, GaussBN, Labelled, Phi},
+    models::{BN, CatBN, GaussBN, Labelled, MixedBN, Phi},
     set,
     types::{Error, Result, Set},
 };
@@ -562,3 +562,169 @@ macro_for!($type in [CatBN, GaussBN] {
     }
 
 });
+
+// ── MixedBN Causal Inference (phi conversion not yet supported) ───
+
+impl<E> BNCausalInference<MixedBN> for CausalInference<'_, E>
+where
+    E: Modelled<MixedBN> + BNInference<MixedBN>,
+{
+    fn cpace_estimate(
+        &self,
+        x: &Set<usize>,
+        y: &Set<usize>,
+        z: &Set<usize>,
+        w: Option<&<MixedBN as BN>::Evidence>,
+    ) -> Result<Option<<MixedBN as BN>::CPD>> {
+        if x.is_empty() {
+            return Err(Error::EmptySet("X"));
+        }
+        if y.is_empty() {
+            return Err(Error::EmptySet("Y"));
+        }
+        if !x.is_disjoint(y) {
+            return Err(Error::SetsNotDisjoint("X", "Y"));
+        }
+        if !x.is_disjoint(z) {
+            return Err(Error::SetsNotDisjoint("X", "Z"));
+        }
+        if !y.is_disjoint(z) {
+            return Err(Error::SetsNotDisjoint("Y", "Z"));
+        }
+
+        let w_ = &w.map_or(set![], |w| w.events());
+
+        if !x.is_disjoint(w_) {
+            return Err(Error::SetsNotDisjoint("X", "W"));
+        }
+        if !y.is_disjoint(w_) {
+            return Err(Error::SetsNotDisjoint("Y", "W"));
+        }
+        if !z.is_disjoint(w_) {
+            return Err(Error::SetsNotDisjoint("Z", "W"));
+        }
+
+        let m = self.engine.model();
+        let z_w = &(z | w_);
+        let z_w_s = m.graph().find_minimal_backdoor_set(x, y, Some(z_w), None)?;
+
+        match z_w_s {
+            None => Ok(None),
+            Some(z_w_s) if z_w_s.is_empty() => Ok(Some(self.engine.estimate(y, x, w)?)),
+            Some(z_w_s) if z_w_s.eq(z_w) => Ok(Some(self.engine.estimate(y, &(x | z), w)?)),
+            Some(_) => Err(Error::InvalidParameter(
+                "backdoor_set",
+                "Phi conversion not yet supported for MixedBN",
+            )),
+        }
+    }
+
+    fn csace_estimate<D>(
+        &self,
+        x: &Set<usize>,
+        y: &Set<usize>,
+        z: &Set<usize>,
+        d: D,
+    ) -> Result<Option<Vec<<MixedBN as BN>::CPD>>>
+    where
+        D: Dataset<Evidence = <MixedBN as BN>::Evidence>,
+    {
+        if self.engine.model().labels() != d.labels() {
+            return Err(Error::LabelMismatch(
+                &format!("{:?}", self.engine.model().labels()),
+                &format!("{:?}", d.labels()),
+            ));
+        }
+
+        let u = Set::from_iter(0..d.labels().len());
+        let u = &(&(&u - x) - y) - z;
+        let d_prime = d.select(&u)?;
+
+        d_prime
+            .evidence_iter()
+            .map(|w| w.and_then(|w| self.cpace_estimate(x, y, z, Some(&w))))
+            .collect()
+    }
+}
+
+impl<E> ParBNCausalInference<MixedBN> for CausalInference<'_, E>
+where
+    E: Modelled<MixedBN> + ParBNInference<MixedBN>,
+{
+    fn par_cpace_estimate(
+        &self,
+        x: &Set<usize>,
+        y: &Set<usize>,
+        z: &Set<usize>,
+        w: Option<&<MixedBN as BN>::Evidence>,
+    ) -> Result<Option<<MixedBN as BN>::CPD>> {
+        if x.is_empty() {
+            return Err(Error::EmptySet("X"));
+        }
+        if y.is_empty() {
+            return Err(Error::EmptySet("Y"));
+        }
+        if !x.is_disjoint(y) {
+            return Err(Error::SetsNotDisjoint("X", "Y"));
+        }
+        if !x.is_disjoint(z) {
+            return Err(Error::SetsNotDisjoint("X", "Z"));
+        }
+        if !y.is_disjoint(z) {
+            return Err(Error::SetsNotDisjoint("Y", "Z"));
+        }
+
+        let w_ = &w.map_or(set![], |w| w.events());
+
+        if !x.is_disjoint(w_) {
+            return Err(Error::SetsNotDisjoint("X", "W"));
+        }
+        if !y.is_disjoint(w_) {
+            return Err(Error::SetsNotDisjoint("Y", "W"));
+        }
+        if !z.is_disjoint(w_) {
+            return Err(Error::SetsNotDisjoint("Z", "W"));
+        }
+
+        let m = self.engine.model();
+        let z_w = &(z | w_);
+        let z_w_s = m.graph().find_minimal_backdoor_set(x, y, Some(z_w), None)?;
+
+        match z_w_s {
+            None => Ok(None),
+            Some(z_w_s) if z_w_s.is_empty() => Ok(Some(self.engine.par_estimate(y, x, w)?)),
+            Some(z_w_s) if z_w_s.eq(z_w) => Ok(Some(self.engine.par_estimate(y, &(x | z), w)?)),
+            Some(_) => Err(Error::InvalidParameter(
+                "backdoor_set",
+                "Phi conversion not yet supported for MixedBN",
+            )),
+        }
+    }
+
+    fn par_csace_estimate<D>(
+        &self,
+        x: &Set<usize>,
+        y: &Set<usize>,
+        z: &Set<usize>,
+        d: D,
+    ) -> Result<Option<Vec<<MixedBN as BN>::CPD>>>
+    where
+        D: Dataset<Evidence = <MixedBN as BN>::Evidence>,
+    {
+        if self.engine.model().labels() != d.labels() {
+            return Err(Error::LabelMismatch(
+                &format!("{:?}", self.engine.model().labels()),
+                &format!("{:?}", d.labels()),
+            ));
+        }
+
+        let u = Set::from_iter(0..d.labels().len());
+        let u = &(&(&u - x) - y) - z;
+        let d_prime = d.select(&u)?;
+
+        d_prime
+            .evidence_iter()
+            .map(|w| w.and_then(|w| self.par_cpace_estimate(x, y, z, Some(&w))))
+            .collect()
+    }
+}

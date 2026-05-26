@@ -13,6 +13,7 @@ from causal_hub.datasets import (
     GaussTable,
     MissingMechanism,
     MissingMethod,
+    MixedTable,
 )
 from causal_hub.estimators import EstimatorMethod
 
@@ -1022,6 +1023,28 @@ class CatPhi:
     def __idiv__(self, other: CatPhi) -> None:
         r"""
         In-place division of two potentials.
+        """
+
+    @classmethod
+    def from_json_string(cls, json: builtins.str) -> CatPhi:
+        r"""
+        Read instance from a JSON string.
+        """
+
+    def to_json_string(self) -> builtins.str:
+        r"""
+        Write instance to a JSON string.
+        """
+
+    @classmethod
+    def from_json_file(cls, path: builtins.str) -> CatPhi:
+        r"""
+        Read instance from a JSON file.
+        """
+
+    def to_json_file(self, path: builtins.str) -> None:
+        r"""
+        Write instance to a JSON file.
         """
 
 @typing.final
@@ -2116,4 +2139,277 @@ class GaussPhi:
     def __idiv__(self, other: GaussPhi) -> None:
         r"""
         In-place division of two potentials.
+        """
+
+    @classmethod
+    def from_json_string(cls, json: builtins.str) -> GaussPhi:
+        r"""
+        Read instance from a JSON string.
+        """
+
+    def to_json_string(self) -> builtins.str:
+        r"""
+        Write instance to a JSON string.
+        """
+
+    @classmethod
+    def from_json_file(cls, path: builtins.str) -> GaussPhi:
+        r"""
+        Read instance from a JSON file.
+        """
+
+    def to_json_file(self, path: builtins.str) -> None:
+        r"""
+        Write instance to a JSON file.
+        """
+
+@typing.final
+class MixedBN:
+    r"""
+    A mixed Bayesian network.
+    """
+
+    def __eq__(self, other: builtins.object) -> builtins.bool: ...
+    def __new__(cls, graph: DiGraph, cpds: typing.Any) -> MixedBN:
+        r"""
+        Constructs a new mixed Bayesian network.
+        """
+
+    def name(self) -> typing.Optional[builtins.str]:
+        r"""
+        Returns the name of the model, if any.
+        """
+
+    def description(self) -> typing.Optional[builtins.str]:
+        r"""
+        Returns the description of the model, if any.
+        """
+
+    def labels(self) -> builtins.list[builtins.str]:
+        r"""
+        Returns the labels of the variables.
+        """
+
+    def graph(self) -> DiGraph:
+        r"""
+        Returns the underlying graph.
+        """
+
+    def cpds(self) -> builtins.dict[builtins.str, MixedCPD]:
+        r"""
+        Returns a map of labels to CPDs.
+        """
+
+    def parameters_size(self) -> builtins.int:
+        r"""
+        Returns the parameters size.
+        """
+
+    def sample(
+        self, n: builtins.int, seed: builtins.int = 31, parallel: builtins.bool = True
+    ) -> MixedTable:
+        r"""
+        Generate samples from the model.
+        """
+
+    @classmethod
+    def from_json_string(cls, json: builtins.str) -> MixedBN:
+        r"""
+        Read instance from a JSON string.
+        """
+
+    def to_json_string(self) -> builtins.str:
+        r"""
+        Write instance to a JSON string.
+        """
+
+    @classmethod
+    def from_json_file(cls, path: builtins.str) -> MixedBN:
+        r"""
+        Read instance from a JSON file.
+        """
+
+    def to_json_file(self, path: builtins.str) -> None:
+        r"""
+        Write instance to a JSON file.
+        """
+
+@typing.final
+class MixedCPD:
+    r"""
+    A unified CPD type for mixed Bayesian networks.
+    """
+
+    def __eq__(self, other: builtins.object) -> builtins.bool: ...
+    def is_categorical(self) -> builtins.bool:
+        r"""
+        Returns true if the CPD is categorical.
+        """
+
+    def is_gaussian(self) -> builtins.bool:
+        r"""
+        Returns true if the CPD is gaussian.
+        """
+
+    def as_catcpd(self) -> typing.Optional[CatCPD]:
+        r"""
+        Returns the inner CatCPD if the CPD is categorical.
+        """
+
+    def as_gausscpd(self) -> typing.Optional[GaussCPD]:
+        r"""
+        Returns the inner GaussCPD if the CPD is gaussian.
+        """
+
+    @classmethod
+    def from_catcpd(cls, cpd: CatCPD) -> MixedCPD:
+        r"""
+        Creates a MixedCPD from a CatCPD.
+        """
+
+    @classmethod
+    def from_gausscpd(cls, cpd: GaussCPD) -> MixedCPD:
+        r"""
+        Creates a MixedCPD from a GaussCPD.
+        """
+
+    def labels(self) -> builtins.list[builtins.str]:
+        r"""
+        Returns the labels of the CPD.
+        """
+
+    def conditioning_labels(self) -> builtins.list[builtins.str]:
+        r"""
+        Returns the conditioning labels of the CPD.
+        """
+
+    def parameters_size(self) -> builtins.int:
+        r"""
+        Returns the parameters size.
+        """
+
+    def __repr__(self) -> builtins.str:
+        r"""
+        Returns the string representation of the MixedCPD.
+        """
+
+@typing.final
+class MixedPhi:
+    r"""
+    A unified potential for mixed Bayesian networks.
+    """
+
+    def __eq__(self, other: builtins.object) -> builtins.bool: ...
+    def is_categorical(self) -> builtins.bool:
+        r"""
+        Returns true if the potential is categorical.
+        """
+
+    def is_gaussian(self) -> builtins.bool:
+        r"""
+        Returns true if the potential is Gaussian.
+        """
+
+    def as_catphi(self) -> typing.Optional[CatPhi]:
+        r"""
+        Returns the inner CatPhi if the potential is categorical.
+        """
+
+    def as_gaussphi(self) -> typing.Optional[GaussPhi]:
+        r"""
+        Returns the inner GaussPhi if the potential is Gaussian.
+        """
+
+    def labels(self) -> builtins.list[builtins.str]:
+        r"""
+        Returns the labels of the potential.
+        """
+
+    def parameters_size(self) -> builtins.int:
+        r"""
+        Returns the parameters size.
+        """
+
+    def condition(self, evidence: typing.Any) -> MixedPhi:
+        r"""
+        Conditions the potential on observed evidence.
+        """
+
+    def marginalize(self, x: typing.Any) -> MixedPhi:
+        r"""
+        Marginalizes the potential over a set of variables.
+        """
+
+    def normalize(self) -> MixedPhi:
+        r"""
+        Normalizes the potential.
+        """
+
+    @classmethod
+    def from_cat_cpd(cls, cpd: CatCPD) -> MixedPhi:
+        r"""
+        Creates a MixedPhi from a CatCPD.
+        """
+
+    @classmethod
+    def from_gauss_cpd(cls, cpd: GaussCPD) -> MixedPhi:
+        r"""
+        Creates a MixedPhi from a GaussCPD.
+        """
+
+    def into_cat_cpd(self, x: typing.Any, z: typing.Any) -> CatCPD:
+        r"""
+        Converts to a CatCPD if the potential is categorical.
+        """
+
+    def into_gauss_cpd(self, x: typing.Any, z: typing.Any) -> GaussCPD:
+        r"""
+        Converts to a GaussCPD if the potential is Gaussian.
+        """
+
+    def __repr__(self) -> builtins.str:
+        r"""
+        Returns the string representation of the MixedPhi.
+        """
+
+    def __mul__(self, other: MixedPhi) -> MixedPhi:
+        r"""
+        Multiplies two potentials.
+        """
+
+    def __imul__(self, other: MixedPhi) -> None:
+        r"""
+        In-place multiplication of two potentials.
+        """
+
+    def __truediv__(self, other: MixedPhi) -> MixedPhi:
+        r"""
+        Divides two potentials.
+        """
+
+    def __idiv__(self, other: MixedPhi) -> None:
+        r"""
+        In-place division of two potentials.
+        """
+
+    @classmethod
+    def from_json_string(cls, json: builtins.str) -> MixedPhi:
+        r"""
+        Read instance from a JSON string.
+        """
+
+    def to_json_string(self) -> builtins.str:
+        r"""
+        Write instance to a JSON string.
+        """
+
+    @classmethod
+    def from_json_file(cls, path: builtins.str) -> MixedPhi:
+        r"""
+        Read instance from a JSON file.
+        """
+
+    def to_json_file(self, path: builtins.str) -> None:
+        r"""
+        Write instance to a JSON file.
         """

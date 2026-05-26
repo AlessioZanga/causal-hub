@@ -1,3 +1,5 @@
+use serde::{Deserialize, Serialize};
+
 use crate::{
     datasets::GaussType,
     models::Labelled,
@@ -6,7 +8,7 @@ use crate::{
 
 /// Gaussian evidence type.
 #[non_exhaustive]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum GaussEvT {
     /// Certain positive evidence.
     CertainPositive {
@@ -44,7 +46,7 @@ impl GaussEvT {
 }
 
 /// Gaussian evidence structure.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct GaussEv {
     labels: Labels,
     evidences: Vec<Option<GaussEvT>>,

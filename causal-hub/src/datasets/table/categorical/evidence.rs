@@ -1,5 +1,6 @@
 use approx::relative_eq;
 use ndarray::prelude::*;
+use serde::{Deserialize, Serialize};
 
 use crate::{
     datasets::CatTrjEvT,
@@ -9,7 +10,7 @@ use crate::{
 
 /// Categorical evidence type.
 #[non_exhaustive]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum CatEvT {
     /// Certain positive evidence.
     CertainPositive {
@@ -100,7 +101,7 @@ impl CatEvT {
 }
 
 /// Categorical evidence structure.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct CatEv {
     labels: Labels,
     support: CatSupport,

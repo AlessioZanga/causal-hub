@@ -6,7 +6,7 @@ use rand::{Rng, SeedableRng};
 use crate::{
     estimators::{BE, CPDEstimator, ParCPDEstimator},
     inference::Modelled,
-    models::{BN, CatBN, GaussBN, Labelled},
+    models::{BN, CatBN, GaussBN, Labelled, MixedBN, MixedCPD},
     samplers::{BNSampler, ForwardSampler, ImportanceSampler, ParBNSampler},
     set,
     types::{Error, Result, Set},
@@ -152,6 +152,43 @@ impl<'a, R, F> ApproximateInference<'a, R, GaussBN, F> {
             //  (|X| * |Z| + (|X| * (|X| + 1)) / 2) * 1200, for delta = 0.05 and epsilon = 0.05.
             //  |X| * (|Z| + (|X| + 1) / 2) * 1200, for delta = 0.05 and epsilon = 0.05.
             x_shape * (z_shape + x_shape.div_ceil(2)) * 1200
+        })
+    }
+}
+
+impl<'a, R, F> ApproximateInference<'a, R, MixedBN, F> {
+    #[inline]
+    fn sample_size(&self, x: &Set<usize>, z: &Set<usize>) -> usize {
+        self.sample_size.unwrap_or_else(|| {
+            let all_cat = self
+                .model
+                .cpds()
+                .values()
+                .all(|cpd| matches!(cpd, MixedCPD::Categorical(_)));
+
+            if all_cat {
+                let labels = self.model.labels();
+                let shape: Vec<usize> = labels
+                    .iter()
+                    .map(|l| {
+                        let cpd = &self.model.cpds()[l];
+                        match cpd {
+                            MixedCPD::Categorical(c) => {
+                                c.support().get(l).map(|s| s.len()).unwrap_or(0)
+                            }
+                            _ => unreachable!(),
+                        }
+                    })
+                    .collect();
+                let (x_shape, z_shape): (usize, usize) = (
+                    x.iter().map(|&i| shape[i]).product(),
+                    z.iter().map(|&i| shape[i]).product(),
+                );
+                z_shape * (x_shape - 1) * 1200
+            } else {
+                let (x_shape, z_shape) = (x.len(), z.len());
+                x_shape * (z_shape + x_shape.div_ceil(2)) * 1200
+            }
         })
     }
 }
@@ -320,6 +357,116 @@ macro_for!($type in [CatBN, GaussBN] {
     }
 
 });
+
+// ── MixedBN Inference (manual impls) ────────────────────────────────
+
+macro_rules! mixedbn_inference_body {
+    ($self:ident, $x:ident, $z:ident, $w:ident) => {{
+        if $x.is_empty() {
+            return Err(Error::EmptySet("X"));
+        }
+        if !$x.is_disjoint($z) {
+            return Err(Error::SetsNotDisjoint("X", "Z"));
+        }
+        $x.union($z).try_for_each(|&i| {
+            if i >= $self.model.labels().len() {
+                return Err(Error::IndexOutOfBounds(i));
+            }
+            Ok(())
+        })?;
+        let n = $self.sample_size($x, $z);
+        if $w.is_some() {
+            return Err(Error::InvalidParameter(
+                "w",
+                "Importance sampling not yet supported for MixedBN; use w=None",
+            ));
+        }
+        let x_z_e = $x | $z;
+        let an_x_z_e = $self.model.graph().ancestors(&x_z_e)?;
+        let an_x_z_e = &an_x_z_e | &x_z_e;
+        let an_x_z_e_model = $self.model.select(&an_x_z_e)?;
+        let an_x = an_x_z_e_model.indices_from($x, $self.model.labels())?;
+        let an_z = an_x_z_e_model.indices_from($z, $self.model.labels())?;
+        let rng = $self.rng.borrow_mut();
+        (n, rng, an_x, an_z, an_x_z_e_model)
+    }};
+}
+
+impl<R> ParBNInference<MixedBN> for ApproximateInference<'_, R, MixedBN, ()>
+where
+    R: Rng + SeedableRng,
+{
+    fn par_estimate(
+        &self,
+        x: &Set<usize>,
+        z: &Set<usize>,
+        w: Option<&<MixedBN as BN>::Evidence>,
+    ) -> Result<<MixedBN as BN>::CPD> {
+        let (n, mut rng, an_x, an_z, an_x_z_e_model) = mixedbn_inference_body!(self, x, z, w);
+        let sampler = ForwardSampler::<R, _>::new(&mut rng, &an_x_z_e_model)?;
+        let dataset = sampler.par_sample_n(n)?;
+        BE::new(&dataset).par_fit(&an_x, &an_z)
+    }
+}
+
+impl<R, F> ParBNInference<MixedBN> for ApproximateInference<'_, R, MixedBN, F>
+where
+    R: Rng + SeedableRng,
+    F: Fn(&<MixedBN as BN>::WtdSamples, &Set<usize>, &Set<usize>) -> Result<<MixedBN as BN>::CPD>,
+{
+    fn par_estimate(
+        &self,
+        x: &Set<usize>,
+        z: &Set<usize>,
+        w: Option<&<MixedBN as BN>::Evidence>,
+    ) -> Result<<MixedBN as BN>::CPD> {
+        let (n, mut rng, an_x, an_z, an_x_z_e_model) = mixedbn_inference_body!(self, x, z, w);
+        let sampler = ForwardSampler::<R, _>::new(&mut rng, &an_x_z_e_model)?;
+        let dataset: <MixedBN as BN>::WtdSamples = sampler.par_sample_n(n)?.into();
+        match &self.estimator {
+            Some(f) => f(&dataset, &an_x, &an_z),
+            None => BE::new(&dataset).fit(&an_x, &an_z),
+        }
+    }
+}
+
+impl<R> BNInference<MixedBN> for ApproximateInference<'_, R, MixedBN, ()>
+where
+    R: Rng,
+{
+    fn estimate(
+        &self,
+        x: &Set<usize>,
+        z: &Set<usize>,
+        w: Option<&<MixedBN as BN>::Evidence>,
+    ) -> Result<<MixedBN as BN>::CPD> {
+        let (n, mut rng, an_x, an_z, an_x_z_e_model) = mixedbn_inference_body!(self, x, z, w);
+        let sampler = ForwardSampler::new(&mut rng, &an_x_z_e_model)?;
+        let dataset = sampler.sample_n(n)?;
+        BE::new(&dataset).fit(&an_x, &an_z)
+    }
+}
+
+impl<R, F> BNInference<MixedBN> for ApproximateInference<'_, R, MixedBN, F>
+where
+    R: Rng,
+    F: Fn(&<MixedBN as BN>::WtdSamples, &Set<usize>, &Set<usize>) -> Result<<MixedBN as BN>::CPD>,
+{
+    fn estimate(
+        &self,
+        x: &Set<usize>,
+        z: &Set<usize>,
+        w: Option<&<MixedBN as BN>::Evidence>,
+    ) -> Result<<MixedBN as BN>::CPD> {
+        let (n, mut rng, an_x, an_z, an_x_z_e_model) = mixedbn_inference_body!(self, x, z, w);
+        let sampler = ForwardSampler::new(&mut rng, &an_x_z_e_model)?;
+        let dataset: <MixedBN as BN>::WtdSamples = sampler.sample_n(n)?.into();
+        match &self.estimator {
+            Some(f) => f(&dataset, &an_x, &an_z),
+            None => BE::new(&dataset).fit(&an_x, &an_z),
+        }
+    }
+}
 
 /// A trait for parallel inference with Bayesian Networks.
 pub trait ParBNInference<T>

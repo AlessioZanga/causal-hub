@@ -1400,6 +1400,113 @@ class MissingTable:
         """
 
 @typing.final
+class MixedEv:
+    r"""
+    A unified evidence type for mixed Bayesian networks.
+    """
+
+    def is_categorical(self) -> builtins.bool:
+        r"""
+        Returns true if the evidence is categorical.
+        """
+
+    def is_gaussian(self) -> builtins.bool:
+        r"""
+        Returns true if the evidence is gaussian.
+        """
+
+    def as_catev(self) -> typing.Optional[CatEv]:
+        r"""
+        Returns the inner CatEv if the evidence is categorical.
+        """
+
+    def as_gaussev(self) -> typing.Optional[GaussEv]:
+        r"""
+        Returns the inner GaussEv if the evidence is gaussian.
+        """
+
+    @classmethod
+    def from_catev(cls, ev: CatEv) -> MixedEv:
+        r"""
+        Creates a MixedEv from a CatEv.
+        """
+
+    @classmethod
+    def from_gaussev(cls, ev: GaussEv) -> MixedEv:
+        r"""
+        Creates a MixedEv from a GaussEv.
+        """
+
+    def __repr__(self) -> builtins.str:
+        r"""
+        Returns the string representation of the MixedEv.
+        """
+
+@typing.final
+class MixedIncTable:
+    r"""
+    A unified incomplete dataset type for mixed Bayesian networks.
+    """
+
+    def is_categorical(self) -> builtins.bool:
+        r"""
+        Returns true if the dataset is categorical.
+        """
+
+    def is_gaussian(self) -> builtins.bool:
+        r"""
+        Returns true if the dataset is gaussian.
+        """
+
+    def __repr__(self) -> builtins.str:
+        r"""
+        Returns the string representation of the MixedIncTable.
+        """
+
+@typing.final
+class MixedTable:
+    r"""
+    A unified complete dataset type for mixed Bayesian networks.
+    """
+
+    def is_categorical(self) -> builtins.bool:
+        r"""
+        Returns true if the dataset is categorical.
+        """
+
+    def is_gaussian(self) -> builtins.bool:
+        r"""
+        Returns true if the dataset is gaussian.
+        """
+
+    def as_cattable(self) -> typing.Optional[CatTable]:
+        r"""
+        Returns the inner CatTable if the dataset is categorical.
+        """
+
+    def as_gausstable(self) -> typing.Optional[GaussTable]:
+        r"""
+        Returns the inner GaussTable if the dataset is gaussian.
+        """
+
+    @classmethod
+    def from_cattable(cls, table: CatTable) -> MixedTable:
+        r"""
+        Creates a MixedTable from a CatTable.
+        """
+
+    @classmethod
+    def from_gausstable(cls, table: GaussTable) -> MixedTable:
+        r"""
+        Creates a MixedTable from a GaussTable.
+        """
+
+    def __repr__(self) -> builtins.str:
+        r"""
+        Returns the string representation of the MixedTable.
+        """
+
+@typing.final
 class Dataset(enum.Enum):
     r"""
     A tabular dataset.
