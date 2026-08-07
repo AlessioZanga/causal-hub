@@ -312,7 +312,7 @@ impl PyCatTrj {
             .into_iter()
             .map(|name| {
                 let column = df.call_method1("get_column", (&name,))?;
-                let categories = column.getattr("cat")?.call_method0("get_categories")?;
+                let categories = column.call_method0("drop_nulls")?.call_method0("unique")?;
                 let categories: Set<String> = categories
                     .try_iter()?
                     .map(|x| x?.extract::<String>())
