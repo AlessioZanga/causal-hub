@@ -2,16 +2,10 @@
 
 import tempfile
 
-import networkx as nx
-import numpy as np
 from causal_hub.assets import load_asia
 from causal_hub.datasets import MixedEv, MixedIncTable, MixedTable
 from causal_hub.models import (
-    CatBN,
-    CatCPD,
-    DiGraph,
     GaussBN,
-    GaussCPD,
     MixedBN,
     MixedCPD,
 )

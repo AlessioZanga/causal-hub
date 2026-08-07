@@ -104,7 +104,7 @@ impl<R: Rng> ImportanceSampler<'_, R, CatBN, CatEv> {
                                 // For each (state, p_not_state) pair ...
                                 .filter_map(|(i, &p_i)| {
                                     // ... with p_i probability, retain the state.
-                                    Some(i).filter(|_| rng.random_bool(p_i))
+                                    rng.random_bool(p_i).then_some(i)
                                 })
                                 .collect();
                         }
@@ -458,7 +458,7 @@ impl<R: Rng> ImportanceSampler<'_, R, CatCTBN, CatTrjEv> {
                                 // For each (state, p_not_state) pair ...
                                 .filter_map(|(i, &p_i)| {
                                     // ... with p_i probability, retain the state.
-                                    Some(i).filter(|_| rng.random_bool(p_i))
+                                    rng.random_bool(p_i).then_some(i)
                                 })
                                 .collect();
                         }

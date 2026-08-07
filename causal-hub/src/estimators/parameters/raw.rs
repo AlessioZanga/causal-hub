@@ -142,7 +142,7 @@ impl<'a, R: Rng + SeedableRng> RAWE<'a, R, CatTrjEv, CatTrj> {
                                 // For each (state, p_not_state) pair ...
                                 .filter_map(|(i, &p_i)| {
                                     // ... with p_i probability, retain the state.
-                                    Some(i).filter(|_| self.rng.random_bool(p_i))
+                                    self.rng.random_bool(p_i).then_some(i)
                                 })
                                 .collect();
                         }
