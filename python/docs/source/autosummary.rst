@@ -7,8 +7,8 @@ Module Reference
 
 .. autosummary::
    :toctree: _autosummary
-   :recursive:
 
+   causal_hub
    causal_hub.assets
    causal_hub.datasets
    causal_hub.estimators

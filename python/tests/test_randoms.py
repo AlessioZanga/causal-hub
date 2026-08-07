@@ -1,6 +1,7 @@
 import networkx as nx
 import pandas as pd
 import pytest
+from causal_hub import Error
 from causal_hub.datasets import (
     CatIncTable,
     CatTable,
@@ -81,7 +82,7 @@ def test_cat_bn_random() -> None:
 
     # Check the vertices.
     assert sorted(bn.graph().vertices()) == sorted(
-        list(states.keys())
+        states.keys()
     ), "Wrong vertices in the BN."
 
 
@@ -96,15 +97,15 @@ def test_gauss_bn_random() -> None:
     assert sorted(bn.graph().vertices()) == sorted(labels), "Wrong vertices in the BN."
 
     # Invalid Parameters
-    with pytest.raises(Exception):
+    with pytest.raises(Error):
         GaussBN.random(labels, p=0.5, s_a=0.0, s_b=1.0, e=1e-6)
-    with pytest.raises(Exception):
+    with pytest.raises(Error):
         GaussBN.random(labels, p=0.5, s_a=1.0, s_b=0.0, e=1e-6)
-    with pytest.raises(Exception):
+    with pytest.raises(Error):
         GaussBN.random(labels, p=0.5, s_a=1.0, s_b=1.0, e=0.0)
-    with pytest.raises(Exception):
+    with pytest.raises(Error):
         GaussBN.random(labels, p=-0.1, s_a=1.0, s_b=1.0, e=1e-6)
-    with pytest.raises(Exception):
+    with pytest.raises(Error):
         GaussBN.random(labels, p=1.1, s_a=1.0, s_b=1.0, e=1e-6)
 
 
@@ -133,9 +134,9 @@ def test_cat_trj_ev_random() -> None:
     assert evidence.labels() == trj.labels(), "Wrong labels in the evidence."
 
     # Invalid Parameters
-    with pytest.raises(Exception):
+    with pytest.raises(Error):
         CatTrjEv.random(trj, p=-0.1)
-    with pytest.raises(Exception):
+    with pytest.raises(Error):
         CatTrjEv.random(trj, p=1.1)
 
 
@@ -174,9 +175,9 @@ def test_cat_trjs_ev_random() -> None:
     assert evidences.labels() == trjs.labels(), "Wrong labels in the evidence."
 
     # Invalid Parameters
-    with pytest.raises(Exception):
+    with pytest.raises(Error):
         CatTrjsEv.random(trjs, p=-0.1)
-    with pytest.raises(Exception):
+    with pytest.raises(Error):
         CatTrjsEv.random(trjs, p=1.1)
 
 
@@ -221,15 +222,15 @@ def test_cat_inc_table_random() -> None:
     assert sample.support() == dataset.support()
 
     # Invalid Parameters
-    with pytest.raises(Exception):
+    with pytest.raises(Error):
         CatIncTable.random(dataset, mechanism, p_min=-0.1, p_max=0.2)
-    with pytest.raises(Exception):
+    with pytest.raises(Error):
         CatIncTable.random(dataset, mechanism, p_min=1.1, p_max=0.2)
-    with pytest.raises(Exception):
+    with pytest.raises(Error):
         CatIncTable.random(dataset, mechanism, p_min=0.1, p_max=-0.1)
-    with pytest.raises(Exception):
+    with pytest.raises(Error):
         CatIncTable.random(dataset, mechanism, p_min=0.1, p_max=1.2)
-    with pytest.raises(Exception):
+    with pytest.raises(Error):
         CatIncTable.random(dataset, mechanism, p_min=0.5, p_max=0.2)
 
 
@@ -251,13 +252,13 @@ def test_gauss_inc_table_random() -> None:
     assert sample.labels() == dataset.labels()
 
     # Invalid Parameters
-    with pytest.raises(Exception):
+    with pytest.raises(Error):
         GaussIncTable.random(dataset, mechanism, p_min=-0.1, p_max=0.2)
-    with pytest.raises(Exception):
+    with pytest.raises(Error):
         GaussIncTable.random(dataset, mechanism, p_min=1.1, p_max=0.2)
-    with pytest.raises(Exception):
+    with pytest.raises(Error):
         GaussIncTable.random(dataset, mechanism, p_min=0.1, p_max=-0.1)
-    with pytest.raises(Exception):
+    with pytest.raises(Error):
         GaussIncTable.random(dataset, mechanism, p_min=0.1, p_max=1.2)
-    with pytest.raises(Exception):
+    with pytest.raises(Error):
         GaussIncTable.random(dataset, mechanism, p_min=0.5, p_max=0.2)

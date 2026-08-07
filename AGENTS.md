@@ -96,7 +96,7 @@ python/causal_hub/        (Python package — nearly pure FFI)
 ### Core Traits (`models/`)
 
 | Trait | Location | Key Methods |
-|-------|----------|-------------|
+| ------- | ---------- | ------------- |
 | `Labelled` | `models/mod.rs` | `labels()`, `label_to_index()`, `index_to_label()`, `index_to()`, `indices_to()`, `index_from()`, `indices_from()` |
 | `Graph` | `models/graphs/mod.rs` | `empty(labels)`, `complete(labels)`, `vertices()`, `edges()`, `has_vertex(x)`, `has_edge(x,y)`, `add_edge(x,y)`, `del_edge(x,y)`, `select(x)`, `from_adjacency_matrix(labels, mat)`, `to_adjacency_matrix()` |
 | `CPD` | `models/mod.rs` | `conditioning_labels()`, `parameters()`, `parameters_size()`, `fitted_statistics()`, `fitted_log_likelihood()`, `pf(x, z)`, `sample(rng, z)` |
@@ -108,7 +108,7 @@ python/causal_hub/        (Python package — nearly pure FFI)
 ### Model Implementations
 
 | Struct | Description | Source |
-|--------|-------------|--------|
+| -------- | ------------- | -------- |
 | `DiGraph` | Directed graph (adjacency-matrix-backed) | `models/graphs/directed.rs` |
 | `UnGraph` | Undirected graph | `models/graphs/undirected.rs` |
 | `CatBN` | Categorical Bayesian network | `models/bayesian_network/categorical/bn.rs` |
@@ -130,7 +130,7 @@ python/causal_hub/        (Python package — nearly pure FFI)
 ### Dataset Types (`datasets/`)
 
 | Struct | Description |
-|--------|-------------|
+| -------- | ------------- |
 | `CatTable` | Categorical complete dataset (Array2<u8>) |
 | `CatIncTable` | Categorical incomplete dataset (Option<u8>) |
 | `CatWtdTable` | Categorical weighted dataset |
@@ -150,7 +150,7 @@ python/causal_hub/        (Python package — nearly pure FFI)
 ### Estimator Traits & Implementations (`estimators/`)
 
 | Trait | Purpose |
-|-------|---------|
+| ------- | --------- |
 | `CSSEstimator<T>` | CPD sufficient statistics estimation |
 | `ParCSSEstimator<T>` | Parallel variant |
 | `CPDEstimator<T>` | CPD parameter estimation |
@@ -159,7 +159,7 @@ python/causal_hub/        (Python package — nearly pure FFI)
 | `CTBNEstimator<T>` / `ParCTBNEstimator<T>` | CTBN fitting (blanket via CPDEstimator) |
 
 | Struct | Description |
-|--------|-------------|
+| -------- | ------------- |
 | `MLE<'a, D>` | Maximum likelihood estimator |
 | `BE<'a, D, T>` | Bayesian estimator (Dirichlet/Normal-Wishart priors) |
 | `SSE<'a, D>` | Sufficient statistics estimator (weighted/IPW/AIPW/PW) |
@@ -176,7 +176,7 @@ python/causal_hub/        (Python package — nearly pure FFI)
 ### Inference (`inference/`)
 
 | Struct | Trait(s) | Description |
-|--------|----------|-------------|
+| -------- | ---------- | ------------- |
 | `ApproximateInference<'a, R, M, F>` | `BNInference`, `ParBNInference` | Monte Carlo approximate inference (sequential & parallel) |
 | `CausalInference<'a, E>` | `BNCausalInference`, `ParBNCausalInference` | PACE/CPACE causal effect estimation |
 | — | `BackdoorCriterion` | Backdoor adjustment set operations |
@@ -196,7 +196,7 @@ python/causal_hub/        (Python package — nearly pure FFI)
 All implement `Random` (and some `ParRandom`). Used for controlled, reproducible generation.
 
 | Struct | Generates |
-|--------|-----------|
+| -------- | ----------- |
 | `RngDiGraph<'a, R>` | Random directed graph |
 | `RngDag<'a, R>` | Random DAG |
 | `RngUnGraph<'a, R>` | Random undirected graph |
@@ -212,7 +212,7 @@ All implement `Random` (and some `ParRandom`). Used for controlled, reproducible
 ### I/O (`io/`)
 
 | Trait | Format | Implementors |
-|-------|--------|--------------|
+| ------- | -------- | -------------- |
 | `BifIO` | BIF (Bayesian Interchange Format, PEG-parsed) | CatBN |
 | `JsonIO` | JSON (with JSON Schema validation) | CatBN, GaussBN, CatCTBN, DiGraph, UnGraph |
 | `CsvIO` | CSV (string + file) | CatTable, CatIncTable, GaussTable |
@@ -220,7 +220,7 @@ All implement `Random` (and some `ParRandom`). Used for controlled, reproducible
 ### Type Aliases & Support Types (`types/`)
 
 | Type | Definition |
-|------|------------|
+| ------ | ------------ |
 | `Map<K, V>` | `IndexMap<K, V, FxBuildHasher>` |
 | `Set<T>` | `IndexSet<T, FxBuildHasher>` |
 | `Labels` | `Set<String>` |
@@ -413,7 +413,7 @@ Follow this workflow when making changes. Steps are guidelines—use judgment on
 6. **Regenerate `.pyi` type stubs** if Python API changed:
 
    ```bash
-   cd python && cargo run --bin stub_gen
+   cargo run -p python --bin stub_gen --release
    ```
 
 7. **Commit** using conventional commit style that matches the repo.

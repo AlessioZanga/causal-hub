@@ -1,6 +1,7 @@
 """Tests for CatPhi, GaussPhi, and MixedPhi potential bindings."""
 
 import numpy as np
+from causal_hub import Error
 from causal_hub.assets import load_asia, load_ecoli70
 from causal_hub.models import CatPhi, GaussPhi, MixedPhi
 
@@ -195,7 +196,7 @@ def test_gauss_phi_from_cpd() -> None:
     """Test creating a GaussPhi from a GaussCPD."""
     ecoli = load_ecoli70()
     cpds = ecoli.cpds()
-    cpd = list(cpds.values())[0]
+    cpd = next(iter(cpds.values()))
     phi = GaussPhi.from_cpd(cpd)
     assert set(phi.labels()) == set(cpd.labels()) | set(cpd.conditioning_labels())
     K = phi.precision_matrix()
@@ -209,7 +210,7 @@ def test_gauss_phi_from_cpd() -> None:
 def test_gauss_phi_normalize() -> None:
     """Test normalizing a GaussPhi."""
     ecoli = load_ecoli70()
-    cpd = list(ecoli.cpds().values())[0]
+    cpd = next(iter(ecoli.cpds().values()))
     phi = GaussPhi.from_cpd(cpd)
     norm = phi.normalize()
     np.testing.assert_allclose(norm.parameters_size(), phi.parameters_size())
@@ -218,7 +219,7 @@ def test_gauss_phi_normalize() -> None:
 def test_gauss_phi_condition() -> None:
     """Test conditioning a GaussPhi."""
     ecoli = load_ecoli70()
-    cpd = list(ecoli.cpds().values())[0]
+    cpd = next(iter(ecoli.cpds().values()))
     phi = GaussPhi.from_cpd(cpd)
     if len(phi.labels()) > 1:
         label = phi.labels()[0]
@@ -229,7 +230,7 @@ def test_gauss_phi_condition() -> None:
 def test_gauss_phi_marginalize() -> None:
     """Test marginalizing a GaussPhi."""
     ecoli = load_ecoli70()
-    cpd = list(ecoli.cpds().values())[0]
+    cpd = next(iter(ecoli.cpds().values()))
     phi = GaussPhi.from_cpd(cpd)
     if len(phi.labels()) > 1:
         label = phi.labels()[0]
@@ -265,7 +266,7 @@ def test_gauss_phi_inplace_ops() -> None:
 def test_gauss_phi_into_cpd() -> None:
     """Test converting a GaussPhi back to a GaussCPD."""
     ecoli = load_ecoli70()
-    cpd = list(ecoli.cpds().values())[0]
+    cpd = next(iter(ecoli.cpds().values()))
     phi = GaussPhi.from_cpd(cpd)
     cpd_labels = set(cpd.labels()) | set(cpd.conditioning_labels())
     if len(cpd_labels) > 1:
@@ -273,7 +274,7 @@ def test_gauss_phi_into_cpd() -> None:
         cpd_rt = phi.into_cpd(x=[labels[0]], z=labels[1:])
         assert cpd_rt.labels() == [labels[0]]
     else:
-        label = list(cpd_labels)[0]
+        label = next(iter(cpd_labels))
         cpd_rt = phi.into_cpd(x=[label], z=[])
         assert cpd_rt.labels() == [label]
 
@@ -286,7 +287,7 @@ def test_gauss_phi_first_cpds() -> None:
     for name, cpd in cpds.items():
         try:
             phi = GaussPhi.from_cpd(cpd)
-        except Exception:
+        except Error:
             continue
         assert name in phi.labels()
         K = phi.precision_matrix()
@@ -305,7 +306,7 @@ def test_gauss_phi_first_cpds() -> None:
 def test_gauss_phi_json_roundtrip() -> None:
     """Test GaussPhi JSON serialization round-trip."""
     ecoli = load_ecoli70()
-    cpd = list(ecoli.cpds().values())[0]
+    cpd = next(iter(ecoli.cpds().values()))
     phi = GaussPhi.from_cpd(cpd)
     json_str = phi.to_json_string()
     phi2 = GaussPhi.from_json_string(json_str)
@@ -336,7 +337,7 @@ def test_mixed_phi_from_cat_cpd() -> None:
 def test_mixed_phi_from_gauss_cpd() -> None:
     """Test creating a MixedPhi from a GaussCPD."""
     ecoli = load_ecoli70()
-    cpd = list(ecoli.cpds().values())[0]
+    cpd = next(iter(ecoli.cpds().values()))
     mixed = MixedPhi.from_gauss_cpd(cpd)
     assert mixed.is_gaussian()
     assert not mixed.is_categorical()
@@ -367,7 +368,7 @@ def test_mixed_phi_json_roundtrip_cat() -> None:
 def test_mixed_phi_json_roundtrip_gauss() -> None:
     """Test MixedPhi JSON round-trip for Gaussian."""
     ecoli = load_ecoli70()
-    cpd = list(ecoli.cpds().values())[0]
+    cpd = next(iter(ecoli.cpds().values()))
     mixed = MixedPhi.from_gauss_cpd(cpd)
     json_str = mixed.to_json_string()
     mixed2 = MixedPhi.from_json_string(json_str)

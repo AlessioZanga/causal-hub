@@ -131,7 +131,8 @@ def test_asia_read_to_json_file() -> None:
     asia = load_asia()
 
     # Get a named temp file for the JSON.
-    path = tempfile.NamedTemporaryFile().name
+    with tempfile.NamedTemporaryFile(suffix=".json") as tmp:
+        path = tmp.name
     # Write to a JSON file.
     asia.to_json_file(path)
     # Read from the JSON file.
@@ -292,7 +293,8 @@ def test_ecoli70_read_to_json_file() -> None:
     ecoli70 = load_ecoli70()
 
     # Get a named temp file for the JSON.
-    path = tempfile.NamedTemporaryFile().name
+    with tempfile.NamedTemporaryFile(suffix=".json") as tmp:
+        path = tmp.name
     # Write to a JSON file.
     ecoli70.to_json_file(path)
     # Read from the JSON file.
@@ -368,7 +370,8 @@ def test_eating_read_to_json_file() -> None:
     eating = load_eating()
 
     # Get a named temp file for the JSON.
-    path = tempfile.NamedTemporaryFile().name
+    with tempfile.NamedTemporaryFile(suffix=".json") as tmp:
+        path = tmp.name
     # Write to a JSON file.
     eating.to_json_file(path)
     # Read from the JSON file.
@@ -546,9 +549,7 @@ def test_ecoli70_fit_incomplete() -> None:
         ),
     ],
 )
-def test_inference_accuracy(  # noqa: PLR0913
-    loader, x, z, target, expected, tol
-) -> None:
+def test_inference_accuracy(loader, x, z, target, expected, tol) -> None:
     """Test inference accuracy against precomputed values."""
     # Load the model.
     bn = loader()

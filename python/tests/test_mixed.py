@@ -14,7 +14,7 @@ from causal_hub.models import (
 def test_mixed_cpd_from_catcpd() -> None:
     """Test creating a MixedCPD from a CatCPD."""
     asia = load_asia()
-    cpd = list(asia.cpds().values())[0]
+    cpd = next(iter(asia.cpds().values()))
     mixed = MixedCPD.from_catcpd(cpd)
     assert mixed.is_categorical()
     assert not mixed.is_gaussian()
@@ -32,7 +32,7 @@ def test_mixed_cpd_from_gausscpd() -> None:
         p=0.5,
         seed=42,
     )
-    cpd = list(ecoli70.cpds().values())[0]
+    cpd = next(iter(ecoli70.cpds().values()))
     mixed = MixedCPD.from_gausscpd(cpd)
     assert mixed.is_gaussian()
     assert not mixed.is_categorical()
@@ -43,7 +43,7 @@ def test_mixed_cpd_from_gausscpd() -> None:
 def test_mixed_cpd_eq() -> None:
     """Test MixedCPD equality."""
     asia = load_asia()
-    cpd = list(asia.cpds().values())[0]
+    cpd = next(iter(asia.cpds().values()))
     a = MixedCPD.from_catcpd(cpd)
     b = MixedCPD.from_catcpd(cpd)
     assert a == b
@@ -52,7 +52,7 @@ def test_mixed_cpd_eq() -> None:
 def test_mixed_cpd_labels() -> None:
     """Test MixedCPD labels."""
     asia = load_asia()
-    cpd = list(asia.cpds().values())[0]
+    cpd = next(iter(asia.cpds().values()))
     orig_labels = cpd.labels()
     mixed = MixedCPD.from_catcpd(cpd)
     assert mixed.labels() == orig_labels
@@ -61,7 +61,7 @@ def test_mixed_cpd_labels() -> None:
 def test_mixed_cpd_parameters_size() -> None:
     """Test MixedCPD parameters_size."""
     asia = load_asia()
-    cpd = list(asia.cpds().values())[0]
+    cpd = next(iter(asia.cpds().values()))
     mixed = MixedCPD.from_catcpd(cpd)
     assert mixed.parameters_size() == cpd.parameters_size()
 

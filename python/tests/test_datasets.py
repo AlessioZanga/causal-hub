@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import pytest
+from causal_hub import Error
 from causal_hub.datasets import (
     CatEv,
     CatIncTable,
@@ -622,7 +623,7 @@ def test_missing_mechanism_error() -> None:
     labels = ["X", "Y"]
     # Index 2 is out of bounds
     pr = {0: {2}}
-    with pytest.raises(Exception):
+    with pytest.raises(Error):
         MissingMechanism(labels, pr)
 
 
