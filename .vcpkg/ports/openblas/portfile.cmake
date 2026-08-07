@@ -70,6 +70,18 @@ if(NOT "${FC}" STREQUAL "")
     list(APPEND OPTIONS -DCMAKE_Fortran_COMPILER=${FC})
 endif()
 
+# On native MSVC builds, CMake's Visual Studio generator auto-detects LLVM
+# flang, which fails to compile LAPACK Fortran sources (missing iso_fortran_env).
+# Invoke vcpkg's Fortran toolchain to download MinGW gfortran via MSYS2 and
+# wire it as CMAKE_Fortran_COMPILER.  Note: this forces dynamic CRT/library
+# linkage for the Fortran-compiled components.
+if(MSVC AND NOT CMAKE_CROSSCOMPILING AND NOT DEFINED CMAKE_Fortran_COMPILER)
+    set(VCPKG_PROVIDED_FORTRAN ON)
+    include(vcpkg_find_fortran)
+    vcpkg_find_fortran(_FORTRAN_CMAKE)
+    list(APPEND OPTIONS ${_FORTRAN_CMAKE})
+endif()
+
 vcpkg_cmake_configure(
     SOURCE_PATH "${SOURCE_PATH}"
     OPTIONS

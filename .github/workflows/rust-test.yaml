@@ -81,14 +81,6 @@ jobs:
       - name: Build OpenBLAS
         run: |
           vcpkg integrate install
-          vcpkg install vcpkg-gfortran:${{ matrix.platform.target }}-windows
-          $gfortran = Get-ChildItem -Path "C:\vcpkg\installed" -Filter "gfortran.exe" -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
-          if ($gfortran) {
-            $env:FC = $gfortran.FullName
-            Write-Host "FC=$($gfortran.FullName)"
-          } else {
-            Write-Host "Warning: gfortran.exe not found in vcpkg installed directory"
-          }
           vcpkg install openblas --overlay-ports=.vcpkg/ports
       - name: Build
         run: cargo build --no-default-features --features=openblas-system
