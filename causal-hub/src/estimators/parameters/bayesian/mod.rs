@@ -1,3 +1,5 @@
+//! Bayesian (categorical / gaussian / mixed) parameter estimators.
+
 mod table;
 mod trajectory;
 

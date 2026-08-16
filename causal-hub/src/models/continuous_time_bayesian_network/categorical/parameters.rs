@@ -267,7 +267,7 @@ impl<'de> Deserialize<'de> for CatCIMS {
                     fitted_conditional_times,
                     fitted_size,
                 )
-                .map_err(|e| E::custom(e.to_string()))
+                .map_err(|evidence| E::custom(evidence.to_string()))
             }
         }
 
@@ -546,9 +546,9 @@ impl CatCIM {
         let conditioning_multi_index = MI::new(conditioning_shape.clone());
 
         // Get the shape of the parameters.
-        let s = parameters.shape();
+        let stats = parameters.shape();
         // Compute the parameters size.
-        let parameters_size = s[0] * s[1] * s[2].saturating_sub(1);
+        let parameters_size = stats[0] * stats[1] * stats[2].saturating_sub(1);
 
         Ok(Self {
             labels,
@@ -687,13 +687,13 @@ impl CatCIM {
         }
 
         // Construct the CIM.
-        let mut cim = Self::new(support, conditioning_support, parameters)?;
+        let mut intensity = Self::new(support, conditioning_support, parameters)?;
 
         // Set the fitted statistics and log-likelihood.
-        cim.fitted_statistics = fitted_statistics;
-        cim.fitted_log_likelihood = fitted_log_likelihood;
+        intensity.fitted_statistics = fitted_statistics;
+        intensity.fitted_log_likelihood = fitted_log_likelihood;
 
-        Ok(cim)
+        Ok(intensity)
     }
 }
 
@@ -964,7 +964,7 @@ impl<'de> Deserialize<'de> for CatCIM {
                     fitted_statistics,
                     fitted_log_likelihood,
                 )
-                .map_err(|e| E::custom(e.to_string()))
+                .map_err(|evidence| E::custom(evidence.to_string()))
             }
         }
 

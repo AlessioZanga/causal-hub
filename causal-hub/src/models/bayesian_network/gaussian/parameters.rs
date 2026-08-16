@@ -31,7 +31,7 @@ pub struct GaussCPDP {
     /// Intercept vector |X|.
     b: Array1<f64>,
     /// Covariance matrix |X| x |X|.
-    s: Array2<f64>,
+    stats: Array2<f64>,
 }
 
 impl GaussCPDP {
@@ -47,7 +47,7 @@ impl GaussCPDP {
     ///
     /// A new `GaussCPDP` instance.
     ///
-    pub fn new(a: Array2<f64>, b: Array1<f64>, s: Array2<f64>) -> Result<Self> {
+    pub fn new(a: Array2<f64>, b: Array1<f64>, stats: Array2<f64>) -> Result<Self> {
         // Check the dimensions are correct.
         if a.nrows() != b.len() {
             return Err(Error::IncompatibleShape(
@@ -55,13 +55,13 @@ impl GaussCPDP {
                 &b.len().to_string(),
             ));
         }
-        if a.nrows() != s.nrows() {
+        if a.nrows() != stats.nrows() {
             return Err(Error::IncompatibleShape(
                 &a.nrows().to_string(),
-                &s.nrows().to_string(),
+                &stats.nrows().to_string(),
             ));
         }
-        if !s.is_square() {
+        if !stats.is_square() {
             return Err(Error::Shape("Covariance matrix must be square."));
         }
         // Check values are finite.
@@ -71,14 +71,14 @@ impl GaussCPDP {
         if !b.iter().all(|&x| x.is_finite()) {
             return Err(Error::Linalg("Intercept vector must have finite values."));
         }
-        if !s.iter().all(|&x| x.is_finite()) {
+        if !stats.iter().all(|&x| x.is_finite()) {
             return Err(Error::Linalg("Covariance matrix must have finite values."));
         }
-        if !s.abs_diff_eq(&s.t(), EPSILON) {
+        if !stats.abs_diff_eq(&stats.t(), EPSILON) {
             return Err(Error::Linalg("Covariance matrix must be symmetric."));
         }
 
-        Ok(Self { a, b, s })
+        Ok(Self { a, b, stats })
     }
 
     /// Returns the coefficient matrix |X| x |Z|.
@@ -111,13 +111,13 @@ impl GaussCPDP {
     ///
     #[inline]
     pub const fn covariance(&self) -> &Array2<f64> {
-        &self.s
+        &self.stats
     }
 }
 
 impl PartialEq for GaussCPDP {
     fn eq(&self, other: &Self) -> bool {
-        self.a.eq(&other.a) && self.b.eq(&other.b) && self.s.eq(&other.s)
+        self.a.eq(&other.a) && self.b.eq(&other.b) && self.stats.eq(&other.stats)
     }
 }
 
@@ -131,7 +131,7 @@ impl AbsDiffEq for GaussCPDP {
     fn abs_diff_eq(&self, other: &Self, epsilon: Self::Epsilon) -> bool {
         self.a.abs_diff_eq(&other.a, epsilon)
             && self.b.abs_diff_eq(&other.b, epsilon)
-            && self.s.abs_diff_eq(&other.s, epsilon)
+            && self.stats.abs_diff_eq(&other.stats, epsilon)
     }
 }
 
@@ -148,7 +148,7 @@ impl RelativeEq for GaussCPDP {
     ) -> bool {
         self.a.relative_eq(&other.a, epsilon, max_relative)
             && self.b.relative_eq(&other.b, epsilon, max_relative)
-            && self.s.relative_eq(&other.s, epsilon, max_relative)
+            && self.stats.relative_eq(&other.stats, epsilon, max_relative)
     }
 }
 
@@ -171,7 +171,7 @@ impl Serialize for GaussCPDP {
         map.serialize_entry("intercept", &intercept)?;
 
         // Convert the covariance matrix to a flat format.
-        let covariance: Vec<_> = self.s.rows().into_iter().map(|x| x.to_vec()).collect();
+        let covariance: Vec<_> = self.stats.rows().into_iter().map(|x| x.to_vec()).collect();
         // Serialize covariance.
         map.serialize_entry("covariance", &covariance)?;
 
@@ -336,15 +336,15 @@ impl GaussCPD {
                 &labels.len().to_string(),
             ));
         }
-        if parameters.s.nrows() != labels.len() {
+        if parameters.stats.nrows() != labels.len() {
             return Err(Error::IncompatibleShape(
-                &parameters.s.nrows().to_string(),
+                &parameters.stats.nrows().to_string(),
                 &labels.len().to_string(),
             ));
         }
-        if parameters.s.ncols() != labels.len() {
+        if parameters.stats.ncols() != labels.len() {
             return Err(Error::IncompatibleShape(
-                &parameters.s.ncols().to_string(),
+                &parameters.stats.ncols().to_string(),
                 &labels.len().to_string(),
             ));
         }
@@ -360,7 +360,7 @@ impl GaussCPD {
             // Reorder the parameters.
             let mut new_a = parameters.a.clone();
             let mut new_b = parameters.b.clone();
-            let mut new_s = parameters.s.clone();
+            let mut new_s = parameters.stats.clone();
             // Reorder rows of A.
             indices.iter().enumerate().for_each(|(i, &j)| {
                 new_a.row_mut(i).assign(&parameters.a.row(j));
@@ -371,7 +371,7 @@ impl GaussCPD {
             });
             // Reorder rows of S.
             indices.iter().enumerate().for_each(|(i, &j)| {
-                new_s.row_mut(i).assign(&parameters.s.row(j));
+                new_s.row_mut(i).assign(&parameters.stats.row(j));
             });
             // Allocate a temporary copy of S to reorder columns.
             let _s = new_s.clone();
@@ -382,7 +382,7 @@ impl GaussCPD {
             // Update parameters.
             parameters.a = new_a;
             parameters.b = new_b;
-            parameters.s = new_s;
+            parameters.stats = new_s;
         }
 
         // Check if conditioning labels are sorted.
@@ -445,17 +445,17 @@ impl GaussCPD {
         let not_x = (0..labels_x.len()).filter(|i| !x.contains(i)).collect();
         let not_z = (0..labels_z.len()).filter(|i| !z.contains(i)).collect();
         // Convert to potential.
-        let phi = self.clone().into_phi()?;
+        let potential = self.clone().into_phi()?;
         // Map CPD indices to potential indices.
-        let x = phi.indices_from(x, labels_x)?;
-        let z = phi.indices_from(z, labels_z)?;
+        let x = potential.indices_from(x, labels_x)?;
+        let z = potential.indices_from(z, labels_z)?;
         // Marginalize the potential.
-        let phi = phi.marginalize(&(&x | &z))?;
+        let potential = potential.marginalize(&(&x | &z))?;
         // Map CPD indices to potential indices.
-        let not_x = phi.indices_from(&not_x, labels_x)?;
-        let not_z = phi.indices_from(&not_z, labels_z)?;
+        let not_x = potential.indices_from(&not_x, labels_x)?;
+        let not_z = potential.indices_from(&not_z, labels_z)?;
         // Convert back to CPD.
-        phi.into_cpd(&not_x, &not_z)
+        potential.into_cpd(&not_x, &not_z)
     }
 
     /// Creates a new Gaussian CPD instance.
@@ -546,21 +546,21 @@ impl GaussCPD {
         }
 
         // Create the CPD.
-        let mut cpd = Self::new(labels, conditioning_labels, parameters)?;
+        let mut distribution = Self::new(labels, conditioning_labels, parameters)?;
 
         // Override support and conditioning support, if provided.
         if let Some(support) = support {
-            cpd.support = support;
+            distribution.support = support;
         }
         if let Some(conditioning_support) = conditioning_support {
-            cpd.conditioning_support = conditioning_support;
+            distribution.conditioning_support = conditioning_support;
         }
 
         // Set the optional fields.
-        cpd.fitted_statistics = fitted_statistics;
-        cpd.fitted_log_likelihood = fitted_log_likelihood;
+        distribution.fitted_statistics = fitted_statistics;
+        distribution.fitted_log_likelihood = fitted_log_likelihood;
 
-        Ok(cpd)
+        Ok(distribution)
     }
 
     /// Converts a potential \phi(X \cup Z) to a CPD P(X | Z).
@@ -576,8 +576,8 @@ impl GaussCPD {
     /// The corresponding CPD.
     ///
     #[inline]
-    pub fn from_phi(phi: GaussPhi, x: &Set<usize>, z: &Set<usize>) -> Result<Self> {
-        phi.into_cpd(x, z)
+    pub fn from_phi(potential: GaussPhi, x: &Set<usize>, z: &Set<usize>) -> Result<Self> {
+        potential.into_cpd(x, z)
     }
 
     /// Converts a CPD P(X | Z) to a potential \phi(X \cup Z).
@@ -666,13 +666,13 @@ impl CPD for GaussCPD {
 
     #[inline]
     fn parameters_size(&self) -> usize {
-        let s = {
+        let stats = {
             // Covariance matrix is symmetric.
-            let s = self.parameters.s.nrows();
-            s * (s + 1) / 2
+            let stats = self.parameters.stats.nrows();
+            stats * (stats + 1) / 2
         };
 
-        self.parameters.a.len() + self.parameters.b.len() + s
+        self.parameters.a.len() + self.parameters.b.len() + stats
     }
 
     #[inline]
@@ -689,7 +689,7 @@ impl CPD for GaussCPD {
         // Get number of variables.
         let n = self.labels.len();
         // Get number of conditioning variables.
-        let m = self.conditioning_labels.len();
+        let model = self.conditioning_labels.len();
 
         // Check X matches number of variables.
         if x.len() != n {
@@ -699,15 +699,15 @@ impl CPD for GaussCPD {
             ));
         }
         // Check Z matches number of conditioning variables.
-        if z.len() != m {
+        if z.len() != model {
             return Err(Error::IncompatibleShape(
-                &m.to_string(),
+                &model.to_string(),
                 &z.len().to_string(),
             ));
         }
 
         // Get parameters.
-        let (a, b, s) = (
+        let (a, b, stats) = (
             self.parameters.coefficients(),
             self.parameters.intercept(),
             self.parameters.covariance(),
@@ -721,7 +721,7 @@ impl CPD for GaussCPD {
         // One variable ...
         if n == 1 {
             // Compute the mean.
-            let mu = match m {
+            let mu = match model {
                 // ... no conditioning variables.
                 0 => b[0], // Get the mean.
                 // ... one conditioning variable.
@@ -732,7 +732,7 @@ impl CPD for GaussCPD {
             // Compute deviation from mean.
             let x_mu = x[0] - mu;
             // Get the (regularized) variance.
-            let k = s[[0, 0]] + EPSILON;
+            let k = stats[[0, 0]] + EPSILON;
             // Compute log probability density function.
             let ln_pf = -0.5 * (LN_2_PI + f64::ln(k) + f64::powi(x_mu, 2) / k);
             // Return probability density function.
@@ -746,12 +746,12 @@ impl CPD for GaussCPD {
         // Compute deviation from mean.
         let x_mu = x - mu;
         // Compute precision matrix.
-        let k = s.pinv()?;
+        let k = stats.pinv()?;
         // Compute log probability density function.
-        let n_ln_2_pi = s.nrows() as f64 * LN_2_PI;
-        let (_, ln_det) = s
-            .sln_det()
-            .map_err(|e| Error::Linalg(&format!("Failed to compute log-determinant: {}", e)))?;
+        let n_ln_2_pi = stats.nrows() as f64 * LN_2_PI;
+        let (_, ln_det) = stats.sln_det().map_err(|evidence| {
+            Error::Linalg(&format!("Failed to compute log-determinant: {}", evidence))
+        })?;
         let ln_pf = -0.5 * (n_ln_2_pi + ln_det + x_mu.dot(&k).dot(&x_mu));
         // Return probability density function.
         Ok(f64::exp(ln_pf))
@@ -761,18 +761,18 @@ impl CPD for GaussCPD {
         // Get number of variables.
         let n = self.labels.len();
         // Get number of conditioning variables.
-        let m = self.conditioning_labels.len();
+        let model = self.conditioning_labels.len();
 
         // Check Z matches number of conditioning variables.
-        if z.len() != m {
+        if z.len() != model {
             return Err(Error::IncompatibleShape(
-                &m.to_string(),
+                &model.to_string(),
                 &z.len().to_string(),
             ));
         }
 
         // Get parameters.
-        let (a, b, s) = (
+        let (a, b, stats) = (
             self.parameters.coefficients(),
             self.parameters.intercept(),
             self.parameters.covariance(),
@@ -786,7 +786,7 @@ impl CPD for GaussCPD {
         // One variable ...
         if n == 1 {
             // Compute the mean.
-            let mu = match m {
+            let mu = match model {
                 // ... no conditioning variables.
                 0 => b[0], // Get the mean.
                 // ... one conditioning variable.
@@ -795,11 +795,11 @@ impl CPD for GaussCPD {
                 _ => (a.dot(z) + b)[0], // Compute mean vector.
             };
             // Sample from standard normal.
-            let e: f64 = StandardNormal.sample(rng);
+            let evidence: f64 = StandardNormal.sample(rng);
             // Get the (regularized) variance.
-            let k = s[[0, 0]] + EPSILON;
+            let k = stats[[0, 0]] + EPSILON;
             // Compute the sample.
-            let x = f64::mul_add(k.sqrt(), e, mu);
+            let x = f64::mul_add(k.sqrt(), evidence, mu);
             // Return the sample.
             return Ok(array![x]);
         }
@@ -809,15 +809,18 @@ impl CPD for GaussCPD {
         // Compute the mean.
         let mu = a.dot(z) + b;
         // Compute the Cholesky decomposition of the covariance matrix.
-        let l = (s + EPSILON * Array::eye(s.nrows()))
+        let l = (stats + EPSILON * Array::eye(stats.nrows()))
             .cholesky_into(UPLO::Lower)
-            .map_err(|e| {
-                Error::Linalg(&format!("Failed to compute Cholesky decomposition: {}", e))
+            .map_err(|evidence| {
+                Error::Linalg(&format!(
+                    "Failed to compute Cholesky decomposition: {}",
+                    evidence
+                ))
             })?;
         // Sample from standard normal.
-        let e = Array1::from_shape_fn(s.nrows(), |_| rng.sample(StandardNormal));
+        let evidence = Array1::from_shape_fn(stats.nrows(), |_| rng.sample(StandardNormal));
         // Compute the sample.
-        Ok(l.dot(&e) + mu)
+        Ok(l.dot(&evidence) + mu)
     }
 }
 

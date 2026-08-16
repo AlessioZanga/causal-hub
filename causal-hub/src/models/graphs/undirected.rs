@@ -110,13 +110,13 @@ impl Graph for UnGraph {
         V: AsRef<str>,
     {
         // Construct the empty graph.
-        let mut g = Self::empty(labels)?;
+        let mut graph = Self::empty(labels)?;
         // Fill the adjacency matrix with `true` values.
-        g.adjacency_matrix.fill(true);
+        graph.adjacency_matrix.fill(true);
         // Remove the self-loops.
-        g.adjacency_matrix.diag_mut().fill(false);
+        graph.adjacency_matrix.diag_mut().fill(false);
 
-        Ok(g)
+        Ok(graph)
     }
 
     fn vertices(&self) -> Set<usize> {
@@ -392,7 +392,7 @@ impl<'de> Deserialize<'de> for UnGraph {
                 })?;
 
                 UnGraph::from_adjacency_matrix(labels, adjacency_matrix)
-                    .map_err(|e| E::custom(e.to_string()))
+                    .map_err(|evidence| E::custom(evidence.to_string()))
             }
         }
 

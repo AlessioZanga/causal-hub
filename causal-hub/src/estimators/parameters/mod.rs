@@ -1,3 +1,5 @@
+//! Parameter estimation: maximum-likelihood, Bayesian, sufficient-statistics, EM, and RAWE estimators.
+
 mod bayesian;
 pub use bayesian::*;
 

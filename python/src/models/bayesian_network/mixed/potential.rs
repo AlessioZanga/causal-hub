@@ -48,7 +48,7 @@ impl PyMixedPhi {
     /// Returns the inner CatPhi if the potential is categorical.
     pub fn as_catphi(&self) -> PyResult<Option<PyCatPhi>> {
         match &*self.lock() {
-            MixedPhi::Categorical(phi) => Ok(Some(phi.clone().into())),
+            MixedPhi::Categorical(potential) => Ok(Some(potential.clone().into())),
             _ => Ok(None),
         }
     }
@@ -56,7 +56,7 @@ impl PyMixedPhi {
     /// Returns the inner GaussPhi if the potential is Gaussian.
     pub fn as_gaussphi(&self) -> PyResult<Option<PyGaussPhi>> {
         match &*self.lock() {
-            MixedPhi::Gaussian(phi) => Ok(Some(phi.clone().into())),
+            MixedPhi::Gaussian(potential) => Ok(Some(potential.clone().into())),
             _ => Ok(None),
         }
     }
@@ -75,18 +75,20 @@ impl PyMixedPhi {
     pub fn condition(&self, evidence: &Bound<'_, PyAny>) -> PyResult<Self> {
         let lock = self.lock();
         match &*lock {
-            MixedPhi::Categorical(phi) => {
-                let support = phi.support().clone();
+            MixedPhi::Categorical(potential) => {
+                let support = potential.support().clone();
                 let ev: CatEv = PyCatEv::from_any(evidence, &support)?.into();
-                phi.condition(&ev)
+                potential
+                    .condition(&ev)
                     .map(MixedPhi::Categorical)
                     .map(Into::into)
                     .map_err(to_pyerr)
             }
-            MixedPhi::Gaussian(phi) => {
-                let labels = phi.labels().clone();
+            MixedPhi::Gaussian(potential) => {
+                let labels = potential.labels().clone();
                 let ev: GaussEv = PyGaussEv::from_any(evidence, &labels)?.into();
-                phi.condition(&ev)
+                potential
+                    .condition(&ev)
                     .map(MixedPhi::Gaussian)
                     .map(Into::into)
                     .map_err(to_pyerr)
@@ -139,7 +141,9 @@ impl PyMixedPhi {
         let z = indices_from!(z, &*lock)?;
         let inner = lock.clone();
         match inner {
-            MixedPhi::Categorical(phi) => phi.into_cpd(&x, &z).map(Into::into).map_err(to_pyerr),
+            MixedPhi::Categorical(potential) => {
+                potential.into_cpd(&x, &z).map(Into::into).map_err(to_pyerr)
+            }
             _ => Err(to_pyerr(Error::InvalidParameter(
                 "MixedPhi",
                 "potential is not categorical",
@@ -158,7 +162,9 @@ impl PyMixedPhi {
         let z = indices_from!(z, &*lock)?;
         let inner = lock.clone();
         match inner {
-            MixedPhi::Gaussian(phi) => phi.into_cpd(&x, &z).map(Into::into).map_err(to_pyerr),
+            MixedPhi::Gaussian(potential) => {
+                potential.into_cpd(&x, &z).map(Into::into).map_err(to_pyerr)
+            }
             _ => Err(to_pyerr(Error::InvalidParameter(
                 "MixedPhi",
                 "potential is not Gaussian",

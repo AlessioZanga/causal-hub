@@ -260,11 +260,11 @@ impl MissingTable {
         // Compute missing correlation.
         let missing_correlation = missing_mask_numeric
             .pearson_correlation()
-            .map_err(|e| Error::Stats(&e.to_string()))?;
+            .map_err(|evidence| Error::Stats(&evidence.to_string()))?;
         // Compute missing covariance.
         let missing_covariance = missing_mask_numeric
             .cov(1.)
-            .map_err(|e| Error::Stats(&e.to_string()))?;
+            .map_err(|evidence| Error::Stats(&evidence.to_string()))?;
 
         Ok(Self {
             labels,
@@ -491,14 +491,14 @@ pub trait IncDataset: Dataset + Sized {
     ///
     fn apply_missing_method(
         &self,
-        m: &MissingMethod,
+        model: &MissingMethod,
         x: Option<&Set<usize>>,
         pr: Option<&MissingMechanism>,
     ) -> Result<Either<Self::Complete, Self::Weighted>> {
         // Get short alias for missing method.
         use MissingMethod as MM;
         // Apply the missing method with the provided arguments.
-        match (m, x, pr) {
+        match (model, x, pr) {
             (MM::LW, _, _) => self.lw_deletion().map(Either::Left),
             (MM::PW, Some(x), _) => self.pw_deletion(x).map(Either::Left),
             (MM::IPW, Some(x), Some(pr)) => self.ipw_deletion(x, pr).map(Either::Right),
@@ -507,7 +507,7 @@ pub trait IncDataset: Dataset + Sized {
                 "missing_method",
                 &format!(
                     "Invalid arguments for applying missing method:\n\
-                    \t missing method:      '{m:?}' , \n\
+                    \t missing method:      '{model:?}' , \n\
                     \t selected variables:  '{x:?}' , \n\
                     \t missing mechanism:   '{pr:?}' .",
                 ),

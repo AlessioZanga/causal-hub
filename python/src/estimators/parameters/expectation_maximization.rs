@@ -54,12 +54,12 @@ pub fn em<'a>(
     let output = py
         .detach(|| -> Result<_> {
             // Initialize the random number generator.
-            let mut rng = Xoshiro256PlusPlus::seed_from_u64(seed);
+            let rng = Xoshiro256PlusPlus::seed_from_u64(seed);
 
             // Log the raw estimator initialization.
             debug!("Initializing the raw estimator for the initial guess ...");
             // Initialize a raw estimator for an initial guess.
-            let raw = RAWE::<'_, _, CatTrjsEv, CatTrjs>::par_new(&mut rng, evidence);
+            let raw = RAWE::<CatTrjs>::par_new(evidence);
             // Log the initial model fitting.
             debug!("Fitting the initial model using the raw estimator ...");
             // Set the initial model.

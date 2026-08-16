@@ -1,3 +1,5 @@
+//! Maximum-likelihood parameter estimators.
+
 mod table;
 mod trajectory;
 

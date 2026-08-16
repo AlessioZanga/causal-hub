@@ -182,18 +182,18 @@ mod tests {
                 let model = load_child()?;
 
                 // Get CPD.
-                let cpd = model
+                let distribution = model
                     .cpds()
                     .get("HypDistrib")
                     .ok_or_else(|| Error::MissingData("HypDistrib"))?;
 
                 // Check shape.
-                assert_eq!(cpd.shape(), array![2]);
-                assert_eq!(cpd.conditioning_shape(), array![4, 3]);
+                assert_eq!(distribution.shape(), array![2]);
+                assert_eq!(distribution.conditioning_shape(), array![4, 3]);
 
                 // Check probability values with "." in it.
                 assert_eq!(
-                    cpd.to_string(),
+                    distribution.to_string(),
                     concat!(
                         "-----------------------------------------------------------------\n",
                         "|               |               | HypDistrib    |               |\n",

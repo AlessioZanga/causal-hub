@@ -137,7 +137,10 @@ mod tests {
     #[test]
     fn new_too_many_states() -> Result<()> {
         let too_many_states: Vec<_> = (0..256).map(|i| i.to_owned()).collect();
-        let too_many_states: Set<_> = too_many_states.iter().map(|s| s.to_string()).collect();
+        let too_many_states: Set<_> = too_many_states
+            .iter()
+            .map(|stats| stats.to_string())
+            .collect();
         let mut support = support![("B", ["no", "yes"]), ("C", ["yes", "no"]),];
         support.insert("A".to_owned(), too_many_states);
 

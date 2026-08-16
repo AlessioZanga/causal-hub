@@ -68,7 +68,7 @@ where
 
     fn random(&mut self) -> Self::Output {
         // Get the inner state sizes.
-        let m = self.support.values().map(|v| v.len()).product();
+        let model = self.support.values().map(|v| v.len()).product();
         let n = self
             .conditioning_support
             .values()
@@ -77,10 +77,10 @@ where
 
         // Create the Gamma distribution.
         let gamma = Gamma::new(self.alpha, 1.0)
-            .map_err(|e| Error::InvalidParameter("alpha", &e.to_string()))?;
+            .map_err(|evidence| Error::InvalidParameter("alpha", &evidence.to_string()))?;
 
         // Sample the parameters.
-        let mut parameters = Array::from_shape_fn((n, m), |_| self.rng.sample(gamma));
+        let mut parameters = Array::from_shape_fn((n, model), |_| self.rng.sample(gamma));
         // Normalize the parameters row-wise.
         parameters /= &parameters.sum_axis(Axis(1)).insert_axis(Axis(1));
 

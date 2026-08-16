@@ -413,7 +413,7 @@ pub trait Phi:
     ///
     /// A new potential instance.
     ///
-    fn condition(&self, e: &Self::Evidence) -> Result<Self>;
+    fn condition(&self, evidence: &Self::Evidence) -> Result<Self>;
 
     /// Marginalizes the potential over a set of variables.
     ///
@@ -445,7 +445,7 @@ pub trait Phi:
     ///
     /// The corresponding potential.
     ///
-    fn from_cpd(cpd: Self::CPD) -> Result<Self>;
+    fn from_cpd(distribution: Self::CPD) -> Result<Self>;
 
     /// Converts a potential \phi(X \cup Z) to a CPD P(X | Z).
     ///

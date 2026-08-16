@@ -24,10 +24,10 @@ mod tests {
         let labels = labels!["A", "B", "C"];
         let mut rng_graph = RngDiGraph::new(&mut rng, &labels, 0.5)?;
 
-        let g = rng_graph.random()?;
+        let graph = rng_graph.random()?;
 
-        assert_eq!(g.vertices().len(), 3);
-        assert_eq!(g.labels(), &labels);
+        assert_eq!(graph.vertices().len(), 3);
+        assert_eq!(graph.labels(), &labels);
 
         Ok(())
     }
@@ -58,11 +58,11 @@ mod tests {
             let labels = labels!["A", "B", "C"];
             let mut rng_graph = RngDag::new(&mut rng, &labels, 0.5)?;
 
-            let g = rng_graph.random()?;
+            let graph = rng_graph.random()?;
 
-            assert_eq!(g.vertices().len(), 3);
-            assert_eq!(g.labels(), &labels);
-            assert!(g.topological_order().is_some());
+            assert_eq!(graph.vertices().len(), 3);
+            assert_eq!(graph.labels(), &labels);
+            assert!(graph.topological_order().is_some());
 
             Ok(())
         }

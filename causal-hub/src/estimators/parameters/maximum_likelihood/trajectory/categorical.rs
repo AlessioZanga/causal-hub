@@ -52,12 +52,11 @@ impl MLE<'_, CatTrj> {
                 // Clone the parameters.
                 let mut q_z = Array::zeros(n_z.dim());
                 // Get the diagonals.
-                parameters
-                    .outer_iter()
-                    .zip(q_z.outer_iter_mut())
-                    .for_each(|(p, mut q)| {
-                        q.assign(&(-&p.diag()));
-                    });
+                parameters.outer_iter().zip(q_z.outer_iter_mut()).for_each(
+                    |(probability, mut q)| {
+                        q.assign(&(-&probability.diag()));
+                    },
+                );
                 // Compute the sample log-likelihood.
                 (&n_z * (&q_z + eps).ln()).sum() + (-&q_z * &t_z).sum()
             };
@@ -66,9 +65,9 @@ impl MLE<'_, CatTrj> {
                 // Clone the parameters.
                 let mut p_xz = parameters.clone();
                 // Set diagonal to zero.
-                p_xz.outer_iter_mut().for_each(|mut p| {
+                p_xz.outer_iter_mut().for_each(|mut probability| {
                     // Fill the diagonal with zeros.
-                    p.diag_mut().fill(0.);
+                    probability.diag_mut().fill(0.);
                 });
                 // Normalize the parameters, align the dimensions.
                 p_xz /= &p_xz.sum_axis(Axis(2)).insert_axis(Axis(2));

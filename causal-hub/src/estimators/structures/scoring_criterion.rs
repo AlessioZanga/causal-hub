@@ -63,12 +63,15 @@ macro_rules! impl_scoring_struct {
     };
 }
 
-impl_scoring_struct!(LL, "The Log Likelihood (LL).");
-impl_scoring_struct!(AIC, "The Akaike Information Criterion (AIC).");
-impl_scoring_struct!(AICC, "The Akaike Information Criterion Corrected (AICc).");
-impl_scoring_struct!(BIC, "The Bayesian Information Criterion (BIC).");
-impl_scoring_struct!(BICC, "The Bayesian Information Criterion Corrected (BICc).");
-impl_scoring_struct!(HQC, "The Hannan-Quinn Criterion (HQC).");
+impl_scoring_struct!(LL, "The Log Likelihood (`LL`).");
+impl_scoring_struct!(AIC, "The Akaike Information Criterion (`AIC`).");
+impl_scoring_struct!(AICC, "The Akaike Information Criterion Corrected (`AICc`).");
+impl_scoring_struct!(BIC, "The Bayesian Information Criterion (`BIC`).");
+impl_scoring_struct!(
+    BICC,
+    "The Bayesian Information Criterion Corrected (`BICc`)."
+);
+impl_scoring_struct!(HQC, "The Hannan-Quinn Criterion (`HQC`).");
 
 macro_for!($type in [CatCPD, GaussCPD, CatCIM] {
 
@@ -81,12 +84,12 @@ macro_for!($type in [CatCPD, GaussCPD, CatCIM] {
             // Compute the intensity matrices for the sets.
             let p_xz = self.estimator.fit(x, z)?;
             // Get the log-likelihood.
-            let ll = p_xz
+            let log_likelihood = p_xz
                 .fitted_log_likelihood()
                 .ok_or_else(|| Error::MissingLogLikelihood())?;
 
             // Compute the score.
-            Ok(ll)
+            Ok(log_likelihood)
         }
     }
 
@@ -99,14 +102,14 @@ macro_for!($type in [CatCPD, GaussCPD, CatCIM] {
             // Compute the intensity matrices for the sets.
             let p_xz = self.estimator.fit(x, z)?;
             // Get the log-likelihood.
-            let ll = p_xz
+            let log_likelihood = p_xz
                 .fitted_log_likelihood()
                 .ok_or_else(|| Error::MissingLogLikelihood())?;
             // Get the number of parameters.
             let k = p_xz.parameters_size() as f64;
 
             // Compute the score.
-            Ok(ll - k)
+            Ok(log_likelihood - k)
         }
     }
 
@@ -124,7 +127,7 @@ macro_for!($type in [CatCPD, GaussCPD, CatCIM] {
                 .ok_or_else(|| Error::MissingSufficientStatistics())?
                 .fitted_size();
             // Get the log-likelihood.
-            let ll = p_xz
+            let log_likelihood = p_xz
                 .fitted_log_likelihood()
                 .ok_or_else(|| Error::MissingLogLikelihood())?;
             // Get the number of parameters.
@@ -134,7 +137,7 @@ macro_for!($type in [CatCPD, GaussCPD, CatCIM] {
             let c = n / (f64::max(n - k - 2., 1.));
 
             // Compute the score.
-            Ok(ll - k * c)
+            Ok(log_likelihood - k * c)
         }
     }
 
@@ -152,14 +155,14 @@ macro_for!($type in [CatCPD, GaussCPD, CatCIM] {
                 .ok_or_else(|| Error::MissingSufficientStatistics())?
                 .fitted_size();
             // Get the log-likelihood.
-            let ll = p_xz
+            let log_likelihood = p_xz
                 .fitted_log_likelihood()
                 .ok_or_else(|| Error::MissingLogLikelihood())?;
             // Get the number of parameters.
             let k = p_xz.parameters_size() as f64;
 
             // Compute the score.
-            Ok(ll - 0.5 * k * f64::ln(n))
+            Ok(log_likelihood - 0.5 * k * f64::ln(n))
         }
     }
 
@@ -177,7 +180,7 @@ macro_for!($type in [CatCPD, GaussCPD, CatCIM] {
                 .ok_or_else(|| Error::MissingSufficientStatistics())?
                 .fitted_size();
             // Get the log-likelihood.
-            let ll = p_xz
+            let log_likelihood = p_xz
                 .fitted_log_likelihood()
                 .ok_or_else(|| Error::MissingLogLikelihood())?;
             // Get the number of parameters.
@@ -187,7 +190,7 @@ macro_for!($type in [CatCPD, GaussCPD, CatCIM] {
             let c = n / (f64::max(n - k - 2., 1.));
 
             // Compute the score.
-            Ok(ll - 0.5 * k * c * f64::ln(n))
+            Ok(log_likelihood - 0.5 * k * c * f64::ln(n))
         }
     }
 
@@ -205,14 +208,14 @@ macro_for!($type in [CatCPD, GaussCPD, CatCIM] {
                 .ok_or_else(|| Error::MissingSufficientStatistics())?
                 .fitted_size();
             // Get the log-likelihood.
-            let ll = p_xz
+            let log_likelihood = p_xz
                 .fitted_log_likelihood()
                 .ok_or_else(|| Error::MissingLogLikelihood())?;
             // Get the number of parameters.
             let k = p_xz.parameters_size() as f64;
 
             // Compute the score.
-            Ok(ll - 0.5 * k * f64::ln(f64::ln(n)))
+            Ok(log_likelihood - 0.5 * k * f64::ln(f64::ln(n)))
         }
     }
 

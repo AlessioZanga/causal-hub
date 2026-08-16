@@ -29,7 +29,7 @@ pub struct GaussPhiK {
     /// Information vector |X|.
     h: Array1<f64>,
     /// Log-normalization constant.
-    g: f64,
+    graph: f64,
 }
 
 impl GaussPhiK {
@@ -51,7 +51,7 @@ impl GaussPhiK {
     ///
     /// A new Gaussian potential instance.
     ///
-    pub fn new(k: Array2<f64>, h: Array1<f64>, g: f64) -> Result<Self> {
+    pub fn new(k: Array2<f64>, h: Array1<f64>, graph: f64) -> Result<Self> {
         // Check K is square.
         if !k.is_square() {
             return Err(Error::Shape("Precision matrix must be square."));
@@ -76,18 +76,18 @@ impl GaussPhiK {
             return Err(Error::Linalg("Information vector must be finite."));
         }
         // Check g is finite.
-        if !g.is_finite() {
+        if !graph.is_finite() {
             return Err(Error::Linalg("Log-normalization constant must be finite."));
         }
 
-        Ok(Self { k, h, g })
+        Ok(Self { k, h, graph })
     }
 
     /// Internal constructor that assumes parameters are already valid.
     /// Only used within trait implementations where validation cannot fail.
     #[inline]
-    fn from_valid_params(k: Array2<f64>, h: Array1<f64>, g: f64) -> Self {
-        Self { k, h, g }
+    fn from_valid_params(k: Array2<f64>, h: Array1<f64>, graph: f64) -> Self {
+        Self { k, h, graph }
     }
 
     /// Returns the precision matrix.
@@ -120,13 +120,13 @@ impl GaussPhiK {
     ///
     #[inline]
     pub const fn log_normalization_constant(&self) -> f64 {
-        self.g
+        self.graph
     }
 }
 
 impl PartialEq for GaussPhiK {
     fn eq(&self, other: &Self) -> bool {
-        self.k.eq(&other.k) && self.h.eq(&other.h) && self.g.eq(&other.g)
+        self.k.eq(&other.k) && self.h.eq(&other.h) && self.graph.eq(&other.graph)
     }
 }
 
@@ -140,7 +140,7 @@ impl AbsDiffEq for GaussPhiK {
     fn abs_diff_eq(&self, other: &Self, epsilon: Self::Epsilon) -> bool {
         self.k.abs_diff_eq(&other.k, epsilon)
             && self.h.abs_diff_eq(&other.h, epsilon)
-            && self.g.abs_diff_eq(&other.g, epsilon)
+            && self.graph.abs_diff_eq(&other.graph, epsilon)
     }
 }
 
@@ -157,7 +157,7 @@ impl RelativeEq for GaussPhiK {
     ) -> bool {
         self.k.relative_eq(&other.k, epsilon, max_relative)
             && self.h.relative_eq(&other.h, epsilon, max_relative)
-            && self.g.relative_eq(&other.g, epsilon, max_relative)
+            && self.graph.relative_eq(&other.graph, epsilon, max_relative)
     }
 }
 
@@ -312,7 +312,7 @@ impl MulAssign<&GaussPhi> for GaussPhi {
             Some(i) => self.parameters.h[i],
             _ => 0.,
         });
-        let lhs_g = self.parameters.g;
+        let lhs_g = self.parameters.graph;
 
         // Order RHS indices w.r.t. new labels.
         let rhs_m: Vec<_> = labels.iter().map(|l| rhs.labels.get_index_of(l)).collect();
@@ -325,14 +325,14 @@ impl MulAssign<&GaussPhi> for GaussPhi {
             Some(i) => rhs.parameters.h[i],
             _ => 0.,
         });
-        let rhs_g = rhs.parameters.g;
+        let rhs_g = rhs.parameters.graph;
 
         // Sum parameters.
         let k = lhs_k + rhs_k;
         let h = lhs_h + rhs_h;
-        let g = lhs_g + rhs_g;
+        let graph = lhs_g + rhs_g;
         // Assemble parameters. Since we're combining valid parameters, the result is valid.
-        let parameters = GaussPhiK::from_valid_params(k, h, g);
+        let parameters = GaussPhiK::from_valid_params(k, h, graph);
 
         // Update the labels.
         self.labels = labels;
@@ -380,7 +380,7 @@ impl DivAssign<&GaussPhi> for GaussPhi {
             Some(i) => self.parameters.h[i],
             _ => 0.,
         });
-        let lhs_g = self.parameters.g;
+        let lhs_g = self.parameters.graph;
 
         // Order RHS indices w.r.t. new labels.
         let rhs_m: Vec<_> = labels.iter().map(|l| rhs.labels.get_index_of(l)).collect();
@@ -393,7 +393,7 @@ impl DivAssign<&GaussPhi> for GaussPhi {
             Some(i) => rhs.parameters.h[i],
             _ => 0.,
         });
-        let rhs_g = rhs.parameters.g;
+        let rhs_g = rhs.parameters.graph;
 
         // Sum parameters.
         let k_prime = lhs_k - rhs_k;
@@ -453,9 +453,9 @@ impl Phi for GaussPhi {
         k + self.parameters.h.len() + 1
     }
 
-    fn condition(&self, e: &Self::Evidence) -> Result<Self> {
+    fn condition(&self, evidence: &Self::Evidence) -> Result<Self> {
         // Check that the evidence labels match the potential labels.
-        if e.labels() != self.labels() {
+        if evidence.labels() != self.labels() {
             return Err(Error::InvalidParameter(
                 "evidence",
                 &format!(
@@ -464,35 +464,35 @@ impl Phi for GaussPhi {
                     \t found:       potential labels = {:?} , \n\
                     \t              evidence  labels = {:?} .",
                     self.labels(),
-                    e.labels(),
+                    evidence.labels(),
                 ),
             ));
         }
 
         // Get the evidence and remove nones.
-        let e = e.evidences().iter().flatten().cloned();
+        let evidence = evidence.evidences().iter().flatten().cloned();
         // Check that the evidence is certain and positive.
-        let e = e.map(|e| match e {
+        let evidence = evidence.map(|evidence| match evidence {
             GaussEvT::CertainPositive { event, value } => (event, value),
             /* _ => panic! NOTE: No other variant so far. */
         });
 
         // Get X and Y from the evidence.
-        let y: Set<_> = e.clone().map(|(event, _)| event).collect();
+        let y: Set<_> = evidence.clone().map(|(event, _)| event).collect();
         let x: Set<_> = &Set::from_iter(0..self.labels.len()) - &y;
 
         // Select the labels of the conditioned potential.
         let labels: Labels = x.iter().map(|&x| self.labels[x].clone()).collect();
 
         // Get the values from the evidence.
-        let _y = Array::from_iter(e.map(|(_, value)| value));
+        let _y = Array::from_iter(evidence.map(|(_, value)| value));
 
         // Get the precision matrix.
         let k = self.parameters.precision_matrix();
         // Get the information vector.
         let h = self.parameters.information_vector();
         // Get the log-normalization constant.
-        let g = self.parameters.log_normalization_constant();
+        let graph = self.parameters.log_normalization_constant();
 
         // Compute the precision matrix as K_xx from K and X.
         let k_prime = Array::from_shape_fn((x.len(), x.len()), |(i, j)| k[[x[i], x[j]]]);
@@ -512,7 +512,7 @@ impl Phi for GaussPhi {
             // Get h_y from h and Y.
             let h_y = Array::from_shape_fn(y.len(), |i| h[y[i]]);
             // Compute g as: g' = g + h_y^T * y - 0.5 * y^T * K_yy * y.
-            g + h_y.dot(&_y) - 0.5 * _y.dot(&k_yy).dot(&_y)
+            graph + h_y.dot(&_y) - 0.5 * _y.dot(&k_yy).dot(&_y)
         };
 
         // Assemble the parameters.
@@ -548,7 +548,7 @@ impl Phi for GaussPhi {
         // Get the information vector.
         let h = self.parameters.information_vector();
         // Get the log-normalization constant.
-        let g = self.parameters.log_normalization_constant();
+        let graph = self.parameters.log_normalization_constant();
 
         // Compute the covariance matrix as: S_xx = (K_xx)^(-1).
         let s_xx = {
@@ -584,10 +584,10 @@ impl Phi for GaussPhi {
         let g_prime = {
             // Compute the log-normalization constant as: g' = g + 0.5 * (ln|2 pi (K_xx)^-1| + h_x^T * (K_xx)^-1 * h_x)
             let n_ln_2_pi = s_xx.nrows() as f64 * LN_2_PI;
-            let (_, ln_det) = s_xx
-                .sln_det()
-                .map_err(|e| Error::Linalg(&format!("Failed to compute the determinant: {e}")))?;
-            g + 0.5 * (n_ln_2_pi + ln_det + h_x.dot(&s_xx).dot(&h_x))
+            let (_, ln_det) = s_xx.sln_det().map_err(|evidence| {
+                Error::Linalg(&format!("Failed to compute the determinant: {evidence}"))
+            })?;
+            graph + 0.5 * (n_ln_2_pi + ln_det + h_x.dot(&s_xx).dot(&h_x))
         };
 
         // Assemble the parameters.
@@ -603,15 +603,15 @@ impl Phi for GaussPhi {
         Ok(self.clone())
     }
 
-    fn from_cpd(cpd: Self::CPD) -> Result<Self> {
+    fn from_cpd(distribution: Self::CPD) -> Result<Self> {
         // Merge labels and conditioning labels in this order.
-        let mut labels = cpd.labels().clone();
-        labels.extend(cpd.conditioning_labels().clone());
+        let mut labels = distribution.labels().clone();
+        labels.extend(distribution.conditioning_labels().clone());
 
         // Get the parameters from the CPD.
-        let parameters = cpd.parameters();
+        let parameters = distribution.parameters();
         // Get the coefficients and covariance.
-        let (a, b, s) = (
+        let (a, b, stats) = (
             parameters.coefficients(),
             parameters.intercept(),
             parameters.covariance(),
@@ -622,18 +622,18 @@ impl Phi for GaussPhi {
         // | K_xx  K_xz |
         // | K_zx  K_zz |
         //
-        let k_xx = s.pinv()?; //                 Precision of X.
+        let k_xx = stats.pinv()?; //                 Precision of X.
         let k_xz = -&k_xx.dot(a); //            Cross-precision of X and Z.
         let k_zx = -a.t().dot(&k_xx); //        Cross-precision of Z and X.
         let k_zz = a.t().dot(&k_xx).dot(a); //  Induced precision of Z.
         // Assemble the precision matrix.
         let k_prime = {
-            let (n, m) = (a.nrows(), a.ncols());
-            let mut k = Array::zeros((n + m, n + m));
+            let (n, model) = (a.nrows(), a.ncols());
+            let mut k = Array::zeros((n + model, n + model));
             k.slice_mut(s![0..n, 0..n]).assign(&k_xx);
-            k.slice_mut(s![0..n, n..n + m]).assign(&k_xz);
-            k.slice_mut(s![n..n + m, 0..n]).assign(&k_zx);
-            k.slice_mut(s![n..n + m, n..n + m]).assign(&k_zz);
+            k.slice_mut(s![0..n, n..n + model]).assign(&k_xz);
+            k.slice_mut(s![n..n + model, 0..n]).assign(&k_zx);
+            k.slice_mut(s![n..n + model, n..n + model]).assign(&k_zz);
             k
         };
 
@@ -654,10 +654,10 @@ impl Phi for GaussPhi {
 
         // Compute the log-normalization constant.
         let g_prime = {
-            let n_ln_2_pi = s.nrows() as f64 * LN_2_PI;
-            let (_, ln_det) = s
-                .sln_det()
-                .map_err(|e| Error::Linalg(&format!("Failed to compute the determinant: {e}")))?;
+            let n_ln_2_pi = stats.nrows() as f64 * LN_2_PI;
+            let (_, ln_det) = stats.sln_det().map_err(|evidence| {
+                Error::Linalg(&format!("Failed to compute the determinant: {evidence}"))
+            })?;
             -0.5 * (n_ln_2_pi + ln_det + b.dot(&h_x))
         };
 
@@ -694,7 +694,7 @@ impl Phi for GaussPhi {
         let h = self.parameters.information_vector();
 
         // Compute the covariance matrix.
-        let s = {
+        let stats = {
             // Get K_xx from K and X.
             let k_xx = Array::from_shape_fn((x.len(), x.len()), |(i, j)| k[[x[i], x[j]]]);
             // Compute the covariance as: S = (K_xx)^(-1)
@@ -705,18 +705,18 @@ impl Phi for GaussPhi {
             // Get K_xz from K, X, and Z.
             let k_xz = Array::from_shape_fn((x.len(), z.len()), |(i, j)| k[[x[i], z[j]]]);
             // Compute the coefficients as: A = - (K_xx)^(-1) * K_xz
-            -s.dot(&k_xz)
+            -stats.dot(&k_xz)
         };
         // Compute the intercept vector.
         let b = {
             // Get h_x from h and X.
             let h_x = Array::from_shape_fn(x.len(), |i| h[x[i]]);
             // Compute the intercept as: b = (K_xx)^(-1) * h_x
-            s.dot(&h_x)
+            stats.dot(&h_x)
         };
 
         // Assemble the parameters.
-        let parameters = GaussCPDP::new(a, b, s)?;
+        let parameters = GaussCPDP::new(a, b, stats)?;
 
         // Create the new CPD.
         GaussCPD::new(labels_x, labels_z, parameters)
@@ -743,7 +743,7 @@ impl Serialize for GaussPhiK {
         map.serialize_entry("information_vector", &information_vector)?;
 
         // Serialize log-normalization constant.
-        map.serialize_entry("log_normalization_constant", &self.g)?;
+        map.serialize_entry("log_normalization_constant", &self.graph)?;
 
         // End the map.
         map.end()

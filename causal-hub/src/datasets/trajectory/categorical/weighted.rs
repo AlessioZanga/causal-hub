@@ -1,3 +1,5 @@
+//! Weighted categorical trajectory dataset.
+
 use std::borrow::Cow;
 
 use ndarray::prelude::*;
@@ -279,9 +281,9 @@ impl CatWtdTrjs {
 impl FromIterator<CatWtdTrj> for CatWtdTrjs {
     #[inline]
     fn from_iter<I: IntoIterator<Item = CatWtdTrj>>(iter: I) -> Self {
-        Self::new(iter).unwrap_or_else(|e| {
+        Self::new(iter).unwrap_or_else(|evidence| {
             // Log the error since we can't propagate it through the trait.
-            log::error!("Failed to create CatWtdTrjs from iterator: {}", e);
+            log::error!("Failed to create CatWtdTrjs from iterator: {}", evidence);
             // Return a minimal valid empty instance as fallback.
             Self {
                 labels: Default::default(),
@@ -297,9 +299,12 @@ impl FromParallelIterator<CatWtdTrj> for CatWtdTrjs {
     #[inline]
     fn from_par_iter<I: IntoParallelIterator<Item = CatWtdTrj>>(iter: I) -> Self {
         let collected = iter.into_par_iter().collect::<Vec<_>>();
-        Self::new(collected).unwrap_or_else(|e| {
+        Self::new(collected).unwrap_or_else(|evidence| {
             // Log the error since we can't propagate it through the trait.
-            log::error!("Failed to create CatWtdTrjs from parallel iterator: {}", e);
+            log::error!(
+                "Failed to create CatWtdTrjs from parallel iterator: {}",
+                evidence
+            );
             // Return a minimal valid empty instance as fallback.
             Self {
                 labels: Default::default(),

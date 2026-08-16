@@ -87,7 +87,7 @@ impl CatPhi {
         })
     }
 
-    /// CatSupport of the potential.
+    /// `CatSupport` of the potential.
     ///
     /// # Returns
     ///
@@ -232,15 +232,22 @@ impl Mul<&CatPhi> for &CatPhi {
     }
 }
 
-impl DivAssign<&CatPhi> for CatPhi {
-    fn div_assign(&mut self, rhs: &CatPhi) {
+impl CatPhi {
+    /// Divides this potential by `rhs` in place.
+    ///
+    /// The support of `rhs` must be a subset of `self` support.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if `rhs` support is not a subset of `self` support.
+    ///
+    pub fn div_assign(&mut self, rhs: &CatPhi) -> Result<()> {
         // Check that RHS support are a subset of LHS support.
         if !rhs.support.keys().all(|k| self.support.contains_key(k)) {
-            panic!(
-                "Failed to divide potentials: RHS support must be a subset of LHS support, \
-                found LHS support = {:?}, RHS support = {:?}",
-                self.support, rhs.support,
-            );
+            return Err(Error::InvalidParameter(
+                "rhs",
+                "RHS support must be a subset of LHS support",
+            ));
         }
 
         // Add a small constant to ensure 0 / 0 = 0.
@@ -266,6 +273,34 @@ impl DivAssign<&CatPhi> for CatPhi {
 
         // Perform element-wise division with 0 / 0 = 0.
         self.parameters /= &rhs_parameters;
+
+        Ok(())
+    }
+
+    /// Returns the potential resulting from dividing `self` by `rhs`.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if `rhs` support is not a subset of `self` support.
+    ///
+    pub fn div(&self, rhs: &CatPhi) -> Result<CatPhi> {
+        let mut lhs = self.clone();
+        lhs.div_assign(rhs)?;
+        Ok(lhs)
+    }
+}
+
+impl DivAssign<&CatPhi> for CatPhi {
+    fn div_assign(&mut self, rhs: &CatPhi) {
+        // The `Phi` trait requires `DivAssign`; potential division is only ever
+        // performed with an `rhs` whose support is a subset of `self` support
+        // (this is guaranteed by the caller, e.g. `into_cpd`). See `CatPhi::div_assign`
+        // for the fallible variant that returns an error on violation.
+        self.div_assign(rhs).unwrap_or_else(|_| {
+            unreachable!(
+                "potential division requires `rhs` support to be a subset of `self` support"
+            )
+        });
     }
 }
 
@@ -274,9 +309,11 @@ impl Div<&CatPhi> for &CatPhi {
 
     #[inline]
     fn div(self, rhs: &CatPhi) -> Self::Output {
-        let mut lhs = self.clone();
-        lhs /= rhs;
-        lhs
+        self.div(rhs).unwrap_or_else(|_| {
+            unreachable!(
+                "potential division requires `rhs` support to be a subset of `self` support"
+            )
+        })
     }
 }
 
@@ -300,9 +337,9 @@ impl Phi for CatPhi {
         self.parameters.len()
     }
 
-    fn condition(&self, e: &Self::Evidence) -> Result<Self> {
+    fn condition(&self, evidence: &Self::Evidence) -> Result<Self> {
         // Check that the evidence support match the potential support.
-        if e.support() != self.support() {
+        if evidence.support() != self.support() {
             return Err(Error::InvalidParameter(
                 "evidence",
                 &format!(
@@ -311,13 +348,13 @@ impl Phi for CatPhi {
                     \t found:       potential support = {:?} , \n\
                     \t              evidence  support = {:?} .",
                     self.support(),
-                    e.support(),
+                    evidence.support(),
                 ),
             ));
         }
 
         // Get the evidence and remove nones.
-        let e = e.evidences().iter().flatten().map(|ev| match ev {
+        let evidence = evidence.evidences().iter().flatten().map(|ev| match ev {
             CatEvT::CertainPositive { event, state } => Ok((event, state)),
             _ => Err(Error::InvalidParameter(
                 "evidence",
@@ -335,8 +372,8 @@ impl Phi for CatPhi {
         let mut parameters = self.parameters.clone();
 
         // Condition in reverse order to avoid axis shifting.
-        e.rev().try_for_each(|e| -> Result<_> {
-            let (&event, &state) = e?;
+        evidence.rev().try_for_each(|evidence| -> Result<_> {
+            let (&event, &state) = evidence?;
             parameters.index_axis_inplace(Axis(event), state);
             support.shift_remove_index(event);
             Ok(())
@@ -366,7 +403,7 @@ impl Phi for CatPhi {
 
         // Filter the support.
         let support = support.into_iter().enumerate();
-        let support = support.filter_map(|(i, s)| (!x.contains(&i)).then_some(s));
+        let support = support.filter_map(|(i, stats)| (!x.contains(&i)).then_some(stats));
         let support = support.collect();
 
         // Sum over the axes in reverse order to avoid shifting.
@@ -388,14 +425,14 @@ impl Phi for CatPhi {
         Self::new(self.support.clone(), parameters)
     }
 
-    fn from_cpd(cpd: Self::CPD) -> Result<Self> {
+    fn from_cpd(distribution: Self::CPD) -> Result<Self> {
         // Merge conditioning support and support in this order.
-        let mut support = cpd.conditioning_support().clone();
-        support.extend(cpd.support().clone());
+        let mut support = distribution.conditioning_support().clone();
+        support.extend(distribution.support().clone());
         // Get n-dimensional shape.
         let shape: Vec<_> = support.values().map(Set::len).collect();
         // Reshape the parameters to match the new shape.
-        let parameters = cpd.parameters().clone();
+        let parameters = distribution.parameters().clone();
         let parameters = parameters
             .into_dyn()
             .into_shape_with_order(shape)
@@ -464,9 +501,9 @@ impl Phi for CatPhi {
             states_x.values().map(Set::len).product(),
         );
         // Reshape the parameters to the new 2D shape.
-        let mut parameters = parameters
-            .into_shape_clone(shape)
-            .map_err(|e| Error::Shape(&format!("Failed to reshape parameters: {}", e)))?;
+        let mut parameters = parameters.into_shape_clone(shape).map_err(|evidence| {
+            Error::Shape(&format!("Failed to reshape parameters: {}", evidence))
+        })?;
 
         // Normalize the parameters.
         parameters /= &parameters.sum_axis(Axis(1)).insert_axis(Axis(1));
@@ -585,8 +622,9 @@ impl<'de> Deserialize<'de> for CatPhi {
                 }
 
                 // Convert parameters to ndarray.
-                let parameters = ArrayD::from_shape_vec(shape, parameters)
-                    .map_err(|e| E::custom(format!("Invalid parameters shape: {e}")))?;
+                let parameters = ArrayD::from_shape_vec(shape, parameters).map_err(|evidence| {
+                    E::custom(format!("Invalid parameters shape: {evidence}"))
+                })?;
 
                 CatPhi::new(support, parameters).map_err(E::custom)
             }

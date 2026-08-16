@@ -16,7 +16,7 @@ macro_rules! impl_css_for_mixed {
                     $enum::Gaussian(t) => SSE::new(t)
                         .with_missing_method(self.missing_method, self.missing_mechanism.clone())?
                         .fit(x, z)
-                        .map(|s| MixedCPDS::Gaussian(Box::new(s))),
+                        .map(|stats| MixedCPDS::Gaussian(Box::new(stats))),
                 }
             }
         }
@@ -30,7 +30,7 @@ macro_rules! impl_css_for_mixed {
                     $enum::Gaussian(t) => SSE::new(t)
                         .with_missing_method(self.missing_method, self.missing_mechanism.clone())?
                         .par_fit(x, z)
-                        .map(|s| MixedCPDS::Gaussian(Box::new(s))),
+                        .map(|stats| MixedCPDS::Gaussian(Box::new(stats))),
                 }
             }
         }

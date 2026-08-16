@@ -1,3 +1,5 @@
+//! Expectation-maximization (EM) estimator for CTBNs.
+
 use crate::types::{Error, Result};
 
 /// A struct representing the output of the expectation-maximization algorithm.

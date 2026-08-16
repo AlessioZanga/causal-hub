@@ -17,8 +17,8 @@ where
     labels: &'a Labels,
     s_a: f64,
     s_b: f64,
-    e: f64,
-    p: f64,
+    evidence: f64,
+    probability: f64,
 }
 
 impl<'a, R> RngGaussBN<'a, R>
@@ -52,8 +52,8 @@ where
         labels: &'a Labels,
         s_a: f64,
         s_b: f64,
-        e: f64,
-        p: f64,
+        evidence: f64,
+        probability: f64,
     ) -> Result<Self> {
         // Check parameters.
         if s_a <= 0.0 {
@@ -62,11 +62,11 @@ where
         if s_b <= 0.0 {
             return Err(Error::InvalidParameter("s_b", "must be positive"));
         }
-        if e <= 0.0 {
+        if evidence <= 0.0 {
             return Err(Error::InvalidParameter("e", "must be positive"));
         }
         // Check if the probability is in [0, 1].
-        if !(0.0..=1.0).contains(&p) {
+        if !(0.0..=1.0).contains(&probability) {
             return Err(Error::InvalidParameter("p", "must be in [0, 1]"));
         }
 
@@ -75,8 +75,8 @@ where
             labels,
             s_a,
             s_b,
-            e,
-            p,
+            evidence,
+            probability,
         })
     }
 }
@@ -89,7 +89,7 @@ where
 
     fn random(&mut self) -> Self::Output {
         // Generate a random DAG.
-        let graph = RngDag::new(self.rng, self.labels, self.p)?.random()?;
+        let graph = RngDag::new(self.rng, self.labels, self.probability)?.random()?;
 
         // Generate the CPDs.
         let cpds = self
@@ -111,7 +111,7 @@ where
                     &conditioning_labels,
                     self.s_a,
                     self.s_b,
-                    self.e,
+                    self.evidence,
                 )?
                 .random()
             })

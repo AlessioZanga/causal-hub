@@ -208,7 +208,7 @@ macro_rules! mixed_pure_dispatch {
             .model
             .cpds()
             .values()
-            .all(|cpd| matches!(cpd, MixedCPD::Categorical(_)));
+            .all(|distribution| matches!(distribution, MixedCPD::Categorical(_)));
         if ok {
             $cat
         } else {
@@ -216,7 +216,7 @@ macro_rules! mixed_pure_dispatch {
                 .model
                 .cpds()
                 .values()
-                .all(|cpd| matches!(cpd, MixedCPD::Gaussian(_)));
+                .all(|distribution| matches!(distribution, MixedCPD::Gaussian(_)));
             if ok {
                 $gauss
             } else {
@@ -239,7 +239,7 @@ fn extract_cat_support(
                 let states = cpd_support[label].clone();
                 (label.clone(), states)
             }
-            _ => unreachable!(),
+            _ => unreachable!(), // A mixed-BN's support is always categorical.
         })
         .collect()
 }
@@ -296,8 +296,8 @@ impl<R: Rng> BNSampler<MixedBN> for ForwardSampler<'_, R, MixedBN> {
                     .rows_mut()
                     .into_iter()
                     .try_for_each(|mut row| -> Result<_> {
-                        if let MixedSample::Categorical(s) = self.sample()? {
-                            row.assign(&s);
+                        if let MixedSample::Categorical(stats) = self.sample()? {
+                            row.assign(&stats);
                         }
                         Ok(())
                     })?;
@@ -310,8 +310,8 @@ impl<R: Rng> BNSampler<MixedBN> for ForwardSampler<'_, R, MixedBN> {
                     .rows_mut()
                     .into_iter()
                     .try_for_each(|mut row| -> Result<_> {
-                        if let MixedSample::Gaussian(s) = self.sample()? {
-                            row.assign(&s);
+                        if let MixedSample::Gaussian(stats) = self.sample()? {
+                            row.assign(&stats);
                         }
                         Ok(())
                     })?;
@@ -338,8 +338,8 @@ impl<R: Rng + SeedableRng> ParBNSampler<MixedBN> for ForwardSampler<'_, R, Mixed
                     .try_for_each(|(seed, mut row)| -> Result<()> {
                         let mut rng = R::seed_from_u64(seed);
                         let sampler = ForwardSampler::new(&mut rng, self.model)?;
-                        if let MixedSample::Categorical(s) = sampler.sample()? {
-                            row.assign(&s);
+                        if let MixedSample::Categorical(stats) = sampler.sample()? {
+                            row.assign(&stats);
                         }
                         Ok(())
                     })?;
@@ -354,8 +354,8 @@ impl<R: Rng + SeedableRng> ParBNSampler<MixedBN> for ForwardSampler<'_, R, Mixed
                     .try_for_each(|(seed, mut row)| -> Result<()> {
                         let mut rng = R::seed_from_u64(seed);
                         let sampler = ForwardSampler::new(&mut rng, self.model)?;
-                        if let MixedSample::Gaussian(s) = sampler.sample()? {
-                            row.assign(&s);
+                        if let MixedSample::Gaussian(stats) = sampler.sample()? {
+                            row.assign(&stats);
                         }
                         Ok(())
                     })?;
@@ -366,7 +366,7 @@ impl<R: Rng + SeedableRng> ParBNSampler<MixedBN> for ForwardSampler<'_, R, Mixed
 }
 
 impl<R: Rng> ForwardSampler<'_, R, CatCTBN> {
-    /// Sample transition time for variable X_i with state x_i.
+    /// Sample transition time for variable `X_i` with state `x_i`.
     fn sample_time(&self, event: &CatSample, i: usize) -> Result<f64> {
         // Cast the state to usize.
         let x = event[i] as usize;
@@ -379,8 +379,8 @@ impl<R: Rng> ForwardSampler<'_, R, CatCTBN> {
         // Get the distribution of the vertex.
         let q_i_x = -cim_i.parameters()[[pa_i, x, x]];
         // Initialize the exponential distribution.
-        let exp_i_x =
-            Exp::new(q_i_x).map_err(|e| Error::RandDistr(&format!("Invalid lambda: {}", e)))?;
+        let exp_i_x = Exp::new(q_i_x)
+            .map_err(|evidence| Error::RandDistr(&format!("Invalid lambda: {}", evidence)))?;
         // Sample the transition time.
         Ok(exp_i_x.sample(&mut self.rng.borrow_mut()))
     }
@@ -438,7 +438,7 @@ impl<R: Rng> CTBNSampler<CatCTBN> for ForwardSampler<'_, R, CatCTBN> {
         // Get the variable that transitions first.
         let mut i = times
             .argmin()
-            .map_err(|e| Error::Stats(&format!("Failed to find min time: {}", e)))?;
+            .map_err(|evidence| Error::Stats(&format!("Failed to find min time: {}", evidence)))?;
         // Set global time.
         let mut time = times[i];
 
@@ -461,8 +461,9 @@ impl<R: Rng> CTBNSampler<CatCTBN> for ForwardSampler<'_, R, CatCTBN> {
             // Normalize the probabilities.
             q_i_zx /= q_i_zx.sum();
             // Initialize a weighted index sampler.
-            let s_i_zx = WeightedIndex::new(&q_i_zx)
-                .map_err(|e| Error::RandDistr(&format!("Invalid probabilities: {}", e)))?;
+            let s_i_zx = WeightedIndex::new(&q_i_zx).map_err(|evidence| {
+                Error::RandDistr(&format!("Invalid probabilities: {}", evidence))
+            })?;
             // Sample the next event.
             event[i] = s_i_zx.sample(&mut self.rng.borrow_mut()) as CatType;
             // Append the event to the trajectory.
@@ -476,9 +477,9 @@ impl<R: Rng> CTBNSampler<CatCTBN> for ForwardSampler<'_, R, CatCTBN> {
             // Add a small epsilon to avoid zero transition times.
             times += EPSILON;
             // Get the variable to transition first.
-            i = times
-                .argmin()
-                .map_err(|e| Error::Stats(&format!("Failed to find min time: {}", e)))?;
+            i = times.argmin().map_err(|evidence| {
+                Error::Stats(&format!("Failed to find min time: {}", evidence))
+            })?;
             // Update the global time.
             time = times[i];
         }
@@ -490,7 +491,7 @@ impl<R: Rng> CTBNSampler<CatCTBN> for ForwardSampler<'_, R, CatCTBN> {
         let shape = (sample_events.len(), sample_events[0].len());
         let sample_events = Array::from_iter(sample_events.into_iter().flatten())
             .into_shape_with_order(shape)
-            .map_err(|e| Error::Shape(&e.to_string()))?;
+            .map_err(|evidence| Error::Shape(&evidence.to_string()))?;
         // Convert the times to a 1D array.
         let sample_times = Array::from_iter(sample_times);
 

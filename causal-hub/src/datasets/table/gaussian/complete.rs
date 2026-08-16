@@ -192,7 +192,7 @@ impl CsvIO for GaussTable {
             .enumerate()
             .map(|(i, row)| {
                 // Get the record row.
-                let row = row.map_err(|e| Error::Csv(Arc::new(e)))?;
+                let row = row.map_err(|evidence| Error::Csv(Arc::new(evidence)))?;
                 // Get the record values and convert to indices.
                 row.into_iter()
                     .enumerate()

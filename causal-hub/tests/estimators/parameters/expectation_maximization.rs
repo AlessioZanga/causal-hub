@@ -17,7 +17,7 @@ mod tests {
     use rand_xoshiro::Xoshiro256PlusPlus;
     use rayon::prelude::*;
 
-    mod ctbn {
+    mod continuous_time_bayesian_network {
         use super::*;
 
         mod categorical {
@@ -86,11 +86,12 @@ mod tests {
                     seeds
                         .into_par_iter()
                         .zip(evidence.par_iter())
-                        .map(|(s, e)| {
+                        .map(|(stats, evidence)| {
                             // Initialize a new random number generator.
-                            let mut rng = Xoshiro256PlusPlus::seed_from_u64(s);
+                            let mut rng = Xoshiro256PlusPlus::seed_from_u64(stats);
                             // Initialize a new sampler.
-                            let importance = ImportanceSampler::new(&mut rng, prev_model, e)?;
+                            let importance =
+                                ImportanceSampler::new(&mut rng, prev_model, evidence)?;
                             // Sample the trajectories.
                             importance.sample_by_length(100)
                         })
@@ -140,14 +141,14 @@ mod tests {
                 let trajectories = forward.par_sample_n_by_length(100, 10_000)?;
 
                 // Set the probability of the evidence.
-                let p = 0.5;
+                let probability = 0.5;
                 // Initialize the evidence generator.
-                let mut generator = RngCatTrjEv::new(&mut rng, &trajectories, p)?;
+                let mut generator = RngCatTrjEv::new(&mut rng, &trajectories, probability)?;
                 // Sample the evidence from the fully-observed trajectories.
                 let evidence = generator.random()?;
 
                 // Initialize a raw estimator for an initial guess.
-                let raw = RAWE::<'_, _, CatTrjsEv, CatTrjs>::par_new(&mut rng, &evidence)?;
+                let raw = RAWE::<CatTrjs>::par_new(&evidence)?;
                 // Set the initial CIMs.
                 let initial_cims: Vec<_> = model
                     .graph()
@@ -167,7 +168,7 @@ mod tests {
                 let max_length = evidence
                     .evidences()
                     .iter()
-                    .map(|e| e.evidences().iter().map(|x| x.len()).sum())
+                    .map(|evidence| evidence.evidences().iter().map(|x| x.len()).sum())
                     .max()
                     .unwrap_or(10);
 
@@ -183,11 +184,12 @@ mod tests {
                     seeds
                         .into_par_iter()
                         .zip(evidence.par_iter())
-                        .map(|(s, e)| {
+                        .map(|(stats, evidence)| {
                             // Initialize a new random number generator.
-                            let mut rng = Xoshiro256PlusPlus::seed_from_u64(s);
+                            let mut rng = Xoshiro256PlusPlus::seed_from_u64(stats);
                             // Initialize a new sampler.
-                            let importance = ImportanceSampler::new(&mut rng, prev_model, e)?;
+                            let importance =
+                                ImportanceSampler::new(&mut rng, prev_model, evidence)?;
                             // Perform multiple imputation.
                             let trjs = importance.sample_n_by_length(max_length, 10)?;
                             // Get the one with the highest weight.

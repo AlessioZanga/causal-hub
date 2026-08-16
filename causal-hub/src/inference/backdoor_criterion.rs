@@ -99,7 +99,7 @@ mod digraph {
     //     * possible causal path in a directed graph is a directed path from X to Y,
     //     * proper path is a directed path from X to Y that does not contain any vertex in X.
     //
-    fn _proper_causal_path(g: &DiGraph, x: &Set<usize>, y: &Set<usize>) -> Result<Set<usize>> {
+    fn _proper_causal_path(graph: &DiGraph, x: &Set<usize>, y: &Set<usize>) -> Result<Set<usize>> {
         // Initialize the PCP set.
         let mut pcp = set![];
 
@@ -112,7 +112,7 @@ mod digraph {
             // While there are vertices to visit ...
             while let Some(z) = stack.pop() {
                 // For each child of the current node ...
-                for w in g.children(&set![z])? {
+                for w in graph.children(&set![z])? {
                     // Skip if W is in X or already visited.
                     if x.contains(&w) || visited.contains(&w) {
                         continue;
@@ -144,9 +144,13 @@ mod digraph {
     //
     //     G^PDB = G \ { X -> PCP(X, Y) }
     //
-    fn _proper_backdoor_graph(g: &DiGraph, x: &Set<usize>, pcp: &Set<usize>) -> Result<DiGraph> {
+    fn _proper_backdoor_graph(
+        graph: &DiGraph,
+        x: &Set<usize>,
+        pcp: &Set<usize>,
+    ) -> Result<DiGraph> {
         // Clone the graph.
-        let mut g_pdb = g.clone();
+        let mut g_pdb = graph.clone();
         // Remove all the edge from X to PCP(X, Y).
         x.iter()
             .flat_map(|&i| pcp.iter().map(move |&j| (i, j)))

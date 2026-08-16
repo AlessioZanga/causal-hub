@@ -130,11 +130,11 @@ where
                     .iter()
                     .filter_map(|&j| {
                         // Check prior knowledge, if available.
-                        if let Some(pk) = self.prior_knowledge {
+                        if let Some(prior_knowledge) = self.prior_knowledge {
                             // If the edge is required, skip the tests.
                             // NOTE: Since CTPC only removes edges,
                             //  it is sufficient to check for required edges.
-                            if pk.is_required(j, i) {
+                            if prior_knowledge.is_required(j, i) {
                                 // Log the skipped CIT.
                                 debug!("CIT for {j} _||_ {i} | [*] ... SKIPPED");
                                 return None;
@@ -162,11 +162,11 @@ where
                                                 Some(Ok(j))
                                             }
                                             Ok(false) => None,
-                                            Err(e) => Some(Err(e)),
+                                            Err(evidence) => Some(Err(evidence)),
                                         }
                                     }
                                     Ok(false) => None,
-                                    Err(e) => Some(Err(e)),
+                                    Err(evidence) => Some(Err(evidence)),
                                 }
                             })
                     })
@@ -221,11 +221,11 @@ where
                         .par_iter()
                         .map(|&j| -> Result<Option<usize>> {
                             // Check prior knowledge, if available.
-                            if let Some(pk) = self.prior_knowledge {
+                            if let Some(prior_knowledge) = self.prior_knowledge {
                                 // If the edge is required, skip the tests.
                                 // NOTE: Since CTPC only removes edges,
                                 //  it is sufficient to check for required edges.
-                                if pk.is_required(j, i) {
+                                if prior_knowledge.is_required(j, i) {
                                     // Log the skipped CIT.
                                     debug!("CIT for {j} _||_ {i} | [*] ... SKIPPED");
                                     return Ok(Some(j));

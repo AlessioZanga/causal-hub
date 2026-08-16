@@ -136,7 +136,7 @@ pub fn sem<'a>(
             // Log the raw estimator initialization.
             debug!("Initializing the raw estimator for the initial guess ...");
             // Initialize a raw estimator for an initial guess.
-            let raw = RAWE::<'_, _, CatTrjsEv, CatTrjs>::par_new(&mut rng, evidence);
+            let raw = RAWE::<CatTrjs>::par_new(evidence);
             // Log the initial model fitting.
             debug!("Fitting the initial model using the raw estimator ...");
             // Set the initial model.

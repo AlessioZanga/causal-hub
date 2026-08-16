@@ -1,3 +1,5 @@
+//! Categorical trajectory dataset implementations.
+
 mod dataset;
 pub use dataset::*;
 

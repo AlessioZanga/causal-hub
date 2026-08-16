@@ -27,8 +27,8 @@ impl Labelled for MixedPhi {
     #[inline]
     fn labels(&self) -> &Labels {
         match self {
-            Self::Categorical(phi) => phi.labels(),
-            Self::Gaussian(phi) => phi.labels(),
+            Self::Categorical(potential) => potential.labels(),
+            Self::Gaussian(potential) => potential.labels(),
         }
     }
 }
@@ -86,11 +86,11 @@ impl Phi for MixedPhi {
 
     fn support(&self) -> Cow<'_, Self::Support> {
         match self {
-            Self::Categorical(phi) => Cow::Owned(crate::models::MixedSupport::Categorical(
-                phi.support().clone(),
+            Self::Categorical(potential) => Cow::Owned(crate::models::MixedSupport::Categorical(
+                potential.support().clone(),
             )),
-            Self::Gaussian(phi) => Cow::Owned(crate::models::MixedSupport::Gaussian(
-                Cow::into_owned(phi.support()),
+            Self::Gaussian(potential) => Cow::Owned(crate::models::MixedSupport::Gaussian(
+                Cow::into_owned(potential.support()),
             )),
         }
     }
@@ -101,18 +101,18 @@ impl Phi for MixedPhi {
 
     fn parameters_size(&self) -> usize {
         match self {
-            Self::Categorical(phi) => phi.parameters_size(),
-            Self::Gaussian(phi) => phi.parameters_size(),
+            Self::Categorical(potential) => potential.parameters_size(),
+            Self::Gaussian(potential) => potential.parameters_size(),
         }
     }
 
-    fn condition(&self, e: &Self::Evidence) -> Result<Self> {
-        match (self, e) {
-            (Self::Categorical(phi), crate::models::MixedEv::Categorical(ev)) => {
-                phi.condition(ev).map(Self::Categorical)
+    fn condition(&self, evidence: &Self::Evidence) -> Result<Self> {
+        match (self, evidence) {
+            (Self::Categorical(potential), crate::models::MixedEv::Categorical(ev)) => {
+                potential.condition(ev).map(Self::Categorical)
             }
-            (Self::Gaussian(phi), crate::models::MixedEv::Gaussian(ev)) => {
-                phi.condition(ev).map(Self::Gaussian)
+            (Self::Gaussian(potential), crate::models::MixedEv::Gaussian(ev)) => {
+                potential.condition(ev).map(Self::Gaussian)
             }
             _ => Err(Error::InvalidParameter(
                 "e",
@@ -123,20 +123,20 @@ impl Phi for MixedPhi {
 
     fn marginalize(&self, x: &Set<usize>) -> Result<Self> {
         match self {
-            Self::Categorical(phi) => phi.marginalize(x).map(Self::Categorical),
-            Self::Gaussian(phi) => phi.marginalize(x).map(Self::Gaussian),
+            Self::Categorical(potential) => potential.marginalize(x).map(Self::Categorical),
+            Self::Gaussian(potential) => potential.marginalize(x).map(Self::Gaussian),
         }
     }
 
     fn normalize(&self) -> Result<Self> {
         match self {
-            Self::Categorical(phi) => phi.normalize().map(Self::Categorical),
-            Self::Gaussian(phi) => phi.normalize().map(Self::Gaussian),
+            Self::Categorical(potential) => potential.normalize().map(Self::Categorical),
+            Self::Gaussian(potential) => potential.normalize().map(Self::Gaussian),
         }
     }
 
-    fn from_cpd(cpd: Self::CPD) -> Result<Self> {
-        match cpd {
+    fn from_cpd(distribution: Self::CPD) -> Result<Self> {
+        match distribution {
             crate::models::MixedCPD::Categorical(c) => c.into_phi().map(Self::Categorical),
             crate::models::MixedCPD::Gaussian(c) => c.into_phi().map(Self::Gaussian),
         }
@@ -144,8 +144,12 @@ impl Phi for MixedPhi {
 
     fn into_cpd(self, x: &Set<usize>, z: &Set<usize>) -> Result<Self::CPD> {
         match self {
-            Self::Categorical(phi) => phi.into_cpd(x, z).map(crate::models::MixedCPD::Categorical),
-            Self::Gaussian(phi) => phi.into_cpd(x, z).map(crate::models::MixedCPD::Gaussian),
+            Self::Categorical(potential) => potential
+                .into_cpd(x, z)
+                .map(crate::models::MixedCPD::Categorical),
+            Self::Gaussian(potential) => potential
+                .into_cpd(x, z)
+                .map(crate::models::MixedCPD::Gaussian),
         }
     }
 }
@@ -179,10 +183,10 @@ impl DivAssign<&MixedPhi> for MixedPhi {
     fn div_assign(&mut self, rhs: &MixedPhi) {
         match (self, rhs) {
             (Self::Categorical(a), MixedPhi::Categorical(b)) => {
-                a.div_assign(b);
+                DivAssign::div_assign(a, b);
             }
             (Self::Gaussian(a), MixedPhi::Gaussian(b)) => {
-                a.div_assign(b);
+                DivAssign::div_assign(a, b);
             }
             _ => unreachable!("cannot divide mixed potential variants"),
         }

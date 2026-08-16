@@ -96,13 +96,11 @@ impl AbsDiffEq for CatCTBN {
             && self.shape.eq(&other.shape)
             && self.initial_distribution.eq(&other.initial_distribution)
             && self.graph.eq(&other.graph)
-            && self
-                .cims
-                .iter()
-                .zip(&other.cims)
-                .all(|((label, cim), (other_label, other_cim))| {
-                    label.eq(other_label) && cim.abs_diff_eq(other_cim, epsilon)
-                })
+            && self.cims.iter().zip(&other.cims).all(
+                |((label, intensity), (other_label, other_cim))| {
+                    label.eq(other_label) && intensity.abs_diff_eq(other_cim, epsilon)
+                },
+            )
     }
 }
 
@@ -122,13 +120,11 @@ impl RelativeEq for CatCTBN {
             && self.shape.eq(&other.shape)
             && self.initial_distribution.eq(&other.initial_distribution)
             && self.graph.eq(&other.graph)
-            && self
-                .cims
-                .iter()
-                .zip(&other.cims)
-                .all(|((label, cim), (other_label, other_cim))| {
-                    label.eq(other_label) && cim.relative_eq(other_cim, epsilon, max_relative)
-                })
+            && self.cims.iter().zip(&other.cims).all(
+                |((label, intensity), (other_label, other_cim))| {
+                    label.eq(other_label) && intensity.relative_eq(other_cim, epsilon, max_relative)
+                },
+            )
     }
 }
 
@@ -175,15 +171,16 @@ impl CTBN for CatCTBN {
         // Allocate the support of the variables.
         let mut support: CatSupport = Default::default();
         // Insert the support of the variables into the map to check if they are the same.
-        cims.values().try_for_each(|cim| {
-            cim.support()
+        cims.values().try_for_each(|intensity| {
+            intensity
+                .support()
                 .iter()
-                .chain(cim.conditioning_support())
-                .try_for_each(|(l, s)| {
+                .chain(intensity.conditioning_support())
+                .try_for_each(|(l, stats)| {
                     // Check if the support are already in the map.
                     if let Some(existing_states) = support.get(l) {
                         // Check if the support are the same.
-                        if existing_states != s {
+                        if existing_states != stats {
                             return Err(Error::InvalidParameter(
                                 "cims",
                                 &format!("CatSupport of `{l}` must be the same across CIMs."),
@@ -191,7 +188,7 @@ impl CTBN for CatCTBN {
                         }
                     } else {
                         // Insert the support into the map.
-                        support.insert(l.to_owned(), s.clone());
+                        support.insert(l.to_owned(), stats.clone());
                     }
                     Ok(())
                 })
@@ -231,13 +228,13 @@ impl CTBN for CatCTBN {
         // Initialize the CPDs as uniform distributions.
         let initial_cpds: Vec<_> = cims
             .values()
-            .map(|cim| {
+            .map(|intensity| {
                 // Get label and support of the CIM.
-                let support = cim.support().clone();
+                let support = intensity.support().clone();
                 // Set empty conditioning support.
                 let conditioning_support = CatSupport::default();
                 // Set uniform parameters.
-                let alpha = cim.shape().product();
+                let alpha = intensity.shape().product();
                 let parameters = Array::from_vec(vec![1. / alpha as f64; alpha]);
                 let parameters = parameters.insert_axis(Axis(0));
                 // Construct the CPD.
@@ -306,10 +303,13 @@ impl CTBN for CatCTBN {
         }
 
         // Construct the categorical CTBN.
-        let mut ctbn = Self::new(graph, cims)?;
+        let mut continuous_time_bayesian_network = Self::new(graph, cims)?;
 
         // Check the initial distribution has same labels.
-        if !initial_distribution.labels().eq(ctbn.labels()) {
+        if !initial_distribution
+            .labels()
+            .eq(continuous_time_bayesian_network.labels())
+        {
             return Err(Error::LabelMismatch(
                 "initial distribution labels",
                 "cims labels",
@@ -319,8 +319,10 @@ impl CTBN for CatCTBN {
         if !initial_distribution
             .cpds()
             .into_iter()
-            .zip(ctbn.cims())
-            .all(|((_, cpd), (_, cim))| cpd.support().eq(cim.support()))
+            .zip(continuous_time_bayesian_network.cims())
+            .all(|((_, distribution), (_, intensity))| {
+                distribution.support().eq(intensity.support())
+            })
         {
             return Err(Error::InvalidParameter(
                 "initial distribution",
@@ -329,11 +331,11 @@ impl CTBN for CatCTBN {
         }
 
         // Set the optional fields.
-        ctbn.name = name;
-        ctbn.description = description;
-        ctbn.initial_distribution = initial_distribution;
+        continuous_time_bayesian_network.name = name;
+        continuous_time_bayesian_network.description = description;
+        continuous_time_bayesian_network.initial_distribution = initial_distribution;
 
-        Ok(ctbn)
+        Ok(continuous_time_bayesian_network)
     }
 }
 

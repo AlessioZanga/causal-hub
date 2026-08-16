@@ -232,64 +232,64 @@ impl Error {
     /// An error related to linear algebra operations.
     #[allow(non_snake_case)]
     #[track_caller]
-    pub fn Linalg(s: &str) -> Self {
-        ErrorKind::Linalg(s.to_string()).into()
+    pub fn Linalg(stats: &str) -> Self {
+        ErrorKind::Linalg(stats.to_string()).into()
     }
 
     /// An error related to probability calculations.
     #[allow(non_snake_case)]
     #[track_caller]
-    pub fn Probability(s: &str) -> Self {
-        ErrorKind::Probability(s.to_string()).into()
+    pub fn Probability(stats: &str) -> Self {
+        ErrorKind::Probability(stats.to_string()).into()
     }
 
     /// An error related to parsing.
     #[allow(non_snake_case)]
     #[track_caller]
-    pub fn Parsing(s: &str) -> Self {
-        ErrorKind::Parsing(s.to_string()).into()
+    pub fn Parsing(stats: &str) -> Self {
+        ErrorKind::Parsing(stats.to_string()).into()
     }
 
     /// An error related to missing data.
     #[allow(non_snake_case)]
     #[track_caller]
-    pub fn MissingData(s: &str) -> Self {
-        ErrorKind::MissingData(s.to_string()).into()
+    pub fn MissingData(stats: &str) -> Self {
+        ErrorKind::MissingData(stats.to_string()).into()
     }
 
     /// An error related to statistics.
     #[allow(non_snake_case)]
     #[track_caller]
-    pub fn Stats(s: &str) -> Self {
-        ErrorKind::Stats(s.to_string()).into()
+    pub fn Stats(stats: &str) -> Self {
+        ErrorKind::Stats(stats.to_string()).into()
     }
 
     /// An error related to random distributions.
     #[allow(non_snake_case)]
     #[track_caller]
-    pub fn RandDistr(s: &str) -> Self {
-        ErrorKind::RandDistr(s.to_string()).into()
+    pub fn RandDistr(stats: &str) -> Self {
+        ErrorKind::RandDistr(stats.to_string()).into()
     }
 
     /// An error related to shape.
     #[allow(non_snake_case)]
     #[track_caller]
-    pub fn Shape(s: &str) -> Self {
-        ErrorKind::Shape(s.to_string()).into()
+    pub fn Shape(stats: &str) -> Self {
+        ErrorKind::Shape(stats.to_string()).into()
     }
 
     /// An error related to unreachable code.
     #[allow(non_snake_case)]
     #[track_caller]
-    pub fn Unreachable(s: &str) -> Self {
-        ErrorKind::Unreachable(s.to_string()).into()
+    pub fn Unreachable(stats: &str) -> Self {
+        ErrorKind::Unreachable(stats.to_string()).into()
     }
 
     /// An error related to lock poisoning.
     #[allow(non_snake_case)]
     #[track_caller]
-    pub fn Poison(s: &str) -> Self {
-        ErrorKind::Poison(s.to_string()).into()
+    pub fn Poison(stats: &str) -> Self {
+        ErrorKind::Poison(stats.to_string()).into()
     }
 
     /// Index is out of bounds.
@@ -309,8 +309,8 @@ impl Error {
     /// An error indicating that a set cannot be empty.
     #[allow(non_snake_case)]
     #[track_caller]
-    pub fn EmptySet(s: &str) -> Self {
-        ErrorKind::EmptySet(s.to_string()).into()
+    pub fn EmptySet(stats: &str) -> Self {
+        ErrorKind::EmptySet(stats.to_string()).into()
     }
 
     /// An error indicating that two sets must be disjoint.
@@ -344,8 +344,8 @@ impl Error {
     /// An error indicating a conflict in prior knowledge.
     #[allow(non_snake_case)]
     #[track_caller]
-    pub fn PriorKnowledgeConflict(s: &str) -> Self {
-        ErrorKind::PriorKnowledgeConflict(s.to_string()).into()
+    pub fn PriorKnowledgeConflict(stats: &str) -> Self {
+        ErrorKind::PriorKnowledgeConflict(stats.to_string()).into()
     }
 
     /// An error indicating that the labels of the graphs are incompatible.
@@ -386,15 +386,15 @@ impl Error {
     /// An error indicating that a state is missing.
     #[allow(non_snake_case)]
     #[track_caller]
-    pub fn MissingState(s: &str) -> Self {
-        ErrorKind::MissingState(s.to_string()).into()
+    pub fn MissingState(stats: &str) -> Self {
+        ErrorKind::MissingState(stats.to_string()).into()
     }
 
     /// An error indicating that a label is missing.
     #[allow(non_snake_case)]
     #[track_caller]
-    pub fn MissingLabel(s: &str) -> Self {
-        ErrorKind::MissingLabel(s.to_string()).into()
+    pub fn MissingLabel(stats: &str) -> Self {
+        ErrorKind::MissingLabel(stats.to_string()).into()
     }
 
     /// An error indicating that a value is NaN.
@@ -414,8 +414,8 @@ impl Error {
     /// An error indicating that an object construction failed.
     #[allow(non_snake_case)]
     #[track_caller]
-    pub fn ConstructionError(s: &str) -> Self {
-        ErrorKind::ConstructionError(s.to_string()).into()
+    pub fn ConstructionError(stats: &str) -> Self {
+        ErrorKind::ConstructionError(stats.to_string()).into()
     }
 }
 

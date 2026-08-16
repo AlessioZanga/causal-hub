@@ -56,7 +56,7 @@ mod tests {
             assert_eq!(ev.labels(), &labels!["X", "Y", "Z"]);
             assert_eq!(ev.evidences().len(), 3);
             // All should be None.
-            assert!(ev.evidences().iter().all(|e| e.is_none()));
+            assert!(ev.evidences().iter().all(|evidence| evidence.is_none()));
 
             Ok(())
         }

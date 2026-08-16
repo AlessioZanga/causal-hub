@@ -11,7 +11,7 @@ use crate::{
 pub struct RngDiGraph<'a, R> {
     rng: &'a mut R,
     labels: &'a Labels,
-    p: f64,
+    probability: f64,
 }
 
 impl<'a, R> RngDiGraph<'a, R> {
@@ -27,13 +27,17 @@ impl<'a, R> RngDiGraph<'a, R> {
     ///
     /// A new `RngDiGraph` instance.
     ///
-    pub fn new(rng: &'a mut R, labels: &'a Labels, p: f64) -> Result<Self> {
+    pub fn new(rng: &'a mut R, labels: &'a Labels, probability: f64) -> Result<Self> {
         // Check if the probability is in [0, 1].
-        if !(0.0..=1.0).contains(&p) {
+        if !(0.0..=1.0).contains(&probability) {
             return Err(Error::InvalidParameter("p", "must be in [0, 1]"));
         }
 
-        Ok(Self { rng, labels, p })
+        Ok(Self {
+            rng,
+            labels,
+            probability,
+        })
     }
 }
 
@@ -42,7 +46,7 @@ impl<R: Rng> Random for RngDiGraph<'_, R> {
 
     fn random(&mut self) -> Self::Output {
         // Construct the empty graph.
-        let mut g = DiGraph::empty(self.labels)?;
+        let mut graph = DiGraph::empty(self.labels)?;
 
         // Get the number of vertices.
         let n = self.labels.len();
@@ -51,15 +55,15 @@ impl<R: Rng> Random for RngDiGraph<'_, R> {
         (0..n)
             .cartesian_product(0..n)
             // ... filter out self-loops and sample edges ...
-            .filter(|(i, j)| i != j && self.rng.random_bool(self.p))
+            .filter(|(i, j)| i != j && self.rng.random_bool(self.probability))
             .try_for_each(|(i, j)| -> Result<()> {
                 // ... add an edge.
-                g.add_edge(i, j)?;
+                graph.add_edge(i, j)?;
 
                 Ok(())
             })?;
 
-        Ok(g)
+        Ok(graph)
     }
 }
 
@@ -67,7 +71,7 @@ impl<R: Rng> Random for RngDiGraph<'_, R> {
 pub struct RngDag<'a, R> {
     rng: &'a mut R,
     labels: &'a Labels,
-    p: f64,
+    probability: f64,
 }
 
 impl<'a, R> RngDag<'a, R> {
@@ -83,13 +87,17 @@ impl<'a, R> RngDag<'a, R> {
     ///
     /// A new `RngDag` instance.
     ///
-    pub fn new(rng: &'a mut R, labels: &'a Labels, p: f64) -> Result<Self> {
+    pub fn new(rng: &'a mut R, labels: &'a Labels, probability: f64) -> Result<Self> {
         // Check if the probability is in [0, 1].
-        if !(0.0..=1.0).contains(&p) {
+        if !(0.0..=1.0).contains(&probability) {
             return Err(Error::InvalidParameter("p", "must be in [0, 1]"));
         }
 
-        Ok(Self { rng, labels, p })
+        Ok(Self {
+            rng,
+            labels,
+            probability,
+        })
     }
 }
 
@@ -98,7 +106,7 @@ impl<R: Rng> Random for RngDag<'_, R> {
 
     fn random(&mut self) -> Self::Output {
         // Construct the empty graph.
-        let mut g = DiGraph::empty(self.labels)?;
+        let mut graph = DiGraph::empty(self.labels)?;
 
         // Get the number of vertices.
         let n = self.labels.len();
@@ -112,15 +120,15 @@ impl<R: Rng> Random for RngDag<'_, R> {
             .into_iter()
             .combinations(2)
             // ... sample edges ...
-            .filter(|_| self.rng.random_bool(self.p))
+            .filter(|_| self.rng.random_bool(self.probability))
             .try_for_each(|idx| -> Result<()> {
                 // ... add an edge.
                 let (i, j) = (idx[0], idx[1]);
-                g.add_edge(i, j)?;
+                graph.add_edge(i, j)?;
 
                 Ok(())
             })?;
 
-        Ok(g)
+        Ok(graph)
     }
 }

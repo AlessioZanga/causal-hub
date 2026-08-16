@@ -45,18 +45,18 @@ mod tests {
         )?);
 
         // P(A=0 | B=0) = 0.1
-        let p = mixed.pf(
+        let probability = mixed.pf(
             &MixedSample::Categorical(array![0]),
             &MixedSample::Categorical(array![0]),
         )?;
-        assert!((p - 0.1).abs() < 1e-10);
+        assert!((probability - 0.1).abs() < 1e-10);
 
         // P(A=1 | B=0) = 0.9
-        let p = mixed.pf(
+        let probability = mixed.pf(
             &MixedSample::Categorical(array![1]),
             &MixedSample::Categorical(array![0]),
         )?;
-        assert!((p - 0.9).abs() < 1e-10);
+        assert!((probability - 0.9).abs() < 1e-10);
 
         Ok(())
     }
@@ -74,9 +74,9 @@ mod tests {
         let sample = mixed.sample(&mut rng, &MixedSample::Categorical(array![]))?;
 
         match sample {
-            MixedSample::Categorical(s) => {
-                assert_eq!(s.len(), 1);
-                assert_eq!(s[0], 1);
+            MixedSample::Categorical(stats) => {
+                assert_eq!(stats.len(), 1);
+                assert_eq!(stats[0], 1);
             }
             _ => panic!("Expected categorical sample"),
         }
@@ -105,11 +105,11 @@ mod tests {
         let mixed = MixedCPD::from(GaussCPD::new(labels!["A"], labels!["B"], params)?);
 
         // P(A=1.5 | B=1.0) should be finite and positive
-        let p = mixed.pf(
+        let probability = mixed.pf(
             &MixedSample::Gaussian(array![1.5]),
             &MixedSample::Gaussian(array![1.0]),
         )?;
-        assert!(p.is_finite() && p > 0.);
+        assert!(probability.is_finite() && probability > 0.);
 
         Ok(())
     }
@@ -124,9 +124,9 @@ mod tests {
         let sample = mixed.sample(&mut rng, &MixedSample::Gaussian(array![]))?;
 
         match sample {
-            MixedSample::Gaussian(s) => {
-                assert_eq!(s.len(), 1);
-                assert!(s[0].is_finite());
+            MixedSample::Gaussian(stats) => {
+                assert_eq!(stats.len(), 1);
+                assert!(stats[0].is_finite());
             }
             _ => panic!("Expected Gaussian sample"),
         }
@@ -180,13 +180,13 @@ mod tests {
 
         let cat_sample: MixedSample = CatSample::from_vec(vec![0, 1]).into();
         match cat_sample {
-            MixedSample::Categorical(s) => assert_eq!(s, array![0, 1]),
+            MixedSample::Categorical(stats) => assert_eq!(stats, array![0, 1]),
             _ => panic!("Expected categorical"),
         }
 
         let gauss_sample: MixedSample = GaussSample::from_vec(vec![1.5, 2.5]).into();
         match gauss_sample {
-            MixedSample::Gaussian(s) => assert_eq!(s, array![1.5, 2.5]),
+            MixedSample::Gaussian(stats) => assert_eq!(stats, array![1.5, 2.5]),
             _ => panic!("Expected gaussian"),
         }
 
@@ -201,11 +201,11 @@ mod tests {
             array![[0.1, 0.9], [0.2, 0.8], [0.3, 0.7], [0.4, 0.6],],
         )?);
 
-        let s = CPD::support(&mixed);
-        match &*s {
-            MixedSupport::Categorical(s) => {
-                assert_eq!(s.len(), 1);
-                for (_, states) in s {
+        let stats = CPD::support(&mixed);
+        match &*stats {
+            MixedSupport::Categorical(stats) => {
+                assert_eq!(stats.len(), 1);
+                for (_, states) in stats {
                     assert_eq!(states.len(), 2);
                     assert!(states.contains("no"));
                     assert!(states.contains("yes"));
@@ -234,10 +234,10 @@ mod tests {
             GaussCPDP::new(array![[3.]], array![2.], array![[4.]])?,
         )?);
 
-        let s = CPD::support(&mixed);
-        match &*s {
-            MixedSupport::Gaussian(s) => {
-                for (_, &(lo, hi)) in s {
+        let stats = CPD::support(&mixed);
+        match &*stats {
+            MixedSupport::Gaussian(stats) => {
+                for (_, &(lo, hi)) in stats {
                     assert!(lo.is_infinite() && lo.is_sign_negative());
                     assert!(hi.is_infinite() && hi.is_sign_positive());
                 }

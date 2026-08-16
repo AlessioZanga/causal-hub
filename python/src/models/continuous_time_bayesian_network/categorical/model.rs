@@ -143,13 +143,13 @@ impl PyCatCTBN {
             .lock()
             .cims()
             .iter()
-            .map(|(label, cim)| {
+            .map(|(label, intensity)| {
                 // Convert the label to a string slice.
                 let label = label.clone();
                 // Convert the CIM to a PyCatCIM.
-                let cim = cim.clone().into();
+                let intensity = intensity.clone().into();
                 // Return the label and CIM as a tuple.
-                (label, cim)
+                (label, intensity)
             })
             .collect())
     }

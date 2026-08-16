@@ -347,7 +347,7 @@ impl CsvIO for CatTable {
             Vec::new(),
             |mut values, (i, row)| -> Result<_> {
                 // Get the record row.
-                let row = row.map_err(|e| Error::Csv(Arc::new(e)))?;
+                let row = row.map_err(|evidence| Error::Csv(Arc::new(evidence)))?;
                 // Zip the row with the support.
                 for (j, (x, support)) in row.into_iter().zip(support.values_mut()).enumerate() {
                     // Check if the value is empty.

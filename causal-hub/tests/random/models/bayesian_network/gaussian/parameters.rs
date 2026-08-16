@@ -16,9 +16,9 @@ mod tests {
         let conditioning_labels = labels!["Z1", "Z2", "Z3"];
         let s_a = 0.5;
         let s_b = 1.0;
-        let e = 1e-2;
+        let evidence = 1e-2;
 
-        let res = RngGaussCPD::new(&mut rng, &labels, &conditioning_labels, s_a, s_b, e);
+        let res = RngGaussCPD::new(&mut rng, &labels, &conditioning_labels, s_a, s_b, evidence);
         assert!(res.is_ok());
 
         Ok(())
@@ -31,13 +31,14 @@ mod tests {
         let conditioning_labels = labels!["Z1", "Z2", "Z3"];
         let s_a = 0.5;
         let s_b = 1.0;
-        let e = 1e-2;
+        let evidence = 1e-2;
 
-        let mut rng_cpd = RngGaussCPD::new(&mut rng, &labels, &conditioning_labels, s_a, s_b, e)?;
-        let cpd: GaussCPD = rng_cpd.random()?;
+        let mut rng_cpd =
+            RngGaussCPD::new(&mut rng, &labels, &conditioning_labels, s_a, s_b, evidence)?;
+        let distribution: GaussCPD = rng_cpd.random()?;
 
-        assert_eq!(cpd.labels(), &labels);
-        assert_eq!(cpd.conditioning_labels(), &conditioning_labels);
+        assert_eq!(distribution.labels(), &labels);
+        assert_eq!(distribution.conditioning_labels(), &conditioning_labels);
 
         Ok(())
     }

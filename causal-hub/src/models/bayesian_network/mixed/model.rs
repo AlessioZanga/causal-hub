@@ -67,8 +67,18 @@ impl MixedEv {
     /// Return the events indices where evidence is present.
     pub fn events(&self) -> Set<usize> {
         match self {
-            Self::Categorical(ev) => ev.evidences().iter().flatten().map(|e| e.event()).collect(),
-            Self::Gaussian(ev) => ev.evidences().iter().flatten().map(|e| e.event()).collect(),
+            Self::Categorical(ev) => ev
+                .evidences()
+                .iter()
+                .flatten()
+                .map(|evidence| evidence.event())
+                .collect(),
+            Self::Gaussian(ev) => ev
+                .evidences()
+                .iter()
+                .flatten()
+                .map(|evidence| evidence.event())
+                .collect(),
         }
     }
 }
@@ -176,13 +186,11 @@ impl AbsDiffEq for MixedBN {
         self.labels.eq(&other.labels)
             && self.graph.eq(&other.graph)
             && self.topological_order.eq(&other.topological_order)
-            && self
-                .cpds
-                .iter()
-                .zip(&other.cpds)
-                .all(|((label, cpd), (other_label, other_cpd))| {
-                    label.eq(other_label) && cpd.abs_diff_eq(other_cpd, epsilon)
-                })
+            && self.cpds.iter().zip(&other.cpds).all(
+                |((label, distribution), (other_label, other_cpd))| {
+                    label.eq(other_label) && distribution.abs_diff_eq(other_cpd, epsilon)
+                },
+            )
     }
 }
 
@@ -200,13 +208,12 @@ impl RelativeEq for MixedBN {
         self.labels.eq(&other.labels)
             && self.graph.eq(&other.graph)
             && self.topological_order.eq(&other.topological_order)
-            && self
-                .cpds
-                .iter()
-                .zip(&other.cpds)
-                .all(|((label, cpd), (other_label, other_cpd))| {
-                    label.eq(other_label) && cpd.relative_eq(other_cpd, epsilon, max_relative)
-                })
+            && self.cpds.iter().zip(&other.cpds).all(
+                |((label, distribution), (other_label, other_cpd))| {
+                    label.eq(other_label)
+                        && distribution.relative_eq(other_cpd, epsilon, max_relative)
+                },
+            )
     }
 }
 
@@ -231,7 +238,7 @@ impl BN for MixedBN {
         Cow::Owned(
             self.cpds
                 .iter()
-                .map(|(label, cpd)| (label.clone(), cpd.support().into_owned()))
+                .map(|(label, distribution)| (label.clone(), distribution.support().into_owned()))
                 .collect(),
         )
     }
@@ -355,11 +362,11 @@ impl BN for MixedBN {
             return Err(Error::InvalidParameter("description", "cannot be empty"));
         }
 
-        let mut bn = Self::new(graph, cpds)?;
-        bn.name = name;
-        bn.description = description;
+        let mut bayesian_network = Self::new(graph, cpds)?;
+        bayesian_network.name = name;
+        bayesian_network.description = description;
 
-        Ok(bn)
+        Ok(bayesian_network)
     }
 }
 

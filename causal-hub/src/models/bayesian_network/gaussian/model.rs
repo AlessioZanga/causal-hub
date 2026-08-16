@@ -53,13 +53,11 @@ impl AbsDiffEq for GaussBN {
         self.labels.eq(&other.labels)
             && self.graph.eq(&other.graph)
             && self.topological_order.eq(&other.topological_order)
-            && self
-                .cpds
-                .iter()
-                .zip(&other.cpds)
-                .all(|((label, cpd), (other_label, other_cpd))| {
-                    label.eq(other_label) && cpd.abs_diff_eq(other_cpd, epsilon)
-                })
+            && self.cpds.iter().zip(&other.cpds).all(
+                |((label, distribution), (other_label, other_cpd))| {
+                    label.eq(other_label) && distribution.abs_diff_eq(other_cpd, epsilon)
+                },
+            )
     }
 }
 
@@ -77,13 +75,12 @@ impl RelativeEq for GaussBN {
         self.labels.eq(&other.labels)
             && self.graph.eq(&other.graph)
             && self.topological_order.eq(&other.topological_order)
-            && self
-                .cpds
-                .iter()
-                .zip(&other.cpds)
-                .all(|((label, cpd), (other_label, other_cpd))| {
-                    label.eq(other_label) && cpd.relative_eq(other_cpd, epsilon, max_relative)
-                })
+            && self.cpds.iter().zip(&other.cpds).all(
+                |((label, distribution), (other_label, other_cpd))| {
+                    label.eq(other_label)
+                        && distribution.relative_eq(other_cpd, epsilon, max_relative)
+                },
+            )
     }
 }
 
@@ -255,13 +252,13 @@ impl BN for GaussBN {
         }
 
         // Construct the BN.
-        let mut bn = Self::new(graph, cpds)?;
+        let mut bayesian_network = Self::new(graph, cpds)?;
 
         // Set the optional fields.
-        bn.name = name;
-        bn.description = description;
+        bayesian_network.name = name;
+        bayesian_network.description = description;
 
-        Ok(bn)
+        Ok(bayesian_network)
     }
 }
 

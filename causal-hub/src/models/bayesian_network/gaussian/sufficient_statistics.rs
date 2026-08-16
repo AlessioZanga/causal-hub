@@ -449,7 +449,7 @@ impl<'de> Deserialize<'de> for GaussCPDS {
                     fitted_design_covariance,
                     fitted_size,
                 )
-                .map_err(|e| E::custom(e.to_string()))
+                .map_err(|evidence| E::custom(evidence.to_string()))
             }
         }
 

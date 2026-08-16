@@ -192,7 +192,7 @@ impl<'de> Deserialize<'de> for CatCPDS {
                 };
 
                 CatCPDS::new(fitted_conditional_counts, fitted_size)
-                    .map_err(|e| E::custom(e.to_string()))
+                    .map_err(|evidence| E::custom(evidence.to_string()))
             }
         }
 
@@ -515,17 +515,17 @@ impl CatCPD {
         let not_x = (0..labels_x.len()).filter(|i| !x.contains(i)).collect();
         let not_z = (0..labels_z.len()).filter(|i| !z.contains(i)).collect();
         // Convert to potential.
-        let phi = self.clone().into_phi()?;
+        let potential = self.clone().into_phi()?;
         // Map CPD indices to potential indices.
-        let x = phi.indices_from(x, labels_x)?;
-        let z = phi.indices_from(z, labels_z)?;
+        let x = potential.indices_from(x, labels_x)?;
+        let z = potential.indices_from(z, labels_z)?;
         // Marginalize the potential.
-        let phi = phi.marginalize(&(&x | &z))?;
+        let potential = potential.marginalize(&(&x | &z))?;
         // Map CPD indices to potential indices.
-        let not_x = phi.indices_from(&not_x, labels_x)?;
-        let not_z = phi.indices_from(&not_z, labels_z)?;
+        let not_x = potential.indices_from(&not_x, labels_x)?;
+        let not_z = potential.indices_from(&not_z, labels_z)?;
         // Convert back to CPD.
-        phi.into_cpd(&not_x, &not_z)
+        potential.into_cpd(&not_x, &not_z)
     }
 
     /// Creates a new categorical conditional probability distribution with optional fields.
@@ -577,13 +577,13 @@ impl CatCPD {
         }
 
         // Construct the categorical CPD.
-        let mut cpd = Self::new(support, conditioning_support, parameters)?;
+        let mut distribution = Self::new(support, conditioning_support, parameters)?;
 
         // Set the optionals.
-        cpd.fitted_statistics = fitted_statistics;
-        cpd.fitted_log_likelihood = fitted_log_likelihood;
+        distribution.fitted_statistics = fitted_statistics;
+        distribution.fitted_log_likelihood = fitted_log_likelihood;
 
-        Ok(cpd)
+        Ok(distribution)
     }
 
     /// Converts a potential \phi(X \cup Z) to a CPD P(X | Z).
@@ -599,8 +599,8 @@ impl CatCPD {
     /// The corresponding CPD.
     ///
     #[inline]
-    pub fn from_phi(phi: CatPhi, x: &Set<usize>, z: &Set<usize>) -> Result<Self> {
-        phi.into_cpd(x, z)
+    pub fn from_phi(potential: CatPhi, x: &Set<usize>, z: &Set<usize>) -> Result<Self> {
+        potential.into_cpd(x, z)
     }
 
     /// Converts a CPD P(X | Z) to a potential \phi(X \cup Z).
@@ -725,7 +725,7 @@ impl CPD for CatCPD {
         // Get number of variables.
         let n = self.labels.len();
         // Get number of conditioning variables.
-        let m = self.conditioning_labels.len();
+        let model = self.conditioning_labels.len();
 
         // Check X matches number of variables.
         if x.len() != n {
@@ -735,9 +735,9 @@ impl CPD for CatCPD {
             ));
         }
         // Check Z matches number of conditioning variables.
-        if z.len() != m {
+        if z.len() != model {
             return Err(Error::IncompatibleShape(
-                &m.to_string(),
+                &model.to_string(),
                 &z.len().to_string(),
             ));
         }
@@ -761,7 +761,7 @@ impl CPD for CatCPD {
         };
 
         // Convert conditioning support to indices.
-        let z = match m {
+        let z = match model {
             // ... no conditioning variables.
             0 => 0,
             // ... one conditioning variable.
@@ -783,12 +783,12 @@ impl CPD for CatCPD {
         // Get number of variables.
         let n = self.labels.len();
         // Get number of conditioning variables.
-        let m = self.conditioning_labels.len();
+        let model = self.conditioning_labels.len();
 
         // Check Z matches number of conditioning variables.
-        if z.len() != m {
+        if z.len() != model {
             return Err(Error::IncompatibleShape(
-                &m.to_string(),
+                &model.to_string(),
                 &z.len().to_string(),
             ));
         }
@@ -799,7 +799,7 @@ impl CPD for CatCPD {
         }
 
         // Convert conditioning support to indices.
-        let z = match m {
+        let z = match model {
             // ... no conditioning variables.
             0 => 0,
             // ... one conditioning variable.
@@ -814,12 +814,13 @@ impl CPD for CatCPD {
         };
 
         // Get the distribution of the vertex.
-        let p = self.parameters.row(z);
+        let probability = self.parameters.row(z);
         // Construct the sampler.
-        let s = WeightedIndex::new(&p)
-            .map_err(|e| Error::Probability(&format!("Failed to create WeightedIndex: {e}")))?;
+        let stats = WeightedIndex::new(&probability).map_err(|evidence| {
+            Error::Probability(&format!("Failed to create WeightedIndex: {evidence}"))
+        })?;
         // Sample from the distribution.
-        let x = s.sample(rng);
+        let x = stats.sample(rng);
 
         // Convert indices to support.
         match n {
@@ -857,22 +858,22 @@ impl Display for CatCPD {
         // Get the number of variables to condition on.
         let z = self.conditioning_shape().len();
         // Get the number of support for the first variable.
-        let s = self.shape()[0];
+        let stats = self.shape()[0];
 
         // Create a horizontal line for table formatting.
-        let hline = "-".repeat((n + 3) * (z + s) + 1);
+        let hline = "-".repeat((n + 3) * (z + stats) + 1);
         writeln!(f, "{hline}")?;
 
         // Create the header row for the table.
         let header = std::iter::repeat_n("", z) // Empty columns for the conditioning variables.
             .chain([self.labels()[0].as_str()]) // Label for the first variable.
-            .chain(std::iter::repeat_n("", s.saturating_sub(1))) // Empty columns for remaining support.
+            .chain(std::iter::repeat_n("", stats.saturating_sub(1))) // Empty columns for remaining support.
             .map(|x| format!("{x:n$}")) // Format each column with fixed width.
             .join(" | ");
         writeln!(f, "| {header} |")?;
 
         // Create a separator row for the table.
-        let separator = std::iter::repeat_n("-".repeat(n), z + s).join(" | ");
+        let separator = std::iter::repeat_n("-".repeat(n), z + stats).join(" | ");
         writeln!(f, "| {separator} |")?;
 
         // Create the second header row with labels and support.

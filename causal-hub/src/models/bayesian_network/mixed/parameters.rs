@@ -56,15 +56,15 @@ pub enum MixedSample {
 
 impl From<CatCPD> for MixedCPD {
     #[inline]
-    fn from(cpd: CatCPD) -> Self {
-        Self::Categorical(cpd)
+    fn from(distribution: CatCPD) -> Self {
+        Self::Categorical(distribution)
     }
 }
 
 impl From<GaussCPD> for MixedCPD {
     #[inline]
-    fn from(cpd: GaussCPD) -> Self {
-        Self::Gaussian(cpd)
+    fn from(distribution: GaussCPD) -> Self {
+        Self::Gaussian(distribution)
     }
 }
 
@@ -99,8 +99,8 @@ impl From<GaussSample> for MixedSample {
 impl Labelled for MixedCPD {
     fn labels(&self) -> &Labels {
         match self {
-            Self::Categorical(cpd) => cpd.labels(),
-            Self::Gaussian(cpd) => cpd.labels(),
+            Self::Categorical(distribution) => distribution.labels(),
+            Self::Gaussian(distribution) => distribution.labels(),
         }
     }
 }
@@ -158,25 +158,29 @@ impl CPD for MixedCPD {
 
     fn conditioning_labels(&self) -> &Labels {
         match self {
-            Self::Categorical(cpd) => cpd.conditioning_labels(),
-            Self::Gaussian(cpd) => cpd.conditioning_labels(),
+            Self::Categorical(distribution) => distribution.conditioning_labels(),
+            Self::Gaussian(distribution) => distribution.conditioning_labels(),
         }
     }
 
     fn support(&self) -> Cow<'_, Self::Support> {
         match self {
-            Self::Categorical(cpd) => Cow::Owned(MixedSupport::Categorical(cpd.support().clone())),
-            Self::Gaussian(cpd) => Cow::Owned(MixedSupport::Gaussian(cpd.support().into_owned())),
+            Self::Categorical(distribution) => {
+                Cow::Owned(MixedSupport::Categorical(distribution.support().clone()))
+            }
+            Self::Gaussian(distribution) => {
+                Cow::Owned(MixedSupport::Gaussian(distribution.support().into_owned()))
+            }
         }
     }
 
     fn conditioning_support(&self) -> Cow<'_, Self::Support> {
         match self {
-            Self::Categorical(cpd) => Cow::Owned(MixedSupport::Categorical(
-                cpd.conditioning_support().clone(),
+            Self::Categorical(distribution) => Cow::Owned(MixedSupport::Categorical(
+                distribution.conditioning_support().clone(),
             )),
-            Self::Gaussian(cpd) => Cow::Owned(MixedSupport::Gaussian(
-                cpd.conditioning_support().into_owned(),
+            Self::Gaussian(distribution) => Cow::Owned(MixedSupport::Gaussian(
+                distribution.conditioning_support().into_owned(),
             )),
         }
     }
@@ -187,36 +191,38 @@ impl CPD for MixedCPD {
 
     fn parameters_size(&self) -> usize {
         match self {
-            Self::Categorical(cpd) => cpd.parameters_size(),
-            Self::Gaussian(cpd) => cpd.parameters_size(),
+            Self::Categorical(distribution) => distribution.parameters_size(),
+            Self::Gaussian(distribution) => distribution.parameters_size(),
         }
     }
 
     fn fitted_statistics(&self) -> Option<Cow<'_, Self::Statistics>> {
         match self {
-            Self::Categorical(cpd) => cpd
+            Self::Categorical(distribution) => distribution
                 .fitted_statistics()
-                .map(|s| Cow::Owned(MixedCPDS::Categorical(s.into_owned()))),
-            Self::Gaussian(cpd) => cpd
+                .map(|stats| Cow::Owned(MixedCPDS::Categorical(stats.into_owned()))),
+            Self::Gaussian(distribution) => distribution
                 .fitted_statistics()
-                .map(|s| Cow::Owned(MixedCPDS::Gaussian(Box::new(s.into_owned())))),
+                .map(|stats| Cow::Owned(MixedCPDS::Gaussian(Box::new(stats.into_owned())))),
         }
     }
 
     fn fitted_log_likelihood(&self) -> Option<f64> {
         match self {
-            Self::Categorical(cpd) => cpd.fitted_log_likelihood(),
-            Self::Gaussian(cpd) => cpd.fitted_log_likelihood(),
+            Self::Categorical(distribution) => distribution.fitted_log_likelihood(),
+            Self::Gaussian(distribution) => distribution.fitted_log_likelihood(),
         }
     }
 
     fn pf(&self, x: &Self::Sample, z: &Self::Sample) -> Result<f64> {
         match (self, x, z) {
-            (Self::Categorical(cpd), MixedSample::Categorical(x), MixedSample::Categorical(z)) => {
-                cpd.pf(x, z)
-            }
-            (Self::Gaussian(cpd), MixedSample::Gaussian(x), MixedSample::Gaussian(z)) => {
-                cpd.pf(x, z)
+            (
+                Self::Categorical(distribution),
+                MixedSample::Categorical(x),
+                MixedSample::Categorical(z),
+            ) => distribution.pf(x, z),
+            (Self::Gaussian(distribution), MixedSample::Gaussian(x), MixedSample::Gaussian(z)) => {
+                distribution.pf(x, z)
             }
             _ => Err(Error::InvalidParameter(
                 "x/z",
@@ -227,12 +233,12 @@ impl CPD for MixedCPD {
 
     fn sample<R: Rng>(&self, rng: &mut R, z: &Self::Sample) -> Result<Self::Sample> {
         match (self, z) {
-            (Self::Categorical(cpd), MixedSample::Categorical(z)) => {
-                let sample = cpd.sample(rng, z)?;
+            (Self::Categorical(distribution), MixedSample::Categorical(z)) => {
+                let sample = distribution.sample(rng, z)?;
                 Ok(MixedSample::Categorical(sample))
             }
-            (Self::Gaussian(cpd), MixedSample::Gaussian(z)) => {
-                let sample = cpd.sample(rng, z)?;
+            (Self::Gaussian(distribution), MixedSample::Gaussian(z)) => {
+                let sample = distribution.sample(rng, z)?;
                 Ok(MixedSample::Gaussian(sample))
             }
             _ => Err(Error::InvalidParameter(

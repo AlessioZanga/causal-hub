@@ -92,10 +92,18 @@ impl CatEvT {
     ///
     pub const fn set_event(&mut self, event: usize) {
         match self {
-            Self::CertainPositive { event: e, .. }
-            | Self::CertainNegative { event: e, .. }
-            | Self::UncertainPositive { event: e, .. }
-            | Self::UncertainNegative { event: e, .. } => *e = event,
+            Self::CertainPositive {
+                event: evidence, ..
+            }
+            | Self::CertainNegative {
+                event: evidence, ..
+            }
+            | Self::UncertainPositive {
+                event: evidence, ..
+            }
+            | Self::UncertainNegative {
+                event: evidence, ..
+            } => *evidence = event,
         }
     }
 }
@@ -141,15 +149,15 @@ impl CatEv {
         // Fill the evidences.
         let mut evidences = values.into_iter().try_fold(
             vec![None; support.len()],
-            |mut evidences, e| -> Result<_> {
+            |mut evidences, evidence| -> Result<_> {
                 // Get the event of the evidence.
-                let event = e.event();
+                let event = evidence.event();
                 // Check if event is in bounds.
                 if event >= evidences.len() {
                     return Err(Error::IndexOutOfBounds(event));
                 }
                 // Push the value into the variable events.
-                evidences[event] = Some(e);
+                evidences[event] = Some(evidence);
 
                 Ok(evidences)
             },
@@ -167,18 +175,18 @@ impl CatEv {
             let mut new_evidences = vec![None; support.len()];
 
             // Iterate over the values and insert them into the events map using sorted indices.
-            for e in evidences.into_iter().flatten() {
+            for evidence in evidences.into_iter().flatten() {
                 // Get the event and support of the evidence.
                 let (event, support) = support
-                    .get_index(e.event())
-                    .ok_or_else(|| Error::IndexOutOfBounds(e.event()))?;
+                    .get_index(evidence.event())
+                    .ok_or_else(|| Error::IndexOutOfBounds(evidence.event()))?;
                 // Sort the event index.
                 let (event, _, new_states) = new_states
                     .get_full(event)
                     .ok_or_else(|| Error::MissingLabel(event))?;
 
                 // Sort the variable support.
-                let e = match e {
+                let evidence = match evidence {
                     E::CertainPositive { state, .. } => {
                         // Sort the variable support.
                         let state = new_states
@@ -204,13 +212,13 @@ impl CatEv {
                         // Allocate new variable support.
                         let mut new_p_states = Array::zeros(p_states.len());
                         // Sort the variable support.
-                        for (i, &p) in p_states.indexed_iter() {
+                        for (i, &probability) in p_states.indexed_iter() {
                             // Get sorted index.
                             let state = new_states
                                 .get_index_of(&support[i])
                                 .ok_or_else(|| Error::MissingState(&support[i]))?;
                             // Assign probability to sorted index.
-                            new_p_states[state] = p;
+                            new_p_states[state] = probability;
                         }
                         // Substitute the sorted support.
                         let p_states = new_p_states;
@@ -221,13 +229,13 @@ impl CatEv {
                         // Allocate new variable support.
                         let mut new_p_not_states = Array::zeros(p_not_states.len());
                         // Sort the variable support.
-                        for (i, &p) in p_not_states.indexed_iter() {
+                        for (i, &probability) in p_not_states.indexed_iter() {
                             // Get sorted index.
                             let state = new_states
                                 .get_index_of(&support[i])
                                 .ok_or_else(|| Error::MissingState(&support[i]))?;
                             // Assign probability to sorted index.
-                            new_p_not_states[state] = p;
+                            new_p_not_states[state] = probability;
                         }
                         // Substitute the sorted support.
                         let p_not_states = new_p_not_states;
@@ -240,7 +248,7 @@ impl CatEv {
                 };
 
                 // Push the value into the variable events.
-                new_evidences[event] = Some(e);
+                new_evidences[event] = Some(evidence);
             }
 
             // Update the support.
@@ -254,9 +262,9 @@ impl CatEv {
         }
 
         // For each variable ...
-        for (i, e) in evidences.iter_mut().enumerate() {
-            if let Some(e) = e.as_ref() {
-                match e {
+        for (i, evidence) in evidences.iter_mut().enumerate() {
+            if let Some(evidence) = evidence.as_ref() {
+                match evidence {
                     E::CertainPositive { .. } => {}
                     E::CertainNegative { .. } => {}
                     E::UncertainPositive { p_states, .. } => {
@@ -385,9 +393,9 @@ impl CatEv {
         // Get the new values.
         let evidences = x.into_iter().enumerate().filter_map(|(i, x)| {
             // Set the event index to the new index.
-            self.evidences[x].clone().map(|mut e| {
-                e.set_event(i);
-                e
+            self.evidences[x].clone().map(|mut evidence| {
+                evidence.set_event(i);
+                evidence
             })
         });
 

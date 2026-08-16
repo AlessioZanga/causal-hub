@@ -68,21 +68,21 @@ mod tests {
 
         // Check the parameters (via inner CPD matching).
         match &model.cpds()[0] {
-            MixedCPD::Categorical(cpd) => {
-                assert_eq!(cpd.parameters(), &array![[0.1, 0.9]])
+            MixedCPD::Categorical(distribution) => {
+                assert_eq!(distribution.parameters(), &array![[0.1, 0.9]])
             }
             _ => panic!("expected categorical"),
         }
         match &model.cpds()[1] {
-            MixedCPD::Categorical(cpd) => {
-                assert_eq!(cpd.parameters(), &array![[0.2, 0.8], [0.4, 0.6]])
+            MixedCPD::Categorical(distribution) => {
+                assert_eq!(distribution.parameters(), &array![[0.2, 0.8], [0.4, 0.6]])
             }
             _ => panic!("expected categorical"),
         }
         match &model.cpds()[2] {
-            MixedCPD::Categorical(cpd) => {
+            MixedCPD::Categorical(distribution) => {
                 assert_eq!(
-                    cpd.parameters(),
+                    distribution.parameters(),
                     &array![[0.1, 0.9], [0.3, 0.7], [0.5, 0.5], [0.6, 0.4]]
                 )
             }

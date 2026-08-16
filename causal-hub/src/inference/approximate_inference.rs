@@ -164,19 +164,19 @@ impl<'a, R, F> ApproximateInference<'a, R, MixedBN, F> {
                 .model
                 .cpds()
                 .values()
-                .all(|cpd| matches!(cpd, MixedCPD::Categorical(_)));
+                .all(|distribution| matches!(distribution, MixedCPD::Categorical(_)));
 
             if all_cat {
                 let labels = self.model.labels();
                 let shape: Vec<usize> = labels
                     .iter()
                     .map(|l| {
-                        let cpd = &self.model.cpds()[l];
-                        match cpd {
+                        let distribution = &self.model.cpds()[l];
+                        match distribution {
                             MixedCPD::Categorical(c) => {
-                                c.support().get(l).map(|s| s.len()).unwrap_or(0)
+                                c.support().get(l).map(|stats| stats.len()).unwrap_or(0)
                             }
-                            _ => unreachable!(),
+                            _ => unreachable!(), // This mixed-BN branch only handles categorical CPDs.
                         }
                     })
                     .collect();
@@ -226,22 +226,22 @@ macro_for!($type in [CatBN, GaussBN] {
             // Get the RNG.
             let mut rng = self.rng.borrow_mut();
             // Get the evidence variables.
-            let e = w.map_or_else(
+            let evidence = w.map_or_else(
                 || set![],
-                |e| e.evidences()
+                |evidence| evidence.evidences()
                     .iter()
                     .flatten()
-                    .map(|e| e.event())
+                    .map(|evidence| evidence.event())
                     .collect()
             );
             // Get the ancestors of the X U Z U E set.
-            let x_z_e = &(x | z) | &e;
+            let x_z_e = &(x | z) | &evidence;
             let an_x_z_e = self.model.graph().ancestors(&x_z_e)?;
             let an_x_z_e = &an_x_z_e | &x_z_e;
             // Restrict the model to the ancestors.
             let an_x_z_e_model = self.model.select(&an_x_z_e)?;
             // Restrict the evidence to the restricted model.
-            let evidence = w.map(|e| e.select(&an_x_z_e)).transpose()?;
+            let evidence = w.map(|evidence| evidence.select(&an_x_z_e)).transpose()?;
             // Map the indices of X and Z to the restricted model.
             let an_x = an_x_z_e_model.indices_from(x, self.model.labels())?;
             let an_z = an_x_z_e_model.indices_from(z, self.model.labels())?;
@@ -301,22 +301,22 @@ macro_for!($type in [CatBN, GaussBN] {
             // Get the RNG.
             let mut rng = self.rng.borrow_mut();
             // Get the evidence variables.
-            let e = w.map_or_else(
+            let evidence = w.map_or_else(
                 || set![],
-                |e| e.evidences()
+                |evidence| evidence.evidences()
                     .iter()
                     .flatten()
-                    .map(|e| e.event())
+                    .map(|evidence| evidence.event())
                     .collect()
             );
             // Get the ancestors of the X U Z U E set.
-            let x_z_e = &(x | z) | &e;
+            let x_z_e = &(x | z) | &evidence;
             let an_x_z_e = self.model.graph().ancestors(&x_z_e)?;
             let an_x_z_e = &an_x_z_e | &x_z_e;
             // Restrict the model to the ancestors.
             let an_x_z_e_model = self.model.select(&an_x_z_e)?;
             // Restrict the evidence to the restricted model.
-            let evidence = w.map(|e| e.select(&an_x_z_e)).transpose()?;
+            let evidence = w.map(|evidence| evidence.select(&an_x_z_e)).transpose()?;
             // Map the indices of X and Z to the restricted model.
             let an_x = an_x_z_e_model.indices_from(x, self.model.labels())?;
             let an_z = an_x_z_e_model.indices_from(z, self.model.labels())?;
@@ -532,22 +532,22 @@ macro_for!($type in [CatBN, GaussBN] {
             // Get the RNG.
             let mut rng = self.rng.borrow_mut();
             // Get the evidence variables.
-            let e = w.map_or_else(
+            let evidence = w.map_or_else(
                 || set![],
-                |e| e.evidences()
+                |evidence| evidence.evidences()
                     .iter()
                     .flatten()
-                    .map(|e| e.event())
+                    .map(|evidence| evidence.event())
                     .collect()
             );
             // Get the ancestors of the X U Z U E set.
-            let x_z_e = &(x | z) | &e;
+            let x_z_e = &(x | z) | &evidence;
             let an_x_z_e = self.model.graph().ancestors(&x_z_e)?;
             let an_x_z_e = &an_x_z_e | &x_z_e;
             // Restrict the model to the ancestors.
             let an_x_z_e_model = self.model.select(&an_x_z_e)?;
             // Restrict the evidence to the restricted model.
-            let evidence = w.map(|e| e.select(&an_x_z_e)).transpose()?;
+            let evidence = w.map(|evidence| evidence.select(&an_x_z_e)).transpose()?;
             // Map the indices of X and Z to the restricted model.
             let an_x = an_x_z_e_model.indices_from(x, self.model.labels())?;
             let an_z = an_x_z_e_model.indices_from(z, self.model.labels())?;
@@ -607,22 +607,22 @@ macro_for!($type in [CatBN, GaussBN] {
             // Get the RNG.
             let mut rng = self.rng.borrow_mut();
             // Get the evidence variables.
-            let e = w.map_or_else(
+            let evidence = w.map_or_else(
                 || set![],
-                |e| e.evidences()
+                |evidence| evidence.evidences()
                     .iter()
                     .flatten()
-                    .map(|e| e.event())
+                    .map(|evidence| evidence.event())
                     .collect()
             );
             // Get the ancestors of the X U Z U E set.
-            let x_z_e = &(x | z) | &e;
+            let x_z_e = &(x | z) | &evidence;
             let an_x_z_e = self.model.graph().ancestors(&x_z_e)?;
             let an_x_z_e = &an_x_z_e | &x_z_e;
             // Restrict the model to the ancestors.
             let an_x_z_e_model = self.model.select(&an_x_z_e)?;
             // Restrict the evidence to the restricted model.
-            let evidence = w.map(|e| e.select(&an_x_z_e)).transpose()?;
+            let evidence = w.map(|evidence| evidence.select(&an_x_z_e)).transpose()?;
             // Map the indices of X and Z to the restricted model.
             let an_x = an_x_z_e_model.indices_from(x, self.model.labels())?;
             let an_z = an_x_z_e_model.indices_from(z, self.model.labels())?;

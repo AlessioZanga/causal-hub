@@ -279,10 +279,14 @@ where
                     let scores = poss_pa
                         .into_par_iter()
                         // Compute the score of the candidate parent set in parallel.
-                        .map(|next_pa| self.score.call(&set![i], &next_pa).map(|s| (s, next_pa)))
+                        .map(|next_pa| {
+                            self.score
+                                .call(&set![i], &next_pa)
+                                .map(|stats| (stats, next_pa))
+                        })
                         .collect::<Result<Vec<_>>>()?;
 
-                    if scores.iter().any(|(s, _)| s.is_nan()) {
+                    if scores.iter().any(|(stats, _)| stats.is_nan()) {
                         return Err(Error::NanValue());
                     }
 

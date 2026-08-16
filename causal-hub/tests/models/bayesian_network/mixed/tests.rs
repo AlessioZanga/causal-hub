@@ -138,9 +138,9 @@ fn sample_categorical_mixedbn() -> Result<()> {
     let sample = sampler.sample()?;
 
     match sample {
-        causal_hub::models::MixedSample::Categorical(s) => {
-            assert_eq!(s.len(), 3);
-            assert!(s.iter().all(|&v| v == 0 || v == 1));
+        causal_hub::models::MixedSample::Categorical(stats) => {
+            assert_eq!(stats.len(), 3);
+            assert!(stats.iter().all(|&v| v == 0 || v == 1));
         }
         _ => panic!("expected categorical sample"),
     }
@@ -156,9 +156,9 @@ fn sample_gaussian_mixedbn() -> Result<()> {
     let sample = sampler.sample()?;
 
     match sample {
-        causal_hub::models::MixedSample::Gaussian(s) => {
-            assert_eq!(s.len(), 3);
-            assert!(s.iter().all(|&v| v.is_finite()));
+        causal_hub::models::MixedSample::Gaussian(stats) => {
+            assert_eq!(stats.len(), 3);
+            assert!(stats.iter().all(|&v| v.is_finite()));
         }
         _ => panic!("expected gaussian sample"),
     }
@@ -279,10 +279,10 @@ fn mle_cpd_fit_categorical() -> Result<()> {
     let dataset = ForwardSampler::new(&mut rng, &model)?.sample_n(100)?;
 
     let estimator = MLE::new(&dataset);
-    let cpd = CPDEstimator::fit(&estimator, &set![0], &set![])?;
+    let distribution = CPDEstimator::fit(&estimator, &set![0], &set![])?;
 
-    match cpd {
-        MixedCPD::Categorical(_) => assert_eq!(cpd.labels(), &labels!["A"]),
+    match distribution {
+        MixedCPD::Categorical(_) => assert_eq!(distribution.labels(), &labels!["A"]),
         _ => panic!("expected categorical CPD"),
     }
     Ok(())
@@ -296,10 +296,10 @@ fn mle_cpd_par_fit_categorical() -> Result<()> {
     let dataset = ForwardSampler::new(&mut rng, &model)?.sample_n(100)?;
 
     let estimator = MLE::new(&dataset);
-    let cpd = ParCPDEstimator::par_fit(&estimator, &set![0], &set![])?;
+    let distribution = ParCPDEstimator::par_fit(&estimator, &set![0], &set![])?;
 
-    match cpd {
-        MixedCPD::Categorical(_) => assert_eq!(cpd.labels(), &labels!["A"]),
+    match distribution {
+        MixedCPD::Categorical(_) => assert_eq!(distribution.labels(), &labels!["A"]),
         _ => panic!("expected categorical CPD"),
     }
     Ok(())
@@ -313,13 +313,13 @@ fn approximate_inference_categorical() -> Result<()> {
     let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
 
     let engine = ApproximateInference::new(&mut rng, &model);
-    let cpd = engine.estimate(&set![2], &set![0], None)?;
+    let distribution = engine.estimate(&set![2], &set![0], None)?;
 
-    match &cpd {
+    match &distribution {
         MixedCPD::Categorical(c) => {
             // P(C=no | A=no) = 0.1*0.2 + 0.3*0.8 = 0.26
-            let p = c.parameters()[(0, 0)];
-            assert_relative_eq!(p, 0.26, epsilon = 0.05);
+            let probability = c.parameters()[(0, 0)];
+            assert_relative_eq!(probability, 0.26, epsilon = 0.05);
         }
         _ => panic!("expected categorical"),
     }
@@ -332,12 +332,12 @@ fn par_approximate_inference_categorical() -> Result<()> {
     let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
 
     let engine = ApproximateInference::new(&mut rng, &model);
-    let cpd = engine.par_estimate(&set![2], &set![0], None)?;
+    let distribution = engine.par_estimate(&set![2], &set![0], None)?;
 
-    match &cpd {
+    match &distribution {
         MixedCPD::Categorical(c) => {
-            let p = c.parameters()[(0, 0)];
-            assert_relative_eq!(p, 0.26, epsilon = 0.05);
+            let probability = c.parameters()[(0, 0)];
+            assert_relative_eq!(probability, 0.26, epsilon = 0.05);
         }
         _ => panic!("expected categorical"),
     }
@@ -350,12 +350,12 @@ fn approximate_inference_gaussian() -> Result<()> {
     let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
 
     let engine = ApproximateInference::new(&mut rng, &model);
-    let cpd = engine.estimate(&set![1], &set![0], None)?;
+    let distribution = engine.estimate(&set![1], &set![0], None)?;
 
-    match &cpd {
-        MixedCPD::Gaussian(g) => {
+    match &distribution {
+        MixedCPD::Gaussian(graph) => {
             // Y = 1.0 + 0.5*X + eps, so P(Y | X=0) has mean ≈ 1.0
-            let intercept = g.parameters().intercept()[0];
+            let intercept = graph.parameters().intercept()[0];
             assert_relative_eq!(intercept, 1.0, epsilon = 0.1);
         }
         _ => panic!("expected gaussian"),
@@ -405,8 +405,8 @@ fn rng_mixedbn_categorical() -> Result<()> {
     let model = generator.random()?;
 
     assert_eq!(model.labels().len(), 2);
-    for cpd in model.cpds().values() {
-        assert!(matches!(cpd, MixedCPD::Categorical(_)));
+    for distribution in model.cpds().values() {
+        assert!(matches!(distribution, MixedCPD::Categorical(_)));
     }
     Ok(())
 }
@@ -425,8 +425,8 @@ fn rng_mixedbn_gaussian() -> Result<()> {
     let model = generator.random()?;
 
     assert_eq!(model.labels().len(), 2);
-    for cpd in model.cpds().values() {
-        assert!(matches!(cpd, MixedCPD::Gaussian(_)));
+    for distribution in model.cpds().values() {
+        assert!(matches!(distribution, MixedCPD::Gaussian(_)));
     }
     Ok(())
 }

@@ -15,7 +15,7 @@ where
     rng: &'a mut R,
     support: &'a CatSupport,
     alpha: f64,
-    p: f64,
+    probability: f64,
 }
 
 impl<'a, R> RngCatBN<'a, R>
@@ -40,13 +40,18 @@ where
     ///
     /// A new `RngCatBN` instance.
     ///
-    pub fn new(rng: &'a mut R, support: &'a CatSupport, alpha: f64, p: f64) -> Result<Self> {
+    pub fn new(
+        rng: &'a mut R,
+        support: &'a CatSupport,
+        alpha: f64,
+        probability: f64,
+    ) -> Result<Self> {
         // Check if alpha is positive.
         if alpha <= 0.0 {
             return Err(Error::InvalidParameter("alpha", "must be positive"));
         }
         // Check if the probability is in [0, 1].
-        if !(0.0..=1.0).contains(&p) {
+        if !(0.0..=1.0).contains(&probability) {
             return Err(Error::InvalidParameter("p", "must be in [0, 1]"));
         }
 
@@ -54,7 +59,7 @@ where
             rng,
             support,
             alpha,
-            p,
+            probability,
         })
     }
 }
@@ -70,7 +75,7 @@ where
         let labels: Labels = self.support.keys().cloned().collect();
 
         // Generate a random DAG.
-        let graph = RngDag::new(self.rng, &labels, self.p)?.random()?;
+        let graph = RngDag::new(self.rng, &labels, self.probability)?.random()?;
 
         // Generate the CPDs.
         let cpds = labels

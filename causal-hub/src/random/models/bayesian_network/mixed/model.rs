@@ -18,8 +18,8 @@ where
     alpha: f64,
     s_a: f64,
     s_b: f64,
-    e: f64,
-    p: f64,
+    evidence: f64,
+    probability: f64,
 }
 
 impl<'a, R> RngMixedBN<'a, R>
@@ -32,7 +32,7 @@ where
     ///
     /// * `rng` - A mutable reference to a random number generator.
     /// * `labels` - The labels of the variables.
-    /// * `support` - The support of the variables (MixedSupport per variable).
+    /// * `support` - The support of the variables (`MixedSupport` per variable).
     /// * `alpha` - The Dirichlet parameter for categorical CPDs (must be positive if any categorical).
     /// * `s_a` - The standard deviation of regression coefficients for Gaussian CPDs.
     /// * `s_b` - The standard deviation of the intercept for Gaussian CPDs.
@@ -57,8 +57,8 @@ where
         alpha: f64,
         s_a: f64,
         s_b: f64,
-        e: f64,
-        p: f64,
+        evidence: f64,
+        probability: f64,
     ) -> Result<Self> {
         if alpha <= 0.0 {
             return Err(Error::InvalidParameter("alpha", "must be positive"));
@@ -69,10 +69,10 @@ where
         if s_b <= 0.0 {
             return Err(Error::InvalidParameter("s_b", "must be positive"));
         }
-        if e <= 0.0 {
+        if evidence <= 0.0 {
             return Err(Error::InvalidParameter("e", "must be positive"));
         }
-        if !(0.0..=1.0).contains(&p) {
+        if !(0.0..=1.0).contains(&probability) {
             return Err(Error::InvalidParameter("p", "must be in [0, 1]"));
         }
 
@@ -83,8 +83,8 @@ where
             alpha,
             s_a,
             s_b,
-            e,
-            p,
+            evidence,
+            probability,
         })
     }
 }
@@ -96,7 +96,7 @@ where
     type Output = Result<MixedBN>;
 
     fn random(&mut self) -> Self::Output {
-        let graph = RngDag::new(self.rng, self.labels, self.p)?.random()?;
+        let graph = RngDag::new(self.rng, self.labels, self.probability)?.random()?;
 
         let cpds = self
             .labels
@@ -116,32 +116,34 @@ where
                             .map(|&j| {
                                 let y = &self.labels[j];
                                 match &self.support[y] {
-                                    MixedSupport::Categorical(s) => (y.clone(), s[y].clone()),
+                                    MixedSupport::Categorical(stats) => {
+                                        (y.clone(), stats[y].clone())
+                                    }
                                     _ => unreachable!("parents must match CPD type"),
                                 }
                             })
                             .collect();
 
-                        let cpd =
+                        let distribution =
                             RngCatCPD::new(self.rng, &support, &conditioning_support, self.alpha)?
                                 .random()?;
-                        Ok(MixedCPD::Categorical(cpd))
+                        Ok(MixedCPD::Categorical(distribution))
                     }
                     MixedSupport::Gaussian(_) => {
                         let v_labels = crate::labels![x.clone()];
                         let conditioning_labels: Labels =
                             pa_i.iter().map(|&j| self.labels[j].clone()).collect();
 
-                        let cpd = RngGaussCPD::new(
+                        let distribution = RngGaussCPD::new(
                             self.rng,
                             &v_labels,
                             &conditioning_labels,
                             self.s_a,
                             self.s_b,
-                            self.e,
+                            self.evidence,
                         )?
                         .random()?;
-                        Ok(MixedCPD::Gaussian(cpd))
+                        Ok(MixedCPD::Gaussian(distribution))
                     }
                 }
             })

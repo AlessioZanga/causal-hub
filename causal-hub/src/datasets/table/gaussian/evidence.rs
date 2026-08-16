@@ -40,7 +40,9 @@ impl GaussEvT {
     ///
     pub const fn set_event(&mut self, event: usize) {
         match self {
-            Self::CertainPositive { event: e, .. } => *e = event,
+            Self::CertainPositive {
+                event: evidence, ..
+            } => *evidence = event,
         }
     }
 }
@@ -81,15 +83,15 @@ impl GaussEv {
         // Fill the evidences.
         let mut evidences = values.into_iter().try_fold(
             vec![None; labels.len()],
-            |mut evidences, e| -> Result<_> {
+            |mut evidences, evidence| -> Result<_> {
                 // Get the event of the evidence.
-                let event = e.event();
+                let event = evidence.event();
                 // Check if event is in bounds.
                 if event >= evidences.len() {
                     return Err(Error::IndexOutOfBounds(event));
                 }
                 // Push the value into the variable events.
-                evidences[event] = Some(e);
+                evidences[event] = Some(evidence);
 
                 Ok(evidences)
             },
@@ -105,23 +107,23 @@ impl GaussEv {
             // Sort the evidences.
             let new_evidences = evidences.into_iter().flatten().try_fold(
                 vec![None; new_labels.len()],
-                |mut new_evidences, e| -> Result<_> {
+                |mut new_evidences, evidence| -> Result<_> {
                     // Get the event of the evidence.
                     let event_name = labels
-                        .get_index(e.event())
-                        .ok_or_else(|| Error::IndexOutOfBounds(e.event()))?;
+                        .get_index(evidence.event())
+                        .ok_or_else(|| Error::IndexOutOfBounds(evidence.event()))?;
                     // Sort the event index.
                     let event = new_labels
                         .get_index_of(event_name)
                         .ok_or_else(|| Error::MissingLabel(event_name))?;
 
                     // Sort the variable events.
-                    let e = match e {
+                    let evidence = match evidence {
                         E::CertainPositive { value, .. } => E::CertainPositive { event, value },
                     };
 
                     // Push the value into the variable events.
-                    new_evidences[event] = Some(e);
+                    new_evidences[event] = Some(evidence);
 
                     Ok(new_evidences)
                 },
@@ -191,9 +193,9 @@ impl GaussEv {
 
         // Get the new values.
         let evidences = x.into_iter().enumerate().filter_map(|(i, x)| {
-            self.evidences[x].clone().map(|mut e| {
-                e.set_event(i);
-                e
+            self.evidences[x].clone().map(|mut evidence| {
+                evidence.set_event(i);
+                evidence
             })
         });
 

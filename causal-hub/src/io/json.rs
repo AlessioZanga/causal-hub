@@ -84,13 +84,13 @@ macro_rules! impl_json_io {
                 let validator = jsonschema::options()
                     .with_retriever(&*$crate::assets::JSON_SCHEMA_RETRIEVER)
                     .build(&serde_json::json!({"$ref": id}))
-                    .map_err(|e| $crate::types::Error::Parsing(&format!("Failed to build JSON Schema validator: {}", e)))?;
+                    .map_err(|evidence| $crate::types::Error::Parsing(&format!("Failed to build JSON Schema validator: {}", evidence)))?;
                 // Validate the JSON against the schema.
                 let errors: Vec<_> = validator.iter_errors(&json).collect();
                 if !errors.is_empty() {
                     let msg = errors
                         .into_iter()
-                        .map(|e| e.to_string())
+                        .map(|evidence| evidence.to_string())
                         .collect::<Vec<_>>()
                         .join(", ");
                     return Err($crate::types::Error::Parsing(&format!(

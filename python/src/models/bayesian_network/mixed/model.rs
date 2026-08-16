@@ -16,7 +16,7 @@ use rand_xoshiro::Xoshiro256PlusPlus;
 use crate::{
     datasets::PyMixedTable,
     error::to_pyerr,
-    impl_from_into_lock,
+    impl_from_into_lock, indices_from,
     models::{PyDiGraph, PyMixedCPD},
 };
 
@@ -88,6 +88,45 @@ impl PyMixedBN {
     /// Returns the parameters size.
     pub fn parameters_size(&self) -> PyResult<usize> {
         Ok(self.lock().parameters_size())
+    }
+
+    /// Restrict the model to the specified variables.
+    ///
+    /// Parameters
+    /// ----------
+    /// x: str | Iterable[str]
+    ///     A variable or an iterable of variables to select.
+    ///
+    /// Returns
+    /// -------
+    /// MixedBN
+    ///     A model restricted to the specified variables.
+    ///
+    pub fn select(&self, x: &Bound<'_, PyAny>) -> PyResult<Self> {
+        // Get a lock on the inner field.
+        let lock = self.lock();
+        // Convert the Python iterable into a set of indices.
+        let x = indices_from!(x, lock)?;
+        // Restrict the model.
+        lock.select(&x).map(Into::into).map_err(to_pyerr)
+    }
+
+    /// Returns the topological order of the underlying graph.
+    ///
+    /// Returns
+    /// -------
+    /// list[str]
+    ///     A topological ordering of the variables.
+    ///
+    pub fn topological_order(&self) -> PyResult<Vec<String>> {
+        // Get a lock on the inner field.
+        let lock = self.lock();
+        // Convert the indices to labels.
+        lock.topological_order()
+            .iter()
+            .map(|&i| lock.index_to_label(i).map(str::to_owned))
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(to_pyerr)
     }
 
     /// Generate samples from the model.

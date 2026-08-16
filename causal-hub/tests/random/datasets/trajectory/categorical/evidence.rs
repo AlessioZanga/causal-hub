@@ -60,13 +60,13 @@ mod tests {
             let res = RngCatTrjEv::new(&mut rng, &trj, -0.1);
             assert!(matches!(
                 res,
-                Err(Error { kind: ErrorKind::InvalidParameter(ref p, ref m), .. }) if p == "p" && m == "must be in [0, 1]"
+                Err(Error { kind: ErrorKind::InvalidParameter(ref probability, ref model), .. }) if probability == "p" && model == "must be in [0, 1]"
             ));
 
             let res = RngCatTrjEv::new(&mut rng, &trj, 1.1);
             assert!(matches!(
                 res,
-                Err(Error { kind: ErrorKind::InvalidParameter(ref p, ref m), .. }) if p == "p" && m == "must be in [0, 1]"
+                Err(Error { kind: ErrorKind::InvalidParameter(ref probability, ref model), .. }) if probability == "p" && model == "must be in [0, 1]"
             ));
 
             Ok(())

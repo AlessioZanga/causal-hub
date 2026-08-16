@@ -1,6 +1,6 @@
-#![deny(clippy::expect_used)]
-#![deny(clippy::unwrap_used)]
-#![warn(missing_docs)]
+#![deny(missing_docs)]
+#![forbid(clippy::expect_used)]
+#![forbid(clippy::unwrap_used)]
 //! # causal-hub
 //!
 //! `causal-hub` is a library for causal inference and causal discovery.

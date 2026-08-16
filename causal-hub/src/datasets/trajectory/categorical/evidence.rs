@@ -1,3 +1,5 @@
+//! Categorical trajectory evidence (certain / uncertain intervals).
+
 use approx::relative_eq;
 use ndarray::prelude::*;
 use rayon::prelude::*;
@@ -112,7 +114,7 @@ impl CatTrjEvT {
     ///
     /// # Returns
     ///
-    /// `true` if the time is in [start_time, end_time), `false` otherwise.
+    /// `true` if the time is in [`start_time`, `end_time`), `false` otherwise.
     ///
     pub fn contains(&self, time: &f64) -> bool {
         (self.start_time()..self.end_time()).contains(time)
@@ -163,15 +165,15 @@ impl CatTrjEv {
         let mut evidences = vec![vec![]; support.len()];
 
         // Fill the evidences.
-        values.into_iter().try_for_each(|e| -> Result<()> {
+        values.into_iter().try_for_each(|evidence| -> Result<()> {
             // Get the event index.
-            let event = e.event();
+            let event = evidence.event();
             // Check if the event index is valid.
             if event >= support.len() {
                 return Err(Error::IndexOutOfBounds(event));
             }
             // Push the value into the events.
-            evidences[event].push(e);
+            evidences[event].push(evidence);
 
             Ok(())
         })?;
@@ -191,20 +193,20 @@ impl CatTrjEv {
             evidences
                 .into_iter()
                 .flatten()
-                .try_for_each(|e| -> Result<()> {
+                .try_for_each(|evidence| -> Result<()> {
                     // Get the event index, starting time, and ending time.
-                    let (start_time, end_time) = (e.start_time(), e.end_time());
+                    let (start_time, end_time) = (evidence.start_time(), evidence.end_time());
                     // Get the event and support of the evidence.
                     let (event, support) = support
-                        .get_index(e.event())
-                        .ok_or_else(|| Error::IndexOutOfBounds(e.event()))?;
+                        .get_index(evidence.event())
+                        .ok_or_else(|| Error::IndexOutOfBounds(evidence.event()))?;
                     // Sort the event index.
                     let (event, _, new_states) = new_states
                         .get_full(event)
                         .ok_or_else(|| Error::MissingLabel(event))?;
 
                     // Sort the event support.
-                    let e = match e {
+                    let evidence = match evidence {
                         E::CertainPositiveInterval { state, .. } => {
                             // Sort the variable support.
                             let state = new_states
@@ -240,18 +242,18 @@ impl CatTrjEv {
                             // Allocate new event support.
                             let mut new_p_states = Array::zeros(p_states.len());
                             // Sort the event support.
-                            p_states
-                                .indexed_iter()
-                                .try_for_each(|(i, &p)| -> Result<()> {
+                            p_states.indexed_iter().try_for_each(
+                                |(i, &probability)| -> Result<()> {
                                     // Get sorted index.
                                     let state = new_states
                                         .get_index_of(&support[i])
                                         .ok_or_else(|| Error::MissingState(&support[i]))?;
                                     // Assign probability to sorted index.
-                                    new_p_states[state] = p;
+                                    new_p_states[state] = probability;
 
                                     Ok(())
-                                })?;
+                                },
+                            )?;
                             // Substitute the sorted support.
                             let p_states = new_p_states;
                             // Construct the sorted evidence.
@@ -266,18 +268,18 @@ impl CatTrjEv {
                             // Allocate new event support.
                             let mut new_p_not_states = Array::zeros(p_not_states.len());
                             // Sort the event support.
-                            p_not_states
-                                .indexed_iter()
-                                .try_for_each(|(i, &p)| -> Result<()> {
+                            p_not_states.indexed_iter().try_for_each(
+                                |(i, &probability)| -> Result<()> {
                                     // Get sorted index.
                                     let state = new_states
                                         .get_index_of(&support[i])
                                         .ok_or_else(|| Error::MissingState(&support[i]))?;
                                     // Assign probability to sorted index.
-                                    new_p_not_states[state] = p;
+                                    new_p_not_states[state] = probability;
 
                                     Ok(())
-                                })?;
+                                },
+                            )?;
                             // Substitute the sorted support.
                             let p_not_states = new_p_not_states;
                             // Construct the sorted evidence.
@@ -291,7 +293,7 @@ impl CatTrjEv {
                     };
 
                     // Push the value into the events.
-                    new_evidences[event].push(e);
+                    new_evidences[event].push(evidence);
 
                     Ok(())
                 })?;
@@ -310,9 +312,9 @@ impl CatTrjEv {
         evidences
             .iter_mut()
             .zip(&shape)
-            .try_for_each(|(e, shape)| -> Result<()> {
+            .try_for_each(|(evidence, shape)| -> Result<()> {
                 // Check state, starting and ending times are coherent.
-                e.iter().try_for_each(|e_i| -> Result<()> {
+                evidence.iter().try_for_each(|e_i| -> Result<()> {
                     // Check starting time must be positive and finite.
                     if !e_i.start_time().is_finite() || e_i.start_time() < 0.0 {
                         return Err(Error::InvalidParameter("start_time", "must be positive and finite"));
@@ -384,7 +386,7 @@ impl CatTrjEv {
                 })?;
 
             // Sort the events by starting time.
-            e.sort_by(|a, b| {
+            evidence.sort_by(|a, b| {
                 a.start_time()
                     .partial_cmp(&b.start_time())
                     // Due to previous checks, this should never fail.
@@ -393,7 +395,7 @@ impl CatTrjEv {
 
             // Handle overlapping intervals.
             let mut merged_e: Vec<E> = Vec::new();
-            for e_j in e.iter() {
+            for e_j in evidence.iter() {
                 // If evidence is empty ...
                 if merged_e.is_empty() {
                     // ... push current evidence and exit.
@@ -568,10 +570,10 @@ impl CatTrjEv {
                     }
                 }
             }
-            *e = merged_e;
+            *evidence = merged_e;
 
             // Check current ending time is less or equal than next starting time.
-            if !e.windows(2).all(|e| e[0].end_time() <= e[1].start_time()) {
+            if !evidence.windows(2).all(|evidence| evidence[0].end_time() <= evidence[1].start_time()) {
                 return Err(Error::InvalidParameter(
                     "evidence",
                     "Ending time must be less or equal than next starting time.",
@@ -630,13 +632,13 @@ impl CatTrjEv {
     ///
     pub fn initial_evidence(&self) -> Result<CatEv> {
         // Get the evidences at time zero.
-        let evidences = self.evidences.iter().filter_map(|e| {
+        let evidences = self.evidences.iter().filter_map(|evidence| {
             // Get the first evidence, if any.
-            let e = e.iter().next().cloned();
+            let evidence = evidence.iter().next().cloned();
             // Check if the evidence is at time zero.
-            let e = e.filter(|e| relative_eq!(e.start_time(), 0.));
+            let evidence = evidence.filter(|evidence| relative_eq!(evidence.start_time(), 0.));
             // Map the evidence to its variable.
-            e.map(|e| e.into())
+            evidence.map(|evidence| evidence.into())
         });
 
         // Clone the support.
@@ -775,9 +777,9 @@ impl CatTrjsEv {
 impl FromIterator<CatTrjEv> for CatTrjsEv {
     #[inline]
     fn from_iter<I: IntoIterator<Item = CatTrjEv>>(iter: I) -> Self {
-        Self::new(iter).unwrap_or_else(|e| {
+        Self::new(iter).unwrap_or_else(|evidence| {
             // Log the error since we can't propagate it through the trait.
-            log::error!("Failed to create CatTrjsEv from iterator: {}", e);
+            log::error!("Failed to create CatTrjsEv from iterator: {}", evidence);
             // Return a minimal valid empty instance as fallback.
             Self {
                 labels: Default::default(),
@@ -793,9 +795,12 @@ impl FromParallelIterator<CatTrjEv> for CatTrjsEv {
     #[inline]
     fn from_par_iter<I: IntoParallelIterator<Item = CatTrjEv>>(iter: I) -> Self {
         let collected = iter.into_par_iter().collect::<Vec<_>>();
-        Self::new(collected).unwrap_or_else(|e| {
+        Self::new(collected).unwrap_or_else(|evidence| {
             // Log the error since we can't propagate it through the trait.
-            log::error!("Failed to create CatTrjsEv from parallel iterator: {}", e);
+            log::error!(
+                "Failed to create CatTrjsEv from parallel iterator: {}",
+                evidence
+            );
             // Return a minimal valid empty instance as fallback.
             Self {
                 labels: Default::default(),

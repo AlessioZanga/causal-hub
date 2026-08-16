@@ -1,3 +1,5 @@
+//! Categorical trajectory (fully-observed) dataset.
+
 use std::borrow::Cow;
 
 use itertools::Itertools;
@@ -343,9 +345,9 @@ impl CatTrjs {
 impl FromIterator<CatTrj> for CatTrjs {
     #[inline]
     fn from_iter<I: IntoIterator<Item = CatTrj>>(iter: I) -> Self {
-        Self::new(iter).unwrap_or_else(|e| {
+        Self::new(iter).unwrap_or_else(|evidence| {
             // Log the error since we can't propagate it through the trait.
-            log::error!("Failed to create CatTrjs from iterator: {}", e);
+            log::error!("Failed to create CatTrjs from iterator: {}", evidence);
             // Return a minimal valid empty instance as fallback.
             Self {
                 labels: Default::default(),
@@ -361,9 +363,12 @@ impl FromParallelIterator<CatTrj> for CatTrjs {
     #[inline]
     fn from_par_iter<I: IntoParallelIterator<Item = CatTrj>>(iter: I) -> Self {
         let collected = iter.into_par_iter().collect::<Vec<_>>();
-        Self::new(collected).unwrap_or_else(|e| {
+        Self::new(collected).unwrap_or_else(|evidence| {
             // Log the error since we can't propagate it through the trait.
-            log::error!("Failed to create CatTrjs from parallel iterator: {}", e);
+            log::error!(
+                "Failed to create CatTrjs from parallel iterator: {}",
+                evidence
+            );
             // Return a minimal valid empty instance as fallback.
             Self {
                 labels: Default::default(),

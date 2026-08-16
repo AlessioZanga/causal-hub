@@ -1,3 +1,5 @@
+//! Sufficient-statistics estimators.
+
 mod table;
 mod trajectory;
 

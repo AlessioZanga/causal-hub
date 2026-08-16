@@ -78,18 +78,18 @@ where
         }
 
         // Compute the extended separation set.
-        let mut s = z.clone();
+        let mut stats = z.clone();
         // Get the ordered position of Y in the extended separation set.
         let s_y = match z.binary_search(&y[0]) {
             Ok(_) => return Err(Error::SetsNotDisjoint("Y", "Z")),
             Err(i) => i,
         };
         // Insert Y into the extended separation set in sorted order.
-        s.shift_insert(s_y, y[0]);
+        stats.shift_insert(s_y, y[0]);
 
         // Fit the intensity matrices.
         let q_xz = self.estimator.fit(x, z)?;
-        let q_xs = self.estimator.fit(x, &s)?;
+        let q_xs = self.estimator.fit(x, &stats)?;
         // Get the sufficient statistics for the sets.
         let stats_xz = q_xz
             .fitted_statistics()
@@ -125,14 +125,14 @@ where
             // Compute the chi-squared statistic.
             let chi_sq = chi_sq.sum_axis(Axis(1));
             // For each chi-squared statistic ...
-            for (c, d) in chi_sq.into_iter().zip(chi_sq_den.rows()) {
+            for (c, data) in chi_sq.into_iter().zip(chi_sq_den.rows()) {
                 // Count the non-zero degrees of freedom.
-                let dof = d.mapv(|d| (d > 0.) as usize).sum();
+                let dof = data.mapv(|data| (data > 0.) as usize).sum();
                 // Check if the degrees of freedom is at least 2.
                 let dof = if dof >= 2 { dof } else { 2 };
                 // Initialize the chi-squared distribution.
                 let n = ChiSquared::new((dof - 1) as f64)
-                    .map_err(|e| Error::Probability(&e.to_string()))?;
+                    .map_err(|evidence| Error::Probability(&evidence.to_string()))?;
                 // Compute the p-value.
                 let p_value = n.cdf(c);
                 // Check if the p-value is in the alpha range.
@@ -202,18 +202,18 @@ where
         let alpha = (self.alpha / 2.)..=(1. - self.alpha / 2.);
 
         // Compute the extended separation set.
-        let mut s = z.clone();
+        let mut stats = z.clone();
         // Get the ordered position of Y in the extended separation set.
         let s_y = match z.binary_search(&y[0]) {
             Ok(_) => return Err(Error::SetsNotDisjoint("Y", "Z")),
             Err(i) => i,
         };
         // Insert Y into the extended separation set in sorted order.
-        s.shift_insert(s_y, y[0]);
+        stats.shift_insert(s_y, y[0]);
 
         // Fit the intensity matrices.
         let q_xz = self.estimator.fit(x, z)?;
-        let q_xs = self.estimator.fit(x, &s)?;
+        let q_xs = self.estimator.fit(x, &stats)?;
         // Get the sufficient statistics for the sets.
         let stats_xz = q_xz
             .fitted_statistics()
@@ -248,7 +248,7 @@ where
                     if let Ok(true) = acc {
                         // Initialize the Fisher-Snedecor distribution.
                         let f = FisherSnedecor::new(r_xz, r_xs)
-                            .map_err(|e| Error::Probability(&e.to_string()))?;
+                            .map_err(|evidence| Error::Probability(&evidence.to_string()))?;
                         // Compute the p-value.
                         let p_value = f.cdf(q_xz / q_xs);
                         // Check if the p-value is in the alpha range.

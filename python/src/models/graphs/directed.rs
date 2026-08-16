@@ -1,13 +1,13 @@
 use std::sync::{Arc, RwLock};
 
 use backend::{
-    inference::{BackdoorCriterion, GraphicalSeparation},
+    inference::{BackdoorCriterion, GraphicalSeparation, TopologicalOrder},
     io::JsonIO,
     models::{DiGraph, Graph, Labelled},
     random::{Random, RngDag, RngDiGraph},
     types::Labels,
 };
-use numpy::prelude::*;
+use numpy::{PyArray2, prelude::*};
 use pyo3::{
     prelude::*,
     types::{PyDict, PyType},
@@ -907,5 +907,102 @@ impl PyDiGraph {
     ///
     pub fn to_json_file(&self, path: &str) -> PyResult<()> {
         self.lock().to_json_file(path).map_err(to_pyerr)
+    }
+
+    /// Restrict the graph to the specified variables.
+    ///
+    /// Parameters
+    /// ----------
+    /// x: str | Iterable[str]
+    ///     A variable or an iterable of variables to select.
+    ///
+    /// Returns
+    /// -------
+    /// DiGraph
+    ///     A graph restricted to the specified variables.
+    ///
+    pub fn select(&self, x: &Bound<'_, PyAny>) -> PyResult<Self> {
+        // Get a lock on the inner field.
+        let lock = self.lock();
+        // Convert the Python iterable into a set of indices.
+        let x = indices_from!(x, lock)?;
+        // Restrict the graph.
+        lock.select(&x).map(Into::into).map_err(to_pyerr)
+    }
+
+    /// Returns a topological order of the graph, if it is a DAG.
+    ///
+    /// Returns
+    /// -------
+    /// list[str] | None
+    ///     A topological ordering of the vertices, or `None` if the graph is
+    ///     not a directed acyclic graph.
+    ///
+    pub fn topological_order(&self) -> PyResult<Option<Vec<String>>> {
+        // Get a lock on the inner field.
+        let lock = self.lock();
+        // Delegate to the inner method.
+        match lock.topological_order() {
+            Some(order) => {
+                // Convert the indices back to labels.
+                let labels = order
+                    .iter()
+                    .map(|&i| lock.index_to_label(i).map(str::to_owned))
+                    .collect::<Result<Vec<_>, _>>()
+                    .map_err(to_pyerr)?;
+                // Return the labels.
+                Ok(Some(labels))
+            }
+            None => Ok(None),
+        }
+    }
+
+    /// Creates a directed graph from an adjacency matrix and labels.
+    ///
+    /// Parameters
+    /// ----------
+    /// labels: Iterable[str]
+    ///     The labels of the vertices.
+    /// adjacency_matrix: numpy.ndarray
+    ///     A 2D boolean array representing the adjacency matrix.
+    ///
+    /// Returns
+    /// -------
+    /// DiGraph
+    ///     A new graph instance.
+    ///
+    #[classmethod]
+    pub fn from_adjacency_matrix(
+        _cls: &Bound<'_, PyType>,
+        labels: &Bound<'_, PyAny>,
+        adjacency_matrix: &Bound<'_, PyAny>,
+    ) -> PyResult<Self> {
+        // Convert the PyIterator to a vector of labels.
+        let labels: Vec<String> = labels
+            .try_iter()?
+            .map(|x| x?.extract::<String>())
+            .collect::<PyResult<_>>()?;
+        let labels: Labels = labels.into_iter().collect();
+        // Convert the adjacency matrix.
+        let adjacency_matrix = adjacency_matrix.cast::<PyArray2<u8>>()?.to_owned_array();
+        let adjacency_matrix = adjacency_matrix.mapv(|x| x != 0);
+        // Create a new DiGraph from the adjacency matrix.
+        DiGraph::from_adjacency_matrix(labels, adjacency_matrix)
+            .map(Into::into)
+            .map_err(to_pyerr)
+    }
+
+    /// Converts the graph to an adjacency matrix.
+    ///
+    /// Returns
+    /// -------
+    /// numpy.ndarray
+    ///     A 2D boolean array representing the adjacency matrix.
+    ///
+    pub fn to_adjacency_matrix<'a>(&self, py: Python<'a>) -> PyResult<Bound<'a, PyArray2<u8>>> {
+        // Get a lock on the inner field.
+        let lock = self.lock();
+        // Convert the adjacency matrix to a NumPy array.
+        Ok(lock.to_adjacency_matrix().mapv(|b| b as u8).to_pyarray(py))
     }
 }

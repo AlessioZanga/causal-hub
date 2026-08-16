@@ -380,9 +380,9 @@ impl IncDataset for CatIncTable {
     fn pw_deletion(&self, x: &Set<usize>) -> Result<Self::Complete> {
         // If no columns are specified, return an empty dataset.
         if x.is_empty() {
-            let s = support![];
+            let stats = support![];
             let v = Array::default((0, 0));
-            return Self::Complete::new(s, v);
+            return Self::Complete::new(stats, v);
         }
 
         // Check that the indices are valid.
@@ -439,10 +439,10 @@ impl IncDataset for CatIncTable {
     fn ipw_deletion(&self, x: &Set<usize>, pr: &MissingMechanism) -> Result<Self::Weighted> {
         // If no columns are specified, return an empty dataset.
         if x.is_empty() {
-            let s = support![];
+            let stats = support![];
             let v = Array::default((0, 0));
             let w = Array::default(0);
-            return Self::Weighted::new(Self::Complete::new(s, v)?, w);
+            return Self::Weighted::new(Self::Complete::new(stats, v)?, w);
         }
 
         // Check that the indices are valid.
@@ -505,10 +505,10 @@ impl IncDataset for CatIncTable {
     fn aipw_deletion(&self, x: &Set<usize>, pr: &MissingMechanism) -> Result<Self::Weighted> {
         // If no columns are specified, return an empty dataset.
         if x.is_empty() {
-            let s = support![];
+            let stats = support![];
             let v = Array::default((0, 0));
             let w = Array::default(0);
-            return Self::Weighted::new(Self::Complete::new(s, v)?, w);
+            return Self::Weighted::new(Self::Complete::new(stats, v)?, w);
         }
 
         // Check that the indices are valid.
@@ -593,7 +593,7 @@ impl CsvIO for CatIncTable {
                 .into_records()
                 .try_fold(Vec::new(), |mut values, row| -> Result<_> {
                     // Get the record row.
-                    let row = row.map_err(|e| Error::Csv(Arc::new(e)))?;
+                    let row = row.map_err(|evidence| Error::Csv(Arc::new(evidence)))?;
                     // Get the record values and convert to indices.
                     values.extend(
                         row.into_iter()

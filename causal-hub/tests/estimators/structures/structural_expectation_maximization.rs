@@ -33,9 +33,9 @@ mod tests {
             let trajectories = forward.par_sample_n_by_length(100, 10_000)?;
 
             // Set the probability of the evidence.
-            let p = 0.5;
+            let probability = 0.5;
             // Initialize the evidence generator.
-            let mut generator = RngCatTrjEv::new(&mut rng, &trajectories, p)?;
+            let mut generator = RngCatTrjEv::new(&mut rng, &trajectories, probability)?;
             // Sample the evidence from the fully-observed trajectories.
             let evidence = generator.random()?;
 
@@ -98,18 +98,18 @@ mod tests {
                 let max_len = evidence
                     .evidences()
                     .iter()
-                    .map(|e| e.evidences().iter().map(|x| x.len()).sum())
+                    .map(|evidence| evidence.evidences().iter().map(|x| x.len()).sum())
                     .max()
                     .unwrap_or(10);
                 // For each (seed, evidence) ...
                 seeds
                     .into_par_iter()
                     .zip(evidence.par_iter())
-                    .map(|(s, e)| {
+                    .map(|(stats, evidence)| {
                         // Initialize a new random number generator.
-                        let mut rng = Xoshiro256PlusPlus::seed_from_u64(s);
+                        let mut rng = Xoshiro256PlusPlus::seed_from_u64(stats);
                         // Initialize a new sampler.
-                        let importance = ImportanceSampler::new(&mut rng, prev_model, e)?;
+                        let importance = ImportanceSampler::new(&mut rng, prev_model, evidence)?;
                         // Perform multiple imputation.
                         let trjs = importance.sample_n_by_length(2 * max_len, 10)?;
                         // Get the one with the highest weight.

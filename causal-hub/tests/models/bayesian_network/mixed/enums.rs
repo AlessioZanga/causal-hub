@@ -181,7 +181,7 @@ mod tests {
 
         let sample: MixedSample = CatSample::from_vec(vec![0, 1, 0]).into();
         match sample {
-            MixedSample::Categorical(s) => assert_eq!(s, array![0, 1, 0]),
+            MixedSample::Categorical(stats) => assert_eq!(stats, array![0, 1, 0]),
             _ => panic!("expected categorical"),
         }
 
@@ -194,7 +194,7 @@ mod tests {
 
         let sample: MixedSample = GaussSample::from_vec(vec![1.5, 2.5]).into();
         match sample {
-            MixedSample::Gaussian(s) => assert_eq!(s, array![1.5, 2.5]),
+            MixedSample::Gaussian(stats) => assert_eq!(stats, array![1.5, 2.5]),
             _ => panic!("expected gaussian"),
         }
 

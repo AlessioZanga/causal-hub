@@ -49,13 +49,13 @@ mod tests {
         let alpha = 1.0;
 
         let mut rng_cpd = RngCatCPD::new(&mut rng, &support, &conditioning_support, alpha)?;
-        let cpd: CatCPD = rng_cpd.random()?;
+        let distribution: CatCPD = rng_cpd.random()?;
 
-        assert_eq!(cpd.support(), &support);
-        assert_eq!(cpd.conditioning_support(), &conditioning_support);
+        assert_eq!(distribution.support(), &support);
+        assert_eq!(distribution.conditioning_support(), &conditioning_support);
 
         // Parameters should sum to 1.
-        for row in cpd.parameters().rows() {
+        for row in distribution.parameters().rows() {
             let sum: f64 = row.iter().sum();
             assert!((sum - 1.0).abs() < 1e-10);
         }

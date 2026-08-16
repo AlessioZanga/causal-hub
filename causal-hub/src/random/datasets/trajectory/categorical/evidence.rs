@@ -11,7 +11,7 @@ use crate::{
 pub struct RngCatTrjEv<'a, R, D> {
     rng: &'a mut R,
     dataset: &'a D,
-    p: f64,
+    probability: f64,
 }
 
 impl<'a, R, D> RngCatTrjEv<'a, R, D> {
@@ -26,13 +26,17 @@ impl<'a, R, D> RngCatTrjEv<'a, R, D> {
     /// # Returns
     ///
     /// A new `RngCatTrjEv` instance.
-    pub fn new(rng: &'a mut R, dataset: &'a D, p: f64) -> Result<Self> {
+    pub fn new(rng: &'a mut R, dataset: &'a D, probability: f64) -> Result<Self> {
         // Check that the probability is in [0, 1].
-        if !(0.0..=1.0).contains(&p) {
+        if !(0.0..=1.0).contains(&probability) {
             return Err(Error::InvalidParameter("p", "must be in [0, 1]"));
         }
 
-        Ok(Self { rng, dataset, p })
+        Ok(Self {
+            rng,
+            dataset,
+            probability,
+        })
     }
 }
 
@@ -55,7 +59,7 @@ impl<R: Rng> Random for RngCatTrjEv<'_, R, CatTrj> {
             .tuple_windows()
             .filter_map(|((&start_time, v), (&end_time, _))| {
                 // Choose if the event is selected.
-                if !self.rng.random_bool(self.p) {
+                if !self.rng.random_bool(self.probability) {
                     // If the event is not selected, skip it.
                     return None;
                 }
@@ -91,7 +95,7 @@ impl<R: Rng> Random for RngCatTrjEv<'_, R, CatTrjs> {
             .dataset
             .values()
             .iter()
-            .map(|trj| RngCatTrjEv::<_, CatTrj>::new(self.rng, trj, self.p)?.random())
+            .map(|trj| RngCatTrjEv::<_, CatTrj>::new(self.rng, trj, self.probability)?.random())
             .collect::<Result<Vec<_>>>()?;
 
         CatTrjsEv::new(evidences)

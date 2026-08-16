@@ -21,17 +21,17 @@ impl PseudoInverse for Array2<f64> {
     fn pinv(&self) -> Result<Self> {
         // Step 0: Scale the matrix to improve numerical stability.
         let a = *self.abs().max().unwrap_or(&1.);
-        let m = self / a;
+        let model = self / a;
         // Step 1: Compute the Single Value Decomposition (SVD).
-        let (u, s, vt) = m
+        let (u, stats, vt) = model
             .svd(true, true)
-            .map_err(|e| Error::Linalg(&format!("Failed to compute SVD: {e}")))?;
+            .map_err(|evidence| Error::Linalg(&format!("Failed to compute SVD: {evidence}")))?;
         let u = u.ok_or_else(|| Error::Linalg("Failed to get U from the SVD."))?;
         let vt = vt.ok_or_else(|| Error::Linalg("Failed to get VT from the SVD."))?;
         // Step 2: Compute the pseudo-inverse of the singular values.
-        let s_max = s.max().unwrap_or(&0.);
-        let r_tol = f64::max(EPSILON, s.len() as f64 * s_max * EPSILON);
-        let s_inv = Array2::from_diag(&s.mapv(|x| if x > r_tol { 1. / x } else { 0. }));
+        let s_max = stats.max().unwrap_or(&0.);
+        let r_tol = f64::max(EPSILON, stats.len() as f64 * s_max * EPSILON);
+        let s_inv = Array2::from_diag(&stats.mapv(|x| if x > r_tol { 1. / x } else { 0. }));
         // Step 3: Compute the pseudo-inverse of S_zz.
         Ok(vt.t().dot(&s_inv).dot(&u.t()) / a)
     }

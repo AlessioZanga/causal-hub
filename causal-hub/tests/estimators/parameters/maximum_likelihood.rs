@@ -14,7 +14,7 @@ mod tests {
 
     const M: <CatIncTable as IncDataset>::Missing = CatIncTable::MISSING;
 
-    mod cpd {
+    mod distribution {
         use super::*;
 
         mod categorical {
@@ -65,7 +65,9 @@ mod tests {
 
                     assert_eq!(distribution.parameters_size(), 1);
                     assert_eq!(
-                        distribution.fitted_statistics().map(|s| s.fitted_size()),
+                        distribution
+                            .fitted_statistics()
+                            .map(|stats| stats.fitted_size()),
                         Some(5.)
                     );
                     assert_relative_eq!(
@@ -115,7 +117,9 @@ mod tests {
 
                     assert_eq!(distribution.parameters_size(), 4);
                     assert_eq!(
-                        distribution.fitted_statistics().map(|s| s.fitted_size()),
+                        distribution
+                            .fitted_statistics()
+                            .map(|stats| stats.fitted_size()),
                         Some(5.)
                     );
                     assert_relative_eq!(
@@ -272,7 +276,9 @@ mod tests {
 
                     assert_eq!(distribution.parameters_size(), 1);
                     assert_eq!(
-                        distribution.fitted_statistics().map(|s| s.fitted_size()),
+                        distribution
+                            .fitted_statistics()
+                            .map(|stats| stats.fitted_size()),
                         Some(4.)
                     );
                     assert_relative_eq!(
@@ -341,7 +347,9 @@ mod tests {
 
                     assert_eq!(distribution.parameters_size(), 1);
                     assert_eq!(
-                        distribution.fitted_statistics().map(|s| s.fitted_size()),
+                        distribution
+                            .fitted_statistics()
+                            .map(|stats| stats.fitted_size()),
                         Some(4.)
                     );
                     assert_relative_eq!(
@@ -593,7 +601,7 @@ mod tests {
         }
     }
 
-    mod bn {
+    mod bayesian_network {
         use super::*;
 
         mod categorical {
@@ -649,7 +657,9 @@ mod tests {
 
                     assert_eq!(distribution.parameters_size(), 1);
                     assert_eq!(
-                        distribution.fitted_statistics().map(|s| s.fitted_size()),
+                        distribution
+                            .fitted_statistics()
+                            .map(|stats| stats.fitted_size()),
                         Some(8.)
                     );
                     assert_relative_eq!(
