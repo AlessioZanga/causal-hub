@@ -2,7 +2,7 @@ use std::sync::{Arc, RwLock};
 
 use backend::{
     inference::{BackdoorCriterion, GraphicalSeparation, TopologicalOrder},
-    io::JsonIO,
+    io::{DotIO, GmlIO, JsonIO},
     models::{DiGraph, Graph, Labelled},
     random::{Random, RngDag, RngDiGraph},
     types::Labels,
@@ -1004,5 +1004,125 @@ impl PyDiGraph {
         let lock = self.lock();
         // Convert the adjacency matrix to a NumPy array.
         Ok(lock.to_adjacency_matrix().mapv(|b| b as u8).to_pyarray(py))
+    }
+
+    /// Read instance from a DOT string.
+    ///
+    /// Parameters
+    /// ----------
+    /// dot: str
+    ///     The DOT string to read from.
+    ///
+    /// Returns
+    /// -------
+    /// DiGraph
+    ///     A new instance.
+    ///
+    #[classmethod]
+    pub fn from_dot_string(_cls: &Bound<'_, PyType>, dot: &str) -> PyResult<Self> {
+        DiGraph::from_dot_string(dot)
+            .map(Into::into)
+            .map_err(to_pyerr)
+    }
+
+    /// Write instance to a DOT string.
+    ///
+    /// Returns
+    /// -------
+    /// str
+    ///     A DOT string representation of the instance.
+    ///
+    pub fn to_dot_string(&self) -> PyResult<String> {
+        self.lock().to_dot_string().map_err(to_pyerr)
+    }
+
+    /// Read instance from a DOT file.
+    ///
+    /// Parameters
+    /// ----------
+    /// path: str
+    ///     The path to the DOT file to read from.
+    ///
+    /// Returns
+    /// -------
+    /// DiGraph
+    ///     A new instance.
+    ///
+    #[classmethod]
+    pub fn from_dot_file(_cls: &Bound<'_, PyType>, path: &str) -> PyResult<Self> {
+        DiGraph::from_dot_file(path)
+            .map(Into::into)
+            .map_err(to_pyerr)
+    }
+
+    /// Write instance to a DOT file.
+    ///
+    /// Parameters
+    /// ----------
+    /// path: str
+    ///     The path to the DOT file to write to.
+    ///
+    pub fn to_dot_file(&self, path: &str) -> PyResult<()> {
+        self.lock().to_dot_file(path).map_err(to_pyerr)
+    }
+
+    /// Read instance from a GML string.
+    ///
+    /// Parameters
+    /// ----------
+    /// gml: str
+    ///     The GML string to read from.
+    ///
+    /// Returns
+    /// -------
+    /// DiGraph
+    ///     A new instance.
+    ///
+    #[classmethod]
+    pub fn from_gml_string(_cls: &Bound<'_, PyType>, gml: &str) -> PyResult<Self> {
+        DiGraph::from_gml_string(gml)
+            .map(Into::into)
+            .map_err(to_pyerr)
+    }
+
+    /// Write instance to a GML string.
+    ///
+    /// Returns
+    /// -------
+    /// str
+    ///     A GML string representation of the instance.
+    ///
+    pub fn to_gml_string(&self) -> PyResult<String> {
+        self.lock().to_gml_string().map_err(to_pyerr)
+    }
+
+    /// Read instance from a GML file.
+    ///
+    /// Parameters
+    /// ----------
+    /// path: str
+    ///     The path to the GML file to read from.
+    ///
+    /// Returns
+    /// -------
+    /// DiGraph
+    ///     A new instance.
+    ///
+    #[classmethod]
+    pub fn from_gml_file(_cls: &Bound<'_, PyType>, path: &str) -> PyResult<Self> {
+        DiGraph::from_gml_file(path)
+            .map(Into::into)
+            .map_err(to_pyerr)
+    }
+
+    /// Write instance to a GML file.
+    ///
+    /// Parameters
+    /// ----------
+    /// path: str
+    ///     The path to the GML file to write to.
+    ///
+    pub fn to_gml_file(&self, path: &str) -> PyResult<()> {
+        self.lock().to_gml_file(path).map_err(to_pyerr)
     }
 }

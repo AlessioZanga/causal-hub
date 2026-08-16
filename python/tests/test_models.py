@@ -56,6 +56,62 @@ def test_digraph_to_networkx() -> None:
     assert list(G.edges) == edges, "Wrong edges in the NetworkX graph."
 
 
+def test_digraph_gml_round_trip() -> None:
+    """Test GML read/write round-trip on a DiGraph."""
+    # Define vertices and edges for a simple directed graph.
+    vertices = ["A", "B", "C", "D"]
+    edges = [("A", "B"), ("B", "C"), ("C", "D")]
+
+    # Create a simple directed graph.
+    graph = DiGraph.empty(vertices)
+    for x, y in edges:
+        graph.add_edge(x, y)
+
+    # Serialize to a GML string and parse it back.
+    gml = graph.to_gml_string()
+    parsed = DiGraph.from_gml_string(gml)
+
+    # Check the vertices and edges are preserved.
+    assert parsed.vertices() == vertices, "Wrong vertices after GML round-trip."
+    assert parsed.edges() == edges, "Wrong edges after GML round-trip."
+
+    # Check file round-trip.
+    with tempfile.NamedTemporaryFile(suffix=".gml") as tmp:
+        path = tmp.name
+        graph.to_gml_file(path)
+        parsed = DiGraph.from_gml_file(path)
+    assert parsed.vertices() == vertices, "Wrong vertices after GML file round-trip."
+    assert parsed.edges() == edges, "Wrong edges after GML file round-trip."
+
+
+def test_digraph_dot_round_trip() -> None:
+    """Test DOT read/write round-trip on a DiGraph."""
+    # Define vertices and edges for a simple directed graph.
+    vertices = ["A", "B", "C", "D"]
+    edges = [("A", "B"), ("B", "C"), ("C", "D")]
+
+    # Create a simple directed graph.
+    graph = DiGraph.empty(vertices)
+    for x, y in edges:
+        graph.add_edge(x, y)
+
+    # Serialize to a DOT string and parse it back.
+    dot = graph.to_dot_string()
+    parsed = DiGraph.from_dot_string(dot)
+
+    # Check the vertices and edges are preserved.
+    assert parsed.vertices() == vertices, "Wrong vertices after DOT round-trip."
+    assert parsed.edges() == edges, "Wrong edges after DOT round-trip."
+
+    # Check file round-trip.
+    with tempfile.NamedTemporaryFile(suffix=".dot") as tmp:
+        path = tmp.name
+        graph.to_dot_file(path)
+        parsed = DiGraph.from_dot_file(path)
+    assert parsed.vertices() == vertices, "Wrong vertices after DOT file round-trip."
+    assert parsed.edges() == edges, "Wrong edges after DOT file round-trip."
+
+
 def test_digraph_graphical_separation() -> None:
     """Test graphical separation (d-separation) on a known network (Asia)."""
     # Get the BN from the assets.

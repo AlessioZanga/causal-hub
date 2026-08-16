@@ -166,6 +166,7 @@ mod causal_hub {
             m.add_class::<crate::models::PyMixedCPD>()?;
             m.add_class::<crate::models::PyMixedBN>()?;
             m.add_class::<crate::models::PyDiGraph>()?;
+            m.add_class::<crate::models::PyUnGraph>()?;
 
             Ok(())
         }

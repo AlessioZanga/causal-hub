@@ -22,6 +22,7 @@ __all__ = [
     "MixedBN",
     "MixedCPD",
     "MixedPhi",
+    "UnGraph",
 ]
 
 @typing.final
@@ -106,6 +107,41 @@ class CatBN:
         -------
         int
             The parameters size.
+        """
+
+    def support(self) -> builtins.dict[builtins.str, builtins.list[builtins.str]]:
+        r"""
+        Returns the support (states) of the model variables.
+
+        Returns
+        -------
+        dict[str, list[str]]
+            A mapping from each variable to its possible states.
+        """
+
+    def select(self, x: typing.Any) -> CatBN:
+        r"""
+        Restrict the model to the specified variables.
+
+        Parameters
+        ----------
+        x: str | Iterable[str]
+            A variable or an iterable of variables to select.
+
+        Returns
+        -------
+        CatBN
+            A model restricted to the specified variables.
+        """
+
+    def topological_order(self) -> builtins.list[builtins.str]:
+        r"""
+        Returns the topological order of the underlying graph.
+
+        Returns
+        -------
+        list[str]
+            A topological ordering of the variables.
         """
 
     @classmethod
@@ -1577,6 +1613,166 @@ class DiGraph:
             The path to the JSON file to write to.
         """
 
+    def select(self, x: typing.Any) -> DiGraph:
+        r"""
+        Restrict the graph to the specified variables.
+
+        Parameters
+        ----------
+        x: str | Iterable[str]
+            A variable or an iterable of variables to select.
+
+        Returns
+        -------
+        DiGraph
+            A graph restricted to the specified variables.
+        """
+
+    def topological_order(self) -> typing.Optional[builtins.list[builtins.str]]:
+        r"""
+        Returns a topological order of the graph, if it is a DAG.
+
+        Returns
+        -------
+        list[str] | None
+            A topological ordering of the vertices, or `None` if the graph is
+            not a directed acyclic graph.
+        """
+
+    @classmethod
+    def from_adjacency_matrix(
+        cls, labels: typing.Any, adjacency_matrix: typing.Any
+    ) -> DiGraph:
+        r"""
+        Creates a directed graph from an adjacency matrix and labels.
+
+        Parameters
+        ----------
+        labels: Iterable[str]
+            The labels of the vertices.
+        adjacency_matrix: numpy.ndarray
+            A 2D boolean array representing the adjacency matrix.
+
+        Returns
+        -------
+        DiGraph
+            A new graph instance.
+        """
+
+    def to_adjacency_matrix(self) -> numpy.typing.NDArray[numpy.uint8]:
+        r"""
+        Converts the graph to an adjacency matrix.
+
+        Returns
+        -------
+        numpy.ndarray
+            A 2D boolean array representing the adjacency matrix.
+        """
+
+    @classmethod
+    def from_dot_string(cls, dot: builtins.str) -> DiGraph:
+        r"""
+        Read instance from a DOT string.
+
+        Parameters
+        ----------
+        dot: str
+            The DOT string to read from.
+
+        Returns
+        -------
+        DiGraph
+            A new instance.
+        """
+
+    def to_dot_string(self) -> builtins.str:
+        r"""
+        Write instance to a DOT string.
+
+        Returns
+        -------
+        str
+            A DOT string representation of the instance.
+        """
+
+    @classmethod
+    def from_dot_file(cls, path: builtins.str) -> DiGraph:
+        r"""
+        Read instance from a DOT file.
+
+        Parameters
+        ----------
+        path: str
+            The path to the DOT file to read from.
+
+        Returns
+        -------
+        DiGraph
+            A new instance.
+        """
+
+    def to_dot_file(self, path: builtins.str) -> None:
+        r"""
+        Write instance to a DOT file.
+
+        Parameters
+        ----------
+        path: str
+            The path to the DOT file to write to.
+        """
+
+    @classmethod
+    def from_gml_string(cls, gml: builtins.str) -> DiGraph:
+        r"""
+        Read instance from a GML string.
+
+        Parameters
+        ----------
+        gml: str
+            The GML string to read from.
+
+        Returns
+        -------
+        DiGraph
+            A new instance.
+        """
+
+    def to_gml_string(self) -> builtins.str:
+        r"""
+        Write instance to a GML string.
+
+        Returns
+        -------
+        str
+            A GML string representation of the instance.
+        """
+
+    @classmethod
+    def from_gml_file(cls, path: builtins.str) -> DiGraph:
+        r"""
+        Read instance from a GML file.
+
+        Parameters
+        ----------
+        path: str
+            The path to the GML file to read from.
+
+        Returns
+        -------
+        DiGraph
+            A new instance.
+        """
+
+    def to_gml_file(self, path: builtins.str) -> None:
+        r"""
+        Write instance to a GML file.
+
+        Parameters
+        ----------
+        path: str
+            The path to the GML file to write to.
+        """
+
 @typing.final
 class GaussBN:
     r"""
@@ -1659,6 +1855,43 @@ class GaussBN:
         -------
         int
             The parameters size.
+        """
+
+    def support(
+        self,
+    ) -> builtins.dict[builtins.str, tuple[builtins.float, builtins.float]]:
+        r"""
+        Returns the support (ranges) of the model variables.
+
+        Returns
+        -------
+        dict[str, tuple[float, float]]
+            A mapping from each variable to its (low, high) range.
+        """
+
+    def select(self, x: typing.Any) -> GaussBN:
+        r"""
+        Restrict the model to the specified variables.
+
+        Parameters
+        ----------
+        x: str | Iterable[str]
+            A variable or an iterable of variables to select.
+
+        Returns
+        -------
+        GaussBN
+            A model restricted to the specified variables.
+        """
+
+    def topological_order(self) -> builtins.list[builtins.str]:
+        r"""
+        Returns the topological order of the underlying graph.
+
+        Returns
+        -------
+        list[str]
+            A topological ordering of the variables.
         """
 
     @classmethod
@@ -2212,6 +2445,31 @@ class MixedBN:
         Returns the parameters size.
         """
 
+    def select(self, x: typing.Any) -> MixedBN:
+        r"""
+        Restrict the model to the specified variables.
+
+        Parameters
+        ----------
+        x: str | Iterable[str]
+            A variable or an iterable of variables to select.
+
+        Returns
+        -------
+        MixedBN
+            A model restricted to the specified variables.
+        """
+
+    def topological_order(self) -> builtins.list[builtins.str]:
+        r"""
+        Returns the topological order of the underlying graph.
+
+        Returns
+        -------
+        list[str]
+            A topological ordering of the variables.
+        """
+
     def sample(
         self, n: builtins.int, seed: builtins.int = 31, parallel: builtins.bool = True
     ) -> datasets.MixedTable:
@@ -2419,4 +2677,280 @@ class MixedPhi:
     def to_json_file(self, path: builtins.str) -> None:
         r"""
         Write instance to a JSON file.
+        """
+
+@typing.final
+class UnGraph:
+    r"""
+    A struct representing an undirected graph using an adjacency matrix.
+    """
+
+    def __eq__(self, other: builtins.object, /) -> builtins.bool: ...
+    @classmethod
+    def empty(cls, vertices: typing.Any) -> UnGraph:
+        r"""
+        Creates an empty undirected graph with the given vertices.
+
+        Parameters
+        ----------
+        vertices: Iterable[str]
+            The vertices of the graph.
+            Vertices will be sorted in alphabetical order.
+
+        Returns
+        -------
+        UnGraph
+            A new graph instance.
+        """
+
+    @classmethod
+    def complete(cls, vertices: typing.Any) -> UnGraph:
+        r"""
+        Creates a complete undirected graph with the given vertices.
+
+        Parameters
+        ----------
+        vertices: Iterable[str]
+            The vertices of the graph.
+            Vertices will be sorted in alphabetical order.
+            No self-loops are created.
+
+        Returns
+        -------
+        UnGraph
+            A new graph instance.
+        """
+
+    def vertices(self) -> builtins.list[builtins.str]:
+        r"""
+        Returns the vertices of the graph.
+
+        Returns
+        -------
+        list[str]
+            A list of vertices.
+        """
+
+    def has_vertex(self, x: builtins.str) -> builtins.bool:
+        r"""
+        Checks if a vertex exists in the graph.
+
+        Parameters
+        ----------
+        x: str
+            The vertex.
+
+        Returns
+        -------
+        bool
+            `true` if the vertex exists, `false` otherwise.
+        """
+
+    def edges(self) -> builtins.list[tuple[builtins.str, builtins.str]]:
+        r"""
+        Returns the edges of the graph.
+
+        Returns
+        -------
+        list[tuple[str, str]]
+            A list of edges.
+        """
+
+    def has_edge(self, x: builtins.str, y: builtins.str) -> builtins.bool:
+        r"""
+        Checks if there is an edge between vertices `x` and `y`.
+
+        Parameters
+        ----------
+        x: str
+            The first vertex.
+        y: str
+            The second vertex.
+
+        Returns
+        -------
+        bool
+            `true` if there is an edge between `x` and `y`, `false` otherwise.
+        """
+
+    def add_edge(self, x: builtins.str, y: builtins.str) -> builtins.bool:
+        r"""
+        Adds an edge between vertices `x` and `y`.
+
+        Parameters
+        ----------
+        x: str
+            The first vertex.
+        y: str
+            The second vertex.
+
+        Returns
+        -------
+        bool
+            `true` if the edge was added, `false` if it already existed.
+        """
+
+    def del_edge(self, x: builtins.str, y: builtins.str) -> builtins.bool:
+        r"""
+        Deletes the edge between vertices `x` and `y`.
+
+        Parameters
+        ----------
+        x: str
+            The first vertex.
+        y: str
+            The second vertex.
+
+        Returns
+        -------
+        bool
+            `true` if the edge was deleted, `false` if it did not exist.
+        """
+
+    def neighbors(self, x: typing.Any) -> builtins.list[builtins.str]:
+        r"""
+        Returns the neighbors of a vertex `x`.
+
+        Parameters
+        ----------
+        x: str | Iterable[str]
+            A vertex or an iterable of vertices.
+
+        Returns
+        -------
+        list[str]
+            A list of neighbor vertices.
+        """
+
+    def select(self, x: typing.Any) -> UnGraph:
+        r"""
+        Restrict the graph to the specified variables.
+
+        Parameters
+        ----------
+        x: str | Iterable[str]
+            A variable or an iterable of variables to select.
+
+        Returns
+        -------
+        UnGraph
+            A graph restricted to the specified variables.
+        """
+
+    @classmethod
+    def from_adjacency_matrix(
+        cls, labels: typing.Any, adjacency_matrix: typing.Any
+    ) -> UnGraph:
+        r"""
+        Creates an undirected graph from an adjacency matrix and labels.
+
+        Parameters
+        ----------
+        labels: Iterable[str]
+            The labels of the vertices.
+        adjacency_matrix: numpy.ndarray
+            A 2D boolean array representing the (symmetric) adjacency matrix.
+
+        Returns
+        -------
+        UnGraph
+            A new graph instance.
+        """
+
+    def to_adjacency_matrix(self) -> numpy.typing.NDArray[numpy.uint8]:
+        r"""
+        Converts the graph to an adjacency matrix.
+
+        Returns
+        -------
+        numpy.ndarray
+            A 2D boolean array representing the adjacency matrix.
+        """
+
+    @classmethod
+    def random(
+        cls, labels: typing.Any, p: builtins.float = 0.1, seed: builtins.int = 31
+    ) -> UnGraph:
+        r"""
+        Generates a random undirected graph.
+
+        Parameters
+        ----------
+        labels: Iterable[str]
+            The labels of the graph.
+        p: float, default=0.1
+            The probability of generating an edge.
+        seed: int, default=31
+            The seed for the random number generator.
+
+        Returns
+        -------
+        UnGraph
+            A random undirected graph.
+        """
+
+    @classmethod
+    def from_json_string(cls, json: builtins.str) -> UnGraph:
+        r"""
+        Read instance from a JSON string.
+        """
+
+    def to_json_string(self) -> builtins.str:
+        r"""
+        Write instance to a JSON string.
+        """
+
+    @classmethod
+    def from_json_file(cls, path: builtins.str) -> UnGraph:
+        r"""
+        Read instance from a JSON file.
+        """
+
+    def to_json_file(self, path: builtins.str) -> None:
+        r"""
+        Write instance to a JSON file.
+        """
+
+    @classmethod
+    def from_dot_string(cls, dot: builtins.str) -> UnGraph:
+        r"""
+        Read instance from a DOT string.
+        """
+
+    def to_dot_string(self) -> builtins.str:
+        r"""
+        Write instance to a DOT string.
+        """
+
+    @classmethod
+    def from_dot_file(cls, path: builtins.str) -> UnGraph:
+        r"""
+        Read instance from a DOT file.
+        """
+
+    def to_dot_file(self, path: builtins.str) -> None:
+        r"""
+        Write instance to a DOT file.
+        """
+
+    @classmethod
+    def from_gml_string(cls, gml: builtins.str) -> UnGraph:
+        r"""
+        Read instance from a GML string.
+        """
+
+    def to_gml_string(self) -> builtins.str:
+        r"""
+        Write instance to a GML string.
+        """
+
+    @classmethod
+    def from_gml_file(cls, path: builtins.str) -> UnGraph:
+        r"""
+        Read instance from a GML file.
+        """
+
+    def to_gml_file(self, path: builtins.str) -> None:
+        r"""
+        Write instance to a GML file.
         """
