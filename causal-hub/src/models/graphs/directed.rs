@@ -260,6 +260,113 @@ impl Graph for DiGraph {
         x < self.labels.len()
     }
 
+    fn add_vertex<V>(&mut self, x: V) -> usize
+    where
+        V: AsRef<str>,
+    {
+        // Cast the vertex label.
+        let x = x.as_ref().to_owned();
+        // Try to insert the vertex label.
+        let (i, f) = self.labels.insert_full(x.clone());
+
+        // If the vertex was already present ...
+        if !f {
+            // ... return early.
+            return i;
+        }
+
+        // Sort the labels.
+        self.labels.sort();
+
+        // Assert the vertex has been added.
+        debug_assert!(self.labels.contains(&x));
+        // Assert the labels are still sorted.
+        debug_assert!(self.labels.iter().is_sorted());
+
+        // Compute the index of the new vertex:
+        // since labels are unique and sorted, it is
+        // the number of labels preceding the new one.
+        let i = self
+            .labels
+            .iter()
+            .filter(|&y| y.as_str() < x.as_str())
+            .count();
+
+        // Compute the size of the adjacency matrix.
+        let n = self.adjacency_matrix.nrows();
+        // Allocate the new adjacency matrix.
+        let mut adjacency_matrix = Array2::from_elem((n + 1, n + 1), false);
+        // Copy the top-left block.
+        adjacency_matrix
+            .slice_mut(s![0..i, 0..i])
+            .assign(&self.adjacency_matrix.slice(s![0..i, 0..i]));
+        // Copy the top-right block.
+        adjacency_matrix
+            .slice_mut(s![0..i, (i + 1)..(n + 1)])
+            .assign(&self.adjacency_matrix.slice(s![0..i, i..n]));
+        // Copy the bottom-left block.
+        adjacency_matrix
+            .slice_mut(s![(i + 1)..(n + 1), 0..i])
+            .assign(&self.adjacency_matrix.slice(s![i..n, 0..i]));
+        // Copy the bottom-right block.
+        adjacency_matrix
+            .slice_mut(s![(i + 1)..(n + 1), (i + 1)..(n + 1)])
+            .assign(&self.adjacency_matrix.slice(s![i..n, i..n]));
+        // Replace the old adjacency matrix.
+        self.adjacency_matrix = adjacency_matrix;
+
+        // Assert the label set is still consistent with the adjacency matrix shape.
+        debug_assert_eq!(self.labels.len(), self.adjacency_matrix.nrows());
+        // Assert the adjacency matrix is still square.
+        debug_assert!(self.adjacency_matrix.is_square());
+
+        // Return the new vertex index.
+        i
+    }
+
+    fn del_vertex(&mut self, x: usize) -> bool {
+        // Remove the vertex label, shifting the subsequent indices.
+        let Some(label) = self.labels.shift_remove_index(x) else {
+            // If the vertex was not present, return early.
+            return false;
+        };
+
+        // Assert the vertex has been removed.
+        debug_assert!(!self.labels.contains(&label));
+        // Assert the labels are still sorted.
+        debug_assert!(self.labels.iter().is_sorted());
+
+        // Compute the size of the adjacency matrix.
+        let n = self.adjacency_matrix.nrows();
+        // Allocate the new adjacency matrix.
+        let mut adjacency_matrix = Array2::from_elem((n - 1, n - 1), false);
+        // Copy the top-left block.
+        adjacency_matrix
+            .slice_mut(s![0..x, 0..x])
+            .assign(&self.adjacency_matrix.slice(s![0..x, 0..x]));
+        // Copy the top-right block.
+        adjacency_matrix
+            .slice_mut(s![0..x, x..(n - 1)])
+            .assign(&self.adjacency_matrix.slice(s![0..x, (x + 1)..n]));
+        // Copy the bottom-left block.
+        adjacency_matrix
+            .slice_mut(s![x..(n - 1), 0..x])
+            .assign(&self.adjacency_matrix.slice(s![(x + 1)..n, 0..x]));
+        // Copy the bottom-right block.
+        adjacency_matrix
+            .slice_mut(s![x..(n - 1), x..(n - 1)])
+            .assign(&self.adjacency_matrix.slice(s![(x + 1)..n, (x + 1)..n]));
+        // Replace the old adjacency matrix.
+        self.adjacency_matrix = adjacency_matrix;
+
+        // Assert the label set is still consistent with the adjacency matrix shape.
+        debug_assert_eq!(self.labels.len(), self.adjacency_matrix.nrows());
+        // Assert the adjacency matrix is still square.
+        debug_assert!(self.adjacency_matrix.is_square());
+
+        true
+    }
+
     fn edges(&self) -> Set<(usize, usize)> {
         // Iterate over the adjacency matrix and collect the edges.
         self.adjacency_matrix

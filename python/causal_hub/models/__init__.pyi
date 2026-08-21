@@ -1156,6 +1156,41 @@ class DiGraph:
             `true` if the vertex exists, `false` otherwise.
         """
 
+    def add_vertex(self, x: builtins.str) -> builtins.int:
+        r"""
+        Adds a new vertex with the given label to the graph.
+
+        Parameters
+        ----------
+        x: str
+            The label of the vertex to add.
+
+        Returns
+        -------
+        int
+            The index of the (possibly new) vertex.
+            Vertices are kept sorted in alphabetical order:
+            adding a vertex may shift the indices of other vertices.
+        """
+
+    def del_vertex(self, x: builtins.str) -> builtins.bool:
+        r"""
+        Deletes the vertex with the given label from the graph,
+        together with all its incident edges.
+
+        Parameters
+        ----------
+        x: str
+            The label of the vertex to delete.
+
+        Returns
+        -------
+        bool
+            `true` if the vertex was deleted, `false` if it did not exist.
+            Vertices are kept sorted in alphabetical order:
+            deleting a vertex may shift the indices of other vertices.
+        """
+
     def edges(self) -> builtins.list[tuple[builtins.str, builtins.str]]:
         r"""
         Returns the edges of the graph.
@@ -2744,6 +2779,41 @@ class UnGraph:
         -------
         bool
             `true` if the vertex exists, `false` otherwise.
+        """
+
+    def add_vertex(self, x: builtins.str) -> builtins.int:
+        r"""
+        Adds a new vertex with the given label to the graph.
+
+        Parameters
+        ----------
+        x: str
+            The label of the vertex to add.
+
+        Returns
+        -------
+        int
+            The index of the (possibly new) vertex.
+            Vertices are kept sorted in alphabetical order:
+            adding a vertex may shift the indices of other vertices.
+        """
+
+    def del_vertex(self, x: builtins.str) -> builtins.bool:
+        r"""
+        Deletes the vertex with the given label from the graph,
+        together with all its incident edges.
+
+        Parameters
+        ----------
+        x: str
+            The label of the vertex to delete.
+
+        Returns
+        -------
+        bool
+            `true` if the vertex was deleted, `false` if it did not exist.
+            Vertices are kept sorted in alphabetical order:
+            deleting a vertex may shift the indices of other vertices.
         """
 
     def edges(self) -> builtins.list[tuple[builtins.str, builtins.str]]:

@@ -123,6 +123,54 @@ impl PyDiGraph {
         Ok(lock.has_vertex(x))
     }
 
+    /// Adds a new vertex with the given label to the graph.
+    ///
+    /// Parameters
+    /// ----------
+    /// x: str
+    ///     The label of the vertex to add.
+    ///
+    /// Returns
+    /// -------
+    /// int
+    ///     The index of the (possibly new) vertex.
+    ///     Vertices are kept sorted in alphabetical order:
+    ///     adding a vertex may shift the indices of other vertices.
+    ///
+    pub fn add_vertex(&mut self, x: &str) -> PyResult<usize> {
+        // Get a mutable lock on the inner field.
+        let mut lock = self.lock_mut();
+        // Add the vertex to the graph.
+        Ok(lock.add_vertex(x))
+    }
+
+    /// Deletes the vertex with the given label from the graph,
+    /// together with all its incident edges.
+    ///
+    /// Parameters
+    /// ----------
+    /// x: str
+    ///     The label of the vertex to delete.
+    ///
+    /// Returns
+    /// -------
+    /// bool
+    ///     `true` if the vertex was deleted, `false` if it did not exist.
+    ///     Vertices are kept sorted in alphabetical order:
+    ///     deleting a vertex may shift the indices of other vertices.
+    ///
+    pub fn del_vertex(&mut self, x: &str) -> PyResult<bool> {
+        // Get a mutable lock on the inner field.
+        let mut lock = self.lock_mut();
+        // Get the index of the vertex, if any.
+        let Ok(x) = lock.label_to_index(x) else {
+            // If the label does not exist, the vertex does not exist.
+            return Ok(false);
+        };
+        // Delete the vertex from the graph.
+        Ok(lock.del_vertex(x))
+    }
+
     /// Returns the edges of the graph.
     ///
     /// Returns

@@ -78,6 +78,45 @@ pub trait Graph {
     ///
     fn has_vertex(&self, x: usize) -> bool;
 
+    /// Adds a new vertex with the given label to the graph.
+    ///
+    /// # Arguments
+    ///
+    /// * `x` - The label of the vertex to add.
+    ///
+    /// # Notes
+    ///
+    /// * Labels are kept sorted in alphabetical order:
+    ///   adding a vertex may shift the indices of other vertices.
+    /// * If a vertex with the given label already exists,
+    ///   the graph is left unchanged.
+    ///
+    /// # Returns
+    ///
+    /// The index of the (possibly new) vertex.
+    ///
+    fn add_vertex<V>(&mut self, x: V) -> usize
+    where
+        V: AsRef<str>;
+
+    /// Deletes the vertex at the given index from the graph,
+    /// together with all its incident edges.
+    ///
+    /// # Arguments
+    ///
+    /// * `x` - The index of the vertex to delete.
+    ///
+    /// # Notes
+    ///
+    /// * Labels are kept sorted in alphabetical order:
+    ///   deleting a vertex may shift the indices of other vertices.
+    ///
+    /// # Returns
+    ///
+    /// `true` if the vertex was deleted, `false` if it did not exist.
+    ///
+    fn del_vertex(&mut self, x: usize) -> bool;
+
     /// Returns the iterator of edges in the graph.
     ///
     /// # Returns

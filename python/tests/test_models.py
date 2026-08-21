@@ -15,7 +15,7 @@ from causal_hub.assets import (
 )
 from causal_hub.datasets import CatTrjs, GaussIncTable
 from causal_hub.estimators import EstimatorMethod
-from causal_hub.models import CatBN, CatCTBN, DiGraph, GaussBN
+from causal_hub.models import CatBN, CatCTBN, DiGraph, GaussBN, UnGraph
 
 
 def test_digraph_from_networkx() -> None:
@@ -715,3 +715,69 @@ def test_inference_with_evidence_dict() -> None:
         seed=42,
     )
     assert est_do is not None
+
+
+@pytest.mark.parametrize("graph_type", [DiGraph, UnGraph])
+def test_graph_add_vertex(graph_type) -> None:
+    """Test adding a new vertex to a graph."""
+    # Create an empty graph.
+    graph = graph_type.empty(["A", "C"])
+
+    # Add a vertex that does not exist.
+    i = graph.add_vertex("B")
+    assert i == 1, "Wrong index for the new vertex."
+    assert graph.vertices() == ["A", "B", "C"], "Wrong vertices after addition."
+
+    # Adding a vertex that already exists returns its index.
+    assert graph.add_vertex("A") == 0, "Wrong index for the existing vertex."
+    assert graph.vertices() == ["A", "B", "C"], "Vertices changed by existing addition."
+
+
+@pytest.mark.parametrize("graph_type", [DiGraph, UnGraph])
+def test_graph_add_vertex_preserves_edges(graph_type) -> None:
+    """Test that edges are preserved when adding a vertex in between."""
+    # Create a graph with an edge.
+    graph = graph_type.empty(["A", "C"])
+    graph.add_edge("A", "C")
+
+    # Add a vertex in between.
+    graph.add_vertex("B")
+
+    # The former edge is preserved.
+    assert graph.edges() == [("A", "C")], "Edge lost by vertex addition."
+
+
+@pytest.mark.parametrize("graph_type", [DiGraph, UnGraph])
+def test_graph_del_vertex(graph_type) -> None:
+    """Test deleting a vertex from a graph."""
+    # Create a graph.
+    graph = graph_type.empty(["A", "B", "C"])
+
+    # Delete an existing vertex.
+    assert graph.del_vertex("B") is True, "Vertex deletion failed."
+    assert graph.vertices() == ["A", "C"], "Wrong vertices after deletion."
+
+    # Deleting a vertex that does not exist returns False.
+    assert (
+        graph.del_vertex("B") is False
+    ), "Deletion of missing vertex must return False."
+    assert (
+        graph.del_vertex("Z") is False
+    ), "Deletion of unknown vertex must return False."
+    assert graph.vertices() == ["A", "C"], "Vertices changed by failed deletion."
+
+
+@pytest.mark.parametrize("graph_type", [DiGraph, UnGraph])
+def test_graph_del_vertex_removes_incident_edges(graph_type) -> None:
+    """Test that incident edges are removed when deleting a vertex."""
+    # Create a graph with edges.
+    graph = graph_type.empty(["A", "B", "C"])
+    graph.add_edge("A", "B")
+    graph.add_edge("B", "C")
+
+    # Delete the middle vertex.
+    assert graph.del_vertex("B") is True, "Vertex deletion failed."
+
+    # The incident edges are gone.
+    assert graph.edges() == [], "Incident edges not removed."
+    assert graph.vertices() == ["A", "C"], "Wrong vertices after deletion."
