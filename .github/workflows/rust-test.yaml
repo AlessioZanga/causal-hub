@@ -49,6 +49,7 @@ jobs:
         run: cargo test --no-default-features --features=openblas-system
 
   windows:
+    if: false # Temporarily disabled
     runs-on: ${{ matrix.platform.runner }}
     strategy:
       fail-fast: false

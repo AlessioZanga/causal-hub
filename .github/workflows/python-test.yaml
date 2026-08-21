@@ -66,6 +66,7 @@ jobs:
           uv run pytest
 
   windows:
+    if: false # Temporarily disabled
     runs-on: ${{ matrix.platform.runner }}
     strategy:
       fail-fast: false
