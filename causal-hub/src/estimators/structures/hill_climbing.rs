@@ -38,8 +38,8 @@ type ES = (
 /// The hill climbing algorithm for structure learning in BNs.
 #[derive(Clone, Debug)]
 pub struct HC<'a, S> {
-    initial_graph: &'a DiGraph,
     score: &'a S,
+    initial_graph: Option<&'a DiGraph>,
     max_parents: Option<usize>,
     max_iter: usize,
     prior_knowledge: Option<&'a PK>,
@@ -53,8 +53,34 @@ where
     ///
     /// # Arguments
     ///
-    /// * `initial_graph` - The initial directed graph.
     /// * `score` - The scoring criterion to use.
+    ///
+    /// # Returns
+    ///
+    /// A new `HC` instance.
+    ///
+    /// # Notes
+    ///
+    /// By default, the search starts from an empty graph over the labels of the
+    /// scoring criterion. Use [`HC::with_initial_graph`] to provide a different
+    /// starting point.
+    ///
+    #[inline]
+    pub fn new(score: &'a S) -> Self {
+        Self {
+            initial_graph: None,
+            score,
+            max_parents: None,
+            max_iter: usize::MAX,
+            prior_knowledge: None,
+        }
+    }
+
+    /// Sets the initial directed graph.
+    ///
+    /// # Arguments
+    ///
+    /// * `initial_graph` - The initial directed graph.
     ///
     /// # Errors
     ///
@@ -62,25 +88,21 @@ where
     ///
     /// # Returns
     ///
-    /// A new `HC` instance.
+    /// The modified instance.
     ///
     #[inline]
-    pub fn new(initial_graph: &'a DiGraph, score: &'a S) -> Result<Self> {
+    pub fn with_initial_graph(mut self, initial_graph: &'a DiGraph) -> Result<Self> {
         // Check labels of the initial graph and the scoring criterion are the same.
-        if initial_graph.labels() != score.labels() {
+        if initial_graph.labels() != self.score.labels() {
             return Err(Error::LabelMismatch(
                 &format!("{:?}", initial_graph.labels()),
-                &format!("{:?}", score.labels()),
+                &format!("{:?}", self.score.labels()),
             ));
         }
+        // Set the initial graph.
+        self.initial_graph = Some(initial_graph);
 
-        Ok(Self {
-            initial_graph,
-            score,
-            max_parents: None,
-            max_iter: usize::MAX,
-            prior_knowledge: None,
-        })
+        Ok(self)
     }
 
     /// Sets the maximum number of parents for each vertex.
@@ -132,10 +154,15 @@ where
     ///
     #[inline]
     pub fn with_prior_knowledge(mut self, prior_knowledge: &'a PK) -> Result<Self> {
+        // Get the initial graph, or an empty graph over the labels of the scoring criterion.
+        let initial_graph = match self.initial_graph {
+            Some(graph) => graph.clone(),
+            None => DiGraph::empty(self.score.labels())?,
+        };
         // Check labels of prior knowledge and initial graph are the same.
-        if self.initial_graph.labels() != prior_knowledge.labels() {
+        if initial_graph.labels() != prior_knowledge.labels() {
             return Err(Error::LabelMismatch(
-                &format!("{:?}", self.initial_graph.labels()),
+                &format!("{:?}", initial_graph.labels()),
                 &format!("{:?}", prior_knowledge.labels()),
             ));
         }
@@ -143,7 +170,7 @@ where
         // every edge of the initial graph must not be forbidden.
         // Note that required edges missing from the initial graph are
         // not a conflict, since they are added during initialization.
-        for (i, j) in self.initial_graph.edges() {
+        for (i, j) in initial_graph.edges() {
             // Check edge must not be forbidden.
             if prior_knowledge.is_forbidden(i, j) {
                 return Err(Error::PriorKnowledgeConflict(&format!(
@@ -169,11 +196,19 @@ impl<S> HC<'_, S> {
     fn is_required(&self, x: usize, y: usize) -> bool {
         self.prior_knowledge.is_some_and(|k| k.is_required(x, y))
     }
+}
 
+impl<S> HC<'_, S>
+where
+    S: ScoringCriterion + Labelled,
+{
     /// Initializes the search space, the in-degrees and the current solution.
     fn init(&self) -> Result<(ES, Vec<usize>, DiGraph)> {
-        // Clone the initial graph.
-        let mut g = self.initial_graph.clone();
+        // Get the initial graph, or an empty graph over the labels of the scoring criterion.
+        let mut g = match self.initial_graph {
+            Some(graph) => graph.clone(),
+            None => DiGraph::empty(self.score.labels())?,
+        };
 
         // If prior knowledge is set ...
         if let Some(k) = self.prior_knowledge {
@@ -234,7 +269,9 @@ impl<S> HC<'_, S> {
 
         Ok(((add, del, rev), in_degree, g))
     }
+}
 
+impl<S> HC<'_, S> {
     /// Checks if an edge operation is consistent with acyclicity and hyper-parameters.
     fn is_valid(
         &self,
@@ -531,7 +568,7 @@ where
 
 impl<S> HC<'_, S>
 where
-    S: ScoringCriterion,
+    S: ScoringCriterion + Labelled,
 {
     /// Execute the HC algorithm.
     ///
@@ -574,7 +611,7 @@ where
 
 impl<S> HC<'_, S>
 where
-    S: ScoringCriterion + Sync,
+    S: ScoringCriterion + Sync + Labelled,
 {
     /// Execute the HC algorithm in parallel.
     ///

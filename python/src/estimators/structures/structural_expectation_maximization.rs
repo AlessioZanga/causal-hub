@@ -253,9 +253,13 @@ pub fn sem<'a>(
                                 e
                             ))
                         })?;
-                        // Initialize the CTPC algorithm.
-                        let ctpc =
-                            CTPC::new(&initial_graph, &f_test, &chi_sq_test).map_err(|e| {
+                        // Initialize the CTPC algorithm and set the initial graph.
+                        let ctpc = CTPC::new(&f_test, &chi_sq_test)
+                            .map_err(|e| {
+                                BackendError::Stats(&format!("Failed to initialize CTPC: {}", e))
+                            })?
+                            .with_initial_graph(&initial_graph)
+                            .map_err(|e| {
                                 BackendError::Stats(&format!("Failed to initialize CTPC: {}", e))
                             })?;
                         // Set prior knowledge.
@@ -276,12 +280,13 @@ pub fn sem<'a>(
                     "cthc" => {
                         // Initialize the scoring criterion.
                         let bic = BIC::new(&cache);
-                        // Initialize the CTHC algorithm and set the maximum number of parents.
-                        let cthc = CTHC::new(&initial_graph, &bic)
+                        // Initialize the CTHC algorithm and set the initial graph and the maximum number of parents.
+                        let cthc = CTHC::new(&bic)
+                            .with_max_parents(max_parents)
+                            .with_initial_graph(&initial_graph)
                             .map_err(|e| {
                                 BackendError::Stats(&format!("Failed to initialize CTHC: {}", e))
-                            })?
-                            .with_max_parents(max_parents);
+                            })?;
                         // Set prior knowledge.
                         let cthc = cthc.with_prior_knowledge(prior_knowledge).map_err(|e| {
                             BackendError::InvalidParameter(

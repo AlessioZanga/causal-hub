@@ -141,8 +141,8 @@ mod tests {
                 let f_test = FTest::new(&cache, 1e-4)?;
                 // Initialize the chi-squared test.
                 let chi_sq_test = ChiSquaredTest::new(&cache, 1e-4)?;
-                // Initialize the CTPC algorithm.
-                let ctpc = CTPC::new(&initial_graph, &f_test, &chi_sq_test)?;
+                // Initialize the CTPC algorithm with the complete initial graph.
+                let ctpc = CTPC::new(&f_test, &chi_sq_test)?.with_initial_graph(&initial_graph)?;
                 // Fit the new structure using CTPC.
                 let fitted_graph = ctpc.par_fit()?;
                 // Fit the new model using the expectation.

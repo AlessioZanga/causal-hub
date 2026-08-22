@@ -46,10 +46,8 @@ mod tests {
         // Initialize the scoring criterion.
         let bic = BIC::new(&cache);
 
-        // Set the initial graph.
-        let initial_graph = DiGraph::empty(dataset.labels())?;
-        // Initialize the HC algorithm.
-        let hc = HC::new(&initial_graph, &bic)?;
+        // Initialize the HC algorithm with the default empty initial graph.
+        let hc = HC::new(&bic);
         // Run the HC algorithm.
         let fitted_graph = hc.fit()?;
 
@@ -86,10 +84,8 @@ mod tests {
         // Initialize the scoring criterion.
         let bic = BIC::new(&cache);
 
-        // Set the initial graph.
-        let initial_graph = DiGraph::empty(dataset.labels())?;
-        // Initialize the HC algorithm.
-        let hc = HC::new(&initial_graph, &bic)?;
+        // Initialize the HC algorithm with the default empty initial graph.
+        let hc = HC::new(&bic);
         // Run the HC algorithm in parallel.
         let fitted_graph = hc.par_fit()?;
 
@@ -133,8 +129,8 @@ mod tests {
         let mut initial_graph = DiGraph::empty(dataset.labels())?;
         assert!(initial_graph.add_edge(x, y)?);
 
-        // Initialize the HC algorithm.
-        let hc = HC::new(&initial_graph, &bic)?;
+        // Initialize the HC algorithm with the custom initial graph.
+        let hc = HC::new(&bic).with_initial_graph(&initial_graph)?;
         // Run the HC algorithm.
         let fitted_graph = hc.fit()?;
 
@@ -168,10 +164,8 @@ mod tests {
         // Initialize the scoring criterion.
         let bic = BIC::new(&cache);
 
-        // Set the initial graph.
-        let initial_graph = DiGraph::empty(dataset.labels())?;
         // Initialize the HC algorithm with maximum one parent per vertex.
-        let hc = HC::new(&initial_graph, &bic)?.with_max_parents(1);
+        let hc = HC::new(&bic).with_max_parents(1);
         // Run the HC algorithm.
         let fitted_graph = hc.fit()?;
 
@@ -214,10 +208,8 @@ mod tests {
             Vec::<Vec<usize>>::new(),
         )?;
 
-        // Set the initial graph.
-        let initial_graph = DiGraph::empty(dataset.labels())?;
         // Initialize the HC algorithm.
-        let hc = HC::new(&initial_graph, &bic)?.with_prior_knowledge(&prior_knowledge)?;
+        let hc = HC::new(&bic).with_prior_knowledge(&prior_knowledge)?;
         // Run the HC algorithm.
         let fitted_graph = hc.fit()?;
 
@@ -264,10 +256,8 @@ mod tests {
             Vec::<Vec<usize>>::new(),
         )?;
 
-        // Set the initial graph.
-        let initial_graph = DiGraph::empty(dataset.labels())?;
         // Initialize the HC algorithm.
-        let hc = HC::new(&initial_graph, &bic)?.with_prior_knowledge(&prior_knowledge)?;
+        let hc = HC::new(&bic).with_prior_knowledge(&prior_knowledge)?;
         // Run the HC algorithm.
         let fitted_graph = hc.fit()?;
 
@@ -300,7 +290,7 @@ mod tests {
         let initial_graph = DiGraph::empty(["A", "B", "C"])?;
 
         // Match error kind.
-        match HC::new(&initial_graph, &bic) {
+        match HC::new(&bic).with_initial_graph(&initial_graph) {
             Err(err) => assert!(matches!(
                 err,
                 Error {
@@ -350,7 +340,9 @@ mod tests {
         assert!(initial_graph.add_edge(x, y)?);
 
         // Match error kind.
-        match HC::new(&initial_graph, &bic).and_then(|hc| hc.with_prior_knowledge(&prior_knowledge))
+        match HC::new(&bic)
+            .with_initial_graph(&initial_graph)
+            .and_then(|hc| hc.with_prior_knowledge(&prior_knowledge))
         {
             Err(err) => {
                 assert!(matches!(
@@ -393,7 +385,7 @@ mod tests {
         assert!(initial_graph.add_edge(2, 0)?);
 
         // Initialize the HC algorithm.
-        let hc = HC::new(&initial_graph, &bic)?;
+        let hc = HC::new(&bic).with_initial_graph(&initial_graph)?;
 
         // Match error kind.
         match hc.fit() {
@@ -430,10 +422,8 @@ mod tests {
         // Initialize the scoring criterion.
         let bic = BIC::new(&cache);
 
-        // Set the initial graph.
-        let initial_graph = DiGraph::empty(dataset.labels())?;
-        // Initialize the HC algorithm.
-        let hc = HC::new(&initial_graph, &bic)?;
+        // Initialize the HC algorithm with the default empty initial graph.
+        let hc = HC::new(&bic);
         // Run the HC algorithm.
         let fitted_graph = hc.fit()?;
 
@@ -485,10 +475,8 @@ mod tests {
         // Initialize the scoring criterion.
         let bic = BIC::new(&cache);
 
-        // Set the initial graph.
-        let initial_graph = DiGraph::empty(dataset.labels())?;
-        // Initialize the HC algorithm.
-        let hc = HC::new(&initial_graph, &bic)?;
+        // Initialize the HC algorithm with the default empty initial graph.
+        let hc = HC::new(&bic);
         // Run the HC algorithm in parallel.
         let fitted_graph = hc.par_fit()?;
 
@@ -540,10 +528,10 @@ mod tests {
         // Initialize the scoring criterion.
         let bic = BIC::new(&cache);
 
-        // Set the initial graph.
+        // Set the empty graph as the score baseline.
         let initial_graph = DiGraph::empty(dataset.labels())?;
-        // Initialize the HC algorithm.
-        let hc = HC::new(&initial_graph, &bic)?;
+        // Initialize the HC algorithm with the default empty initial graph.
+        let hc = HC::new(&bic);
         // Run the HC algorithm.
         let fitted_graph = hc.fit()?;
 

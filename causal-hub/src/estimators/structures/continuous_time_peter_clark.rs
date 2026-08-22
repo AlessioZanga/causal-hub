@@ -12,7 +12,7 @@ use crate::{
 /// A struct representing a continuous-time Peter-Clark estimator.
 #[derive(Clone, Debug)]
 pub struct CTPC<'a, T, S> {
-    initial_graph: &'a DiGraph,
+    initial_graph: Option<&'a DiGraph>,
     null_time: &'a T,
     null_state: &'a S,
     prior_knowledge: Option<&'a PK>,
@@ -27,37 +27,75 @@ where
     ///
     /// # Arguments
     ///
-    /// * `initial_graph` - A reference to the initial graph.
     /// * `null_time` - A reference to the null time to transition hypothesis test.
     /// * `null_state` - A reference to the null state-to-state transition hypothesis test.
+    ///
+    /// # Errors
+    ///
+    /// * If the labels of the two hypothesis tests do not match.
     ///
     /// # Returns
     ///
     /// A new `CTPC` instance.
     ///
+    /// # Notes
+    ///
+    /// By default, the algorithm starts from a complete graph over the labels of
+    /// the hypothesis tests. Use [`CTPC::with_initial_graph`] to provide a different
+    /// starting point.
+    ///
     #[inline]
-    pub fn new(initial_graph: &'a DiGraph, null_time: &'a T, null_state: &'a S) -> Result<Self> {
-        // Check labels of the initial graph and the estimator are the same.
-        if initial_graph.labels() != null_time.labels() {
+    pub fn new(null_time: &'a T, null_state: &'a S) -> Result<Self> {
+        // Check labels of the two hypothesis tests are the same.
+        if null_time.labels() != null_state.labels() {
             return Err(Error::LabelMismatch(
-                &format!("{:?}", initial_graph.labels()),
                 &format!("{:?}", null_time.labels()),
-            ));
-        }
-        // Check labels of the initial graph and the estimator are the same.
-        if initial_graph.labels() != null_state.labels() {
-            return Err(Error::LabelMismatch(
-                &format!("{:?}", initial_graph.labels()),
                 &format!("{:?}", null_state.labels()),
             ));
         }
 
         Ok(Self {
-            initial_graph,
+            initial_graph: None,
             null_time,
             null_state,
             prior_knowledge: None,
         })
+    }
+
+    /// Sets the initial directed graph.
+    ///
+    /// # Arguments
+    ///
+    /// * `initial_graph` - A reference to the initial graph.
+    ///
+    /// # Errors
+    ///
+    /// * If the labels of the initial graph and the hypothesis tests do not match.
+    ///
+    /// # Returns
+    ///
+    /// The modified instance.
+    ///
+    #[inline]
+    pub fn with_initial_graph(mut self, initial_graph: &'a DiGraph) -> Result<Self> {
+        // Check labels of the initial graph and the time-to-transition test are the same.
+        if initial_graph.labels() != self.null_time.labels() {
+            return Err(Error::LabelMismatch(
+                &format!("{:?}", initial_graph.labels()),
+                &format!("{:?}", self.null_time.labels()),
+            ));
+        }
+        // Check labels of the initial graph and the state-to-state transition test are the same.
+        if initial_graph.labels() != self.null_state.labels() {
+            return Err(Error::LabelMismatch(
+                &format!("{:?}", initial_graph.labels()),
+                &format!("{:?}", self.null_state.labels()),
+            ));
+        }
+        // Set the initial graph.
+        self.initial_graph = Some(initial_graph);
+
+        Ok(self)
     }
 
     /// Sets the prior knowledge for the algorithm.
@@ -72,19 +110,24 @@ where
     ///
     #[inline]
     pub fn with_prior_knowledge(mut self, prior_knowledge: &'a PK) -> Result<Self> {
+        // Get the initial graph, or a complete graph over the labels of the hypothesis tests.
+        let initial_graph = match self.initial_graph {
+            Some(graph) => graph.clone(),
+            None => DiGraph::complete(self.null_time.labels())?,
+        };
         // Check labels of prior knowledge and initial graph are the same.
-        if self.initial_graph.labels() != prior_knowledge.labels() {
+        if initial_graph.labels() != prior_knowledge.labels() {
             return Err(Error::LabelMismatch(
-                &format!("{:?}", self.initial_graph.labels()),
+                &format!("{:?}", initial_graph.labels()),
                 &format!("{:?}", prior_knowledge.labels()),
             ));
         }
         // Check prior knowledge is consistent with initial graph.
-        for edge in self.initial_graph.vertices().into_iter().permutations(2) {
+        for edge in initial_graph.vertices().into_iter().permutations(2) {
             // Get the edge indices.
             let (i, j) = (edge[0], edge[1]);
             // Check edge must be either present and not forbidden ...
-            if self.initial_graph.has_edge(i, j)? {
+            if initial_graph.has_edge(i, j)? {
                 if prior_knowledge.is_forbidden(i, j) {
                     return Err(Error::PriorKnowledgeConflict(&format!(
                         "Initial graph contains forbidden edge ({i}, {j})."
@@ -110,8 +153,11 @@ where
     /// The fitted graph.
     ///
     pub fn fit(&self) -> Result<DiGraph> {
-        // Clone the initial graph.
-        let mut graph = self.initial_graph.clone();
+        // Get the initial graph, or a complete graph over the labels of the hypothesis tests.
+        let mut graph = match self.initial_graph {
+            Some(graph) => graph.clone(),
+            None => DiGraph::complete(self.null_time.labels())?,
+        };
 
         // For each vertex in the graph ...
         for i in graph.vertices() {
@@ -192,8 +238,8 @@ where
 
 impl<'a, T, S> CTPC<'a, T, S>
 where
-    T: CITest + Sync,
-    S: CITest + Sync,
+    T: CITest + Sync + Labelled,
+    S: CITest + Sync + Labelled,
 {
     /// Execute the CTPC algorithm and return the fitted graph in parallel.
     ///
@@ -202,14 +248,19 @@ where
     /// The fitted graph.
     ///
     pub fn par_fit(&self) -> Result<DiGraph> {
+        // Get the initial graph, or a complete graph over the labels of the hypothesis tests.
+        let initial_graph = match self.initial_graph {
+            Some(graph) => graph.clone(),
+            None => DiGraph::complete(self.null_time.labels())?,
+        };
+
         // For each vertex in the graph ...
-        let parents: Vec<_> = self
-            .initial_graph
+        let parents: Vec<_> = initial_graph
             .vertices()
             .into_par_iter()
             .map(|i| -> Result<Set<usize>> {
                 // Get the parents of the vertex.
-                let mut pa_i = self.initial_graph.parents(&set![i])?;
+                let mut pa_i = initial_graph.parents(&set![i])?;
 
                 // Initialize the counter.
                 let mut k = 0;
@@ -262,7 +313,7 @@ where
             .collect::<Result<_>>()?;
 
         // Initialize an empty graph.
-        let mut graph = DiGraph::empty(self.initial_graph.labels())?;
+        let mut graph = DiGraph::empty(initial_graph.labels())?;
 
         // Set the parents of each vertex.
         parents.into_iter().enumerate().try_for_each(|(i, pa_i)| {
