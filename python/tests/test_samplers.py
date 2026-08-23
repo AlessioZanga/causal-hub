@@ -20,7 +20,7 @@ def test_cat_bn_sample() -> None:
     graph.add_edge("A", "B")
 
     # 3. Fit Model
-    model = CatBN.fit(dataset, graph, estimator=EstimatorMethod.MLE)
+    model = CatBN.fit(dataset, graph, estimator_method=EstimatorMethod.MLE)
 
     # 4. Sample
     n_samples = 50
@@ -42,7 +42,7 @@ def test_cat_bn_sample_sequential() -> None:
     df = pd.DataFrame({"A": a}).astype("category")
     dataset = CatTable.from_pandas(df)
     graph = DiGraph.empty(["A"])
-    model = CatBN.fit(dataset, graph, estimator=EstimatorMethod.MLE)
+    model = CatBN.fit(dataset, graph, estimator_method=EstimatorMethod.MLE)
     n_samples = 50
     sampled_data = model.sample(n=n_samples, seed=42, parallel=False)
     assert isinstance(sampled_data, CatTable)
@@ -58,7 +58,7 @@ def test_cat_bn_sample_parallel_sequential_consistency() -> None:
     dataset = CatTable.from_pandas(df)
     graph = DiGraph.empty(["A", "B"])
     graph.add_edge("A", "B")
-    model = CatBN.fit(dataset, graph, estimator=EstimatorMethod.MLE)
+    model = CatBN.fit(dataset, graph, estimator_method=EstimatorMethod.MLE)
     n_samples = 200
     par = model.sample(n=n_samples, seed=42, parallel=True)
     seq = model.sample(n=n_samples, seed=42, parallel=False)
@@ -81,7 +81,7 @@ def test_gauss_bn_sample() -> None:
     graph.add_edge("X", "Y")
 
     # 3. Fit
-    model = GaussBN.fit(dataset, graph, estimator=EstimatorMethod.MLE)
+    model = GaussBN.fit(dataset, graph, estimator_method=EstimatorMethod.MLE)
 
     # 4. Sample
     n_samples = 50
@@ -104,7 +104,7 @@ def test_gauss_bn_sample_sequential() -> None:
     df = pd.DataFrame({"X": x})
     dataset = GaussTable.from_pandas(df)
     graph = DiGraph.empty(["X"])
-    model = GaussBN.fit(dataset, graph, estimator=EstimatorMethod.MLE)
+    model = GaussBN.fit(dataset, graph, estimator_method=EstimatorMethod.MLE)
     n_samples = 50
     sampled_data = model.sample(n=n_samples, seed=42, parallel=False)
     assert isinstance(sampled_data, GaussTable)
@@ -120,7 +120,7 @@ def test_gauss_bn_sample_parallel_sequential_consistency() -> None:
     dataset = GaussTable.from_pandas(df)
     graph = DiGraph.empty(["X", "Y"])
     graph.add_edge("X", "Y")
-    model = GaussBN.fit(dataset, graph, estimator=EstimatorMethod.MLE)
+    model = GaussBN.fit(dataset, graph, estimator_method=EstimatorMethod.MLE)
     n_samples = 100
     par = model.sample(n=n_samples, seed=42, parallel=True)
     seq = model.sample(n=n_samples, seed=42, parallel=False)
@@ -164,7 +164,7 @@ def test_cat_ctbn_sample() -> None:
     graph.add_edge("A", "B")
 
     # 3. Fit
-    model = CatCTBN.fit(dataset, graph, estimator=EstimatorMethod.MLE)
+    model = CatCTBN.fit(dataset, graph, estimator_method=EstimatorMethod.MLE)
 
     # 4. Sample
     sampled = model.sample(n=2, max_time=5.0, seed=42)

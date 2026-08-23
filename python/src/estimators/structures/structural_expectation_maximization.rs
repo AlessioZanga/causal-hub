@@ -77,6 +77,8 @@ pub fn sem<'a>(
     let initial_graph_locks = initial_graph.as_ref().map(|x| x.lock());
     // Get the reference to the initial graph, if any.
     let initial_graph: Option<&DiGraph> = initial_graph_locks.as_deref();
+    // Reject any unknown keyword arguments.
+    crate::utils::ensure_kwargs_consumed(kwargs)?;
 
     // Check the structure learning algorithm is supported.
     if !matches!(algorithm, "ctpc" | "cthc") {

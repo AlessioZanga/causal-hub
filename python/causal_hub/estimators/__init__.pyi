@@ -149,8 +149,8 @@ def hc(
 
     Parameters
     ----------
-    dataset: CatTable | GaussTable
-        The complete dataset to learn the structure from.
+    dataset: CatTable | CatIncTable | CatWtdTable | GaussTable | GaussIncTable | GaussWtdTable
+        The dataset to learn the structure from.
     estimator_method: EstimatorMethod | None
         The parameter estimator to use (default is `EstimatorMethod.BE`).
     scorer_method: ScorerMethod | None

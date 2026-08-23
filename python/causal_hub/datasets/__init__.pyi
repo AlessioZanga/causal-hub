@@ -17,12 +17,14 @@ __all__ = [
     "CatTrjEv",
     "CatTrjs",
     "CatTrjsEv",
+    "CatWtdTable",
     "CatWtdTrj",
     "CatWtdTrjs",
     "Dataset",
     "GaussEv",
     "GaussIncTable",
     "GaussTable",
+    "GaussWtdTable",
     "MissingMechanism",
     "MissingMethod",
     "MissingTable",
@@ -722,6 +724,79 @@ class CatTrjsEv:
         """
 
 @typing.final
+class CatWtdTable:
+    r"""
+    A categorical weighted tabular dataset.
+    """
+
+    def __new__(cls, dataset: CatTable, weights: typing.Any) -> CatWtdTable:
+        r"""
+        Constructs a new categorical weighted tabular dataset.
+
+        Parameters
+        ----------
+        dataset : CatTable
+            A categorical tabular dataset instance.
+        weights : numpy.ndarray
+            A 1D NumPy array of non-negative finite weights, one per sample.
+
+        Returns
+        -------
+        CatWtdTable
+            A new categorical weighted tabular dataset instance.
+        """
+
+    def labels(self) -> builtins.list[builtins.str]:
+        r"""
+        The labels of the dataset.
+
+        Returns
+        -------
+        list[str]
+            A list of strings containing the labels of the dataset.
+        """
+
+    def support(self) -> builtins.dict[builtins.str, tuple]:
+        r"""
+        The support of the dataset.
+
+        Returns
+        -------
+        dict[str, tuple[str, ...]]
+            A dictionary mapping each label to a tuple of its possible states.
+        """
+
+    def values(self) -> numpy.typing.NDArray[numpy.uint8]:
+        r"""
+        The values of the dataset.
+
+        Returns
+        -------
+        numpy.ndarray
+            A 2D NumPy array containing the values of the dataset.
+        """
+
+    def weights(self) -> numpy.typing.NDArray[numpy.float64]:
+        r"""
+        The weights of the samples.
+
+        Returns
+        -------
+        numpy.ndarray
+            A 1D NumPy array containing the weight of each sample.
+        """
+
+    def sample_size(self) -> builtins.float:
+        r"""
+        The sample size.
+
+        Returns
+        -------
+        float
+            The sum of the sample weights.
+        """
+
+@typing.final
 class CatWtdTrj:
     r"""
     A categorical trajectory with a weight.
@@ -1088,6 +1163,69 @@ class GaussTable:
         -------
         polars.DataFrame
             A Polars DataFrame.
+        """
+
+@typing.final
+class GaussWtdTable:
+    r"""
+    A Gaussian weighted tabular dataset.
+    """
+
+    def __new__(cls, dataset: GaussTable, weights: typing.Any) -> GaussWtdTable:
+        r"""
+        Constructs a new Gaussian weighted tabular dataset.
+
+        Parameters
+        ----------
+        dataset : GaussTable
+            A Gaussian tabular dataset instance.
+        weights : numpy.ndarray
+            A 1D NumPy array of non-negative finite weights, one per sample.
+
+        Returns
+        -------
+        GaussWtdTable
+            A new Gaussian weighted tabular dataset instance.
+        """
+
+    def labels(self) -> builtins.list[builtins.str]:
+        r"""
+        The labels of the dataset.
+
+        Returns
+        -------
+        list[str]
+            A list of strings containing the labels of the dataset.
+        """
+
+    def values(self) -> numpy.typing.NDArray[numpy.float64]:
+        r"""
+        The values of the dataset.
+
+        Returns
+        -------
+        numpy.ndarray
+            A 2D NumPy array containing the values of the dataset.
+        """
+
+    def weights(self) -> numpy.typing.NDArray[numpy.float64]:
+        r"""
+        The weights of the samples.
+
+        Returns
+        -------
+        numpy.ndarray
+            A 1D NumPy array containing the weight of each sample.
+        """
+
+    def sample_size(self) -> builtins.float:
+        r"""
+        The sample size.
+
+        Returns
+        -------
+        float
+            The sum of the sample weights.
         """
 
 @typing.final
@@ -1543,6 +1681,10 @@ class Dataset(enum.Enum):
     r"""
     A categorical incomplete tabular dataset.
     """
+    CategoricalWeighted = ...
+    r"""
+    A categorical weighted tabular dataset.
+    """
     Gaussian = ...
     r"""
     A Gaussian tabular dataset.
@@ -1550,6 +1692,10 @@ class Dataset(enum.Enum):
     GaussianIncomplete = ...
     r"""
     A Gaussian incomplete tabular dataset.
+    """
+    GaussianWeighted = ...
+    r"""
+    A Gaussian weighted tabular dataset.
     """
 
 @typing.final

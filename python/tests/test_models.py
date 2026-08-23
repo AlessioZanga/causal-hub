@@ -173,7 +173,7 @@ def test_asia_fit() -> None:
     # Sample 1000 data points from the BN.
     sample = asia.sample(1000, seed=42)
     # Fit a new BN to the sample.
-    asia_fitted = CatBN.fit(sample, asia.graph(), estimator=EstimatorMethod.BE)
+    asia_fitted = CatBN.fit(sample, asia.graph(), estimator_method=EstimatorMethod.BE)
 
     # Check the labels of the fitted BN.
     assert asia_fitted.labels() == asia.labels(), "Wrong fitted BN labels."
@@ -412,7 +412,9 @@ def test_eating_fit() -> None:
     # Sample 1000 trajectories from the CTBN.
     sample = eating.sample(1000, max_time=10.0, seed=42)
     # Fit a new CTBN to the sample.
-    eating_fitted = CatCTBN.fit(sample, eating.graph(), estimator=EstimatorMethod.BE)
+    eating_fitted = CatCTBN.fit(
+        sample, eating.graph(), estimator_method=EstimatorMethod.BE
+    )
 
     # Check the labels of the fitted CTBN.
     assert eating_fitted.labels() == eating.labels(), "Wrong fitted CTBN labels."
@@ -466,7 +468,7 @@ def test_categorical_bayesian_network_fit_incomplete() -> None:
     graph = DiGraph.from_networkx(G)
 
     # Fit the model.
-    model = CatBN.fit(dataset, graph, estimator=EstimatorMethod.MLE)
+    model = CatBN.fit(dataset, graph, estimator_method=EstimatorMethod.MLE)
 
     # Check the labels and graph.
     assert model.labels() == ["A", "B"]
@@ -505,7 +507,7 @@ def test_gaussian_bayesian_network_fit_numerical() -> None:
     graph = DiGraph.from_networkx(nx.DiGraph([("A", "B")]))
 
     # Fit the model.
-    model = GaussBN.fit(dataset, graph, estimator=EstimatorMethod.MLE)
+    model = GaussBN.fit(dataset, graph, estimator_method=EstimatorMethod.MLE)
 
     # Check the parameters.
     cpds = model.cpds()

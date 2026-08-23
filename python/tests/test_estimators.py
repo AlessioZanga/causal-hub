@@ -7,6 +7,7 @@ from causal_hub.datasets import (
     CatTable,
     CatTrjs,
     CatTrjsEv,
+    CatWtdTable,
     CatWtdTrjs,
     GaussIncTable,
     GaussTable,
@@ -47,7 +48,7 @@ def test_cat_bn_fit() -> None:
     graph.add_edge("A", "B")
 
     # 3. Fit Model
-    model = CatBN.fit(dataset, graph, estimator=EstimatorMethod.MLE)
+    model = CatBN.fit(dataset, graph, estimator_method=EstimatorMethod.MLE)
 
     assert isinstance(model, CatBN)
     assert set(model.labels()) == {"A", "B"}
@@ -77,7 +78,7 @@ def test_gauss_bn_fit() -> None:
     graph.add_edge("X", "Y")
 
     # 3. Fit
-    model = GaussBN.fit(dataset, graph, estimator=EstimatorMethod.MLE)
+    model = GaussBN.fit(dataset, graph, estimator_method=EstimatorMethod.MLE)
 
     assert isinstance(model, GaussBN)
 
@@ -132,7 +133,7 @@ def test_cat_ctbn_fit() -> None:
     graph.add_edge("A", "B")
 
     # 3. Fit
-    model = CatCTBN.fit(dataset, graph, estimator=EstimatorMethod.MLE)
+    model = CatCTBN.fit(dataset, graph, estimator_method=EstimatorMethod.MLE)
     assert isinstance(model, CatCTBN)
 
 
@@ -388,7 +389,7 @@ def test_structure_learning_hc_invalid_dataset() -> None:
 
 
 def test_structure_learning_hc_incomplete_dataset() -> None:
-    """Test that HC raises an error for incomplete datasets."""
+    """Test structure learning using Hill Climbing (HC) on an incomplete dataset."""
     states = {"X": ["0", "1"], "Y": ["0", "1"]}
     model = CatBN.random(states, p=0.5, seed=42)
 
@@ -396,9 +397,30 @@ def test_structure_learning_hc_incomplete_dataset() -> None:
     mechanism = MissingMechanism.random(model.graph(), MT.MCAR, 1.0, seed=42)
     inc_table = CatIncTable.random(cat_table, mechanism, 0.1, 0.5, seed=42)
 
-    with pytest.raises(ValueError) as excinfo:
-        hc(inc_table)
-    assert "complete dataset" in str(excinfo.value)
+    graph = hc(inc_table)
+
+    assert isinstance(graph, DiGraph)
+    assert set(graph.vertices()) == {"X", "Y"}
+
+
+def test_structure_learning_hc_weighted_dataset() -> None:
+    """Test structure learning using Hill Climbing (HC) on a weighted dataset."""
+    # A = B.
+    size = 50
+    a = np.random.choice(["0", "1"], size=size)
+    b = a.copy()
+
+    df = pd.DataFrame({"A": a, "B": b})
+    df = df.astype("category")
+
+    cat_table = CatTable.from_pandas(df)
+    dataset = CatWtdTable(cat_table, np.ones(size))
+
+    graph = hc(dataset)
+
+    assert isinstance(graph, DiGraph)
+    assert set(graph.vertices()) == {"A", "B"}
+    assert set(graph.edges()) in [{("A", "B")}, {("B", "A")}]
 
 
 def test_structure_learning_hc_gauss() -> None:
@@ -496,6 +518,25 @@ def test_structure_learning_hc_gauss_score() -> None:
     assert isinstance(graph, DiGraph)
     assert set(graph.vertices()) == {"X", "Y"}
     assert set(graph.edges()) in [{("X", "Y")}, {("Y", "X")}]
+
+
+def test_structure_learning_hc_rejects_unknown_kwarg() -> None:
+    """Test that HC rejects unknown keyword arguments with a TypeError."""
+    # A = B.
+    size = 100
+    a = np.random.choice(["0", "1"], size=size)
+    b = a.copy()
+
+    df = pd.DataFrame({"A": a, "B": b})
+    df = df.astype("category")
+
+    dataset = CatTable.from_pandas(df)
+
+    pk = PK(["A", "B"], [], [], [])
+
+    with pytest.raises(TypeError) as excinfo:
+        hc(dataset, prior_knowledge=pk, estimator=EstimatorMethod.MLE)
+    assert "estimator" in str(excinfo.value)
 
 
 def test_structure_learning_hc_invalid_score() -> None:

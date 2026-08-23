@@ -216,6 +216,11 @@ impl PyCatCTBN {
         // Get the dataset and the graph.
         let dataset: CatTrjs = dataset.extract::<PyCatTrjs>()?.into();
         let graph: DiGraph = graph.extract::<PyDiGraph>()?.into();
+        // Get the prior `alpha` from the keyword arguments, if any.
+        let alpha = kwarg!(kwargs, "alpha", (usize, f64))?;
+        // Reject any unknown keyword arguments.
+        crate::utils::ensure_kwargs_consumed(kwargs)?;
+
         // Get the estimator method.
         // Initialize the estimator.
         let estimator: Box<dyn PyCTBNEstimator<CatCTBN>> = match estimator_method {
@@ -238,7 +243,7 @@ impl PyCatCTBN {
                     )
                     .map_err(to_pyerr)?;
                 // Set the prior `alpha`, if any.
-                match kwarg!(kwargs, "alpha", (usize, f64))? {
+                match alpha {
                     None => Box::new(estimator),
                     Some(alpha) => Box::new(estimator.with_prior(alpha)),
                 }

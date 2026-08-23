@@ -270,6 +270,11 @@ impl PyCatBN {
             ($type:ty, $dataset:expr) => {{
                 // Get the dataset.
                 let dataset: $type = $dataset.into();
+                // Get the prior `alpha` from the keyword arguments, if any.
+                let alpha = kwarg!(kwargs, "alpha", usize)?;
+                // Reject any unknown keyword arguments.
+                crate::utils::ensure_kwargs_consumed(kwargs)?;
+
                 // Initialize the estimator.
                 let estimator: Box<dyn PyBNEstimator<CatBN>> = match estimator_method {
                     // Initialize the maximum likelihood estimator.
@@ -291,7 +296,7 @@ impl PyCatBN {
                             )
                             .map_err(to_pyerr)?;
                         // Set the prior `alpha`, if any.
-                        match kwarg!(kwargs, "alpha", usize)? {
+                        match alpha {
                             None => Box::new(estimator),
                             Some(alpha) => Box::new(estimator.with_prior(alpha)),
                         }

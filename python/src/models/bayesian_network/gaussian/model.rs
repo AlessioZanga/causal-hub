@@ -271,7 +271,11 @@ impl PyGaussBN {
             ($type: ty, $dataset: expr) => {{
                 // Get the dataset.
                 let dataset: $type = $dataset.into();
-                // Get the estimator method.
+                // Get the prior `alpha` from the keyword arguments, if any.
+                let alpha = kwarg!(kwargs, "alpha", f64)?;
+                // Reject any unknown keyword arguments.
+                crate::utils::ensure_kwargs_consumed(kwargs)?;
+
                 // Initialize the estimator.
                 let estimator: Box<dyn PyBNEstimator<GaussBN>> = match estimator_method {
                     // Initialize the maximum likelihood estimator.
@@ -293,7 +297,7 @@ impl PyGaussBN {
                             )
                             .map_err(to_pyerr)?;
                         // Set the prior `alpha`, if any.
-                        match kwarg!(kwargs, "alpha", f64)? {
+                        match alpha {
                             None => Box::new(estimator),
                             Some(alpha) => Box::new(estimator.with_prior(alpha)),
                         }

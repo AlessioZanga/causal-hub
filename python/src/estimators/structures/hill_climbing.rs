@@ -1,10 +1,9 @@
 use backend::{
-    datasets::{CatTable, GaussTable},
     estimators::{HC, PK},
     models::DiGraph,
-    types::{Cache, Error as BackendError},
+    types::Cache,
 };
-use pyo3::{exceptions::PyValueError, prelude::*, types::PyDict};
+use pyo3::{prelude::*, types::PyDict};
 use pyo3_stub_gen::derive::*;
 
 use crate::{
@@ -20,8 +19,8 @@ use crate::{
 ///
 /// Parameters
 /// ----------
-/// dataset: CatTable | GaussTable
-///     The complete dataset to learn the structure from.
+/// dataset: CatTable | CatIncTable | CatWtdTable | GaussTable | GaussIncTable | GaussWtdTable
+///     The dataset to learn the structure from.
 /// estimator_method: EstimatorMethod | None
 ///     The parameter estimator to use (default is `EstimatorMethod.BE`).
 /// scorer_method: ScorerMethod | None
@@ -68,21 +67,16 @@ pub fn hc(
     let initial_graph_locks = initial_graph.as_ref().map(|x| x.lock());
     // Get the reference to the initial graph, if any.
     let initial_graph: Option<&DiGraph> = initial_graph_locks.as_deref();
-
-    // Check the dataset type is supported.
-    if !matches!(dataset, PyDataset::Categorical(_) | PyDataset::Gaussian(_)) {
-        return Err(PyErr::new::<PyValueError, _>(
-            "Expected either a categorical or a Gaussian complete dataset for structure learning.",
-        ));
-    }
+    // Reject any unknown keyword arguments.
+    crate::utils::ensure_kwargs_consumed(kwargs)?;
 
     // Macro to run the HC algorithm on the given table type.
     macro_rules! fit_hc {
-        ($type:ty, $dataset:expr) => {{
-            // Get the dataset.
-            let dataset = <$type>::from($dataset);
+        ($dataset:expr) => {{
+            // Get a read lock on the table.
+            let dataset = $dataset.lock();
             // Dispatch over the estimator method and scoring criterion, and run HC.
-            dispatch_estimator_method!(estimator_method, &dataset, |estimator| {
+            dispatch_estimator_method!(estimator_method, &*dataset, |estimator| {
                 // Cache the parameter estimator.
                 let cache = Cache::new(estimator);
                 // Dispatch over the scorer method and run HC.
@@ -119,11 +113,12 @@ pub fn hc(
 
     // Match the dataset type.
     let graph = match dataset {
-        PyDataset::Categorical(dataset) => fit_hc!(CatTable, dataset),
-        PyDataset::Gaussian(dataset) => fit_hc!(GaussTable, dataset),
-        _ => Err(to_pyerr(BackendError::Unreachable(
-            "Unsupported dataset type.",
-        ))),
+        PyDataset::Categorical(dataset) => fit_hc!(dataset),
+        PyDataset::CategoricalIncomplete(dataset) => fit_hc!(dataset),
+        PyDataset::CategoricalWeighted(dataset) => fit_hc!(dataset),
+        PyDataset::Gaussian(dataset) => fit_hc!(dataset),
+        PyDataset::GaussianIncomplete(dataset) => fit_hc!(dataset),
+        PyDataset::GaussianWeighted(dataset) => fit_hc!(dataset),
     }?;
 
     // Convert the fitted graph into a Python object.

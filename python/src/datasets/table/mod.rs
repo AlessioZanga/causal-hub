@@ -22,8 +22,12 @@ pub enum PyDataset {
     Categorical(PyCatTable),
     /// A categorical incomplete tabular dataset.
     CategoricalIncomplete(PyCatIncTable),
+    /// A categorical weighted tabular dataset.
+    CategoricalWeighted(PyCatWtdTable),
     /// A Gaussian tabular dataset.
     Gaussian(PyGaussTable),
     /// A Gaussian incomplete tabular dataset.
     GaussianIncomplete(PyGaussIncTable),
+    /// A Gaussian weighted tabular dataset.
+    GaussianWeighted(PyGaussWtdTable),
 }

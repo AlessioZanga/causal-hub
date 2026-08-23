@@ -56,6 +56,8 @@ pub fn ctpc(
     let initial_graph_locks = initial_graph.as_ref().map(|x| x.lock());
     // Get the reference to the initial graph, if any.
     let initial_graph: Option<&DiGraph> = initial_graph_locks.as_deref();
+    // Reject any unknown keyword arguments.
+    crate::utils::ensure_kwargs_consumed(kwargs)?;
 
     // Dispatch over the estimator method and run the CTPC algorithm.
     let graph = dispatch_estimator_method!(estimator_method, trajectories, |estimator| {
