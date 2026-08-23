@@ -15,6 +15,7 @@ use rand_xoshiro::Xoshiro256PlusPlus;
 use crate::{error::to_pyerr, impl_from_into_lock, indices_from};
 
 /// A struct representing an undirected graph using an adjacency matrix.
+///
 #[gen_stub_pyclass]
 #[pyclass(name = "UnGraph", module = "causal_hub.models", eq, from_py_object)]
 #[derive(Clone, Debug)]
@@ -411,6 +412,7 @@ impl PyUnGraph {
     }
 
     /// Read instance from a JSON string.
+    ///
     #[classmethod]
     pub fn from_json_string(_cls: &Bound<'_, PyType>, json: &str) -> PyResult<Self> {
         UnGraph::from_json_string(json)
@@ -419,11 +421,13 @@ impl PyUnGraph {
     }
 
     /// Write instance to a JSON string.
+    ///
     pub fn to_json_string(&self) -> PyResult<String> {
         self.lock().to_json_string().map_err(to_pyerr)
     }
 
     /// Read instance from a JSON file.
+    ///
     #[classmethod]
     pub fn from_json_file(_cls: &Bound<'_, PyType>, path: &str) -> PyResult<Self> {
         UnGraph::from_json_file(path)
@@ -432,11 +436,13 @@ impl PyUnGraph {
     }
 
     /// Write instance to a JSON file.
+    ///
     pub fn to_json_file(&self, path: &str) -> PyResult<()> {
         self.lock().to_json_file(path).map_err(to_pyerr)
     }
 
     /// Read instance from a DOT string.
+    ///
     #[classmethod]
     pub fn from_dot_string(_cls: &Bound<'_, PyType>, dot: &str) -> PyResult<Self> {
         UnGraph::from_dot_string(dot)
@@ -445,11 +451,13 @@ impl PyUnGraph {
     }
 
     /// Write instance to a DOT string.
+    ///
     pub fn to_dot_string(&self) -> PyResult<String> {
         self.lock().to_dot_string().map_err(to_pyerr)
     }
 
     /// Read instance from a DOT file.
+    ///
     #[classmethod]
     pub fn from_dot_file(_cls: &Bound<'_, PyType>, path: &str) -> PyResult<Self> {
         UnGraph::from_dot_file(path)
@@ -458,11 +466,13 @@ impl PyUnGraph {
     }
 
     /// Write instance to a DOT file.
+    ///
     pub fn to_dot_file(&self, path: &str) -> PyResult<()> {
         self.lock().to_dot_file(path).map_err(to_pyerr)
     }
 
     /// Read instance from a GML string.
+    ///
     #[classmethod]
     pub fn from_gml_string(_cls: &Bound<'_, PyType>, gml: &str) -> PyResult<Self> {
         UnGraph::from_gml_string(gml)
@@ -471,11 +481,13 @@ impl PyUnGraph {
     }
 
     /// Write instance to a GML string.
+    ///
     pub fn to_gml_string(&self) -> PyResult<String> {
         self.lock().to_gml_string().map_err(to_pyerr)
     }
 
     /// Read instance from a GML file.
+    ///
     #[classmethod]
     pub fn from_gml_file(_cls: &Bound<'_, PyType>, path: &str) -> PyResult<Self> {
         UnGraph::from_gml_file(path)
@@ -484,6 +496,7 @@ impl PyUnGraph {
     }
 
     /// Write instance to a GML file.
+    ///
     pub fn to_gml_file(&self, path: &str) -> PyResult<()> {
         self.lock().to_gml_file(path).map_err(to_pyerr)
     }

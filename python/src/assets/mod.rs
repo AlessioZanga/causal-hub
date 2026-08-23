@@ -43,6 +43,7 @@ macro_for!(
 });
 
 /// Load the `EATING` categorical CTBN from the assets.
+///
 #[gen_stub_pyfunction(module = "causal_hub.assets")]
 #[pyfunction]
 pub fn load_eating() -> PyResult<PyCatCTBN> {

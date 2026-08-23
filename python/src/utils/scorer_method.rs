@@ -2,9 +2,10 @@
 ///
 /// It constructs the corresponding scorer from the given cache and evaluates
 /// the runner with it.
+///
 #[macro_export]
 macro_rules! dispatch_scorer_method {
-    ($scorer_method:expr, $cache:expr, $runner:expr $(,)?) => {
+    ($cache:expr, $scorer_method:expr, $runner:expr $(,)?) => {
         match $scorer_method {
             $crate::estimators::PyScorerMethod::LL => {
                 ($runner)(&::backend::estimators::LL::new($cache))

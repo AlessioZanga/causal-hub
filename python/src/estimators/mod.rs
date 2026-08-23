@@ -7,6 +7,7 @@ use pyo3_stub_gen::derive::*;
 pub use structures::*;
 
 /// estimator methods.
+///
 #[gen_stub_pyclass_enum]
 #[pyclass(
     name = "EstimatorMethod",
@@ -23,6 +24,7 @@ pub enum PyEstimatorMethod {
 }
 
 /// Scoring criteria for score-based structure learning algorithms.
+///
 #[gen_stub_pyclass_enum]
 #[pyclass(
     name = "ScorerMethod",

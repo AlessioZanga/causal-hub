@@ -24,6 +24,7 @@ use crate::{
 };
 
 /// A categorical incomplete tabular dataset.
+///
 #[gen_stub_pyclass]
 #[pyclass(name = "CatIncTable", module = "causal_hub.datasets", from_py_object)]
 #[derive(Clone, Debug)]

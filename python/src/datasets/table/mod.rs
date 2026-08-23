@@ -13,6 +13,7 @@ use pyo3::prelude::*;
 use pyo3_stub_gen_derive::gen_stub_pyclass_enum;
 
 /// A tabular dataset.
+///
 #[gen_stub_pyclass_enum]
 #[pyclass(name = "Dataset", module = "causal_hub.datasets", skip_from_py_object)]
 #[derive(Clone, Debug, FromPyObject)]

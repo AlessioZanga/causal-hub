@@ -10,6 +10,7 @@ use crate::{
 };
 
 /// A unified evidence type for mixed Bayesian networks.
+///
 #[gen_stub_pyclass]
 #[pyclass(name = "MixedEv", module = "causal_hub.datasets", from_py_object)]
 #[derive(Clone, Debug)]
@@ -23,16 +24,19 @@ impl_from_into_lock!(PyMixedEv, MixedEv);
 #[pymethods]
 impl PyMixedEv {
     /// Returns true if the evidence is categorical.
+    ///
     pub fn is_categorical(&self) -> bool {
         matches!(*self.lock(), MixedEv::Categorical(_))
     }
 
     /// Returns true if the evidence is gaussian.
+    ///
     pub fn is_gaussian(&self) -> bool {
         matches!(*self.lock(), MixedEv::Gaussian(_))
     }
 
     /// Returns the inner CatEv if the evidence is categorical.
+    ///
     pub fn as_catev(&self) -> Option<PyCatEv> {
         match &*self.lock() {
             MixedEv::Categorical(ev) => Some(ev.clone().into()),
@@ -41,6 +45,7 @@ impl PyMixedEv {
     }
 
     /// Returns the inner GaussEv if the evidence is gaussian.
+    ///
     pub fn as_gaussev(&self) -> Option<PyGaussEv> {
         match &*self.lock() {
             MixedEv::Gaussian(ev) => Some(ev.clone().into()),
@@ -49,18 +54,21 @@ impl PyMixedEv {
     }
 
     /// Creates a MixedEv from a CatEv.
+    ///
     #[classmethod]
     pub fn from_catev(_cls: &Bound<'_, PyType>, ev: &PyCatEv) -> Self {
         MixedEv::Categorical(ev.lock().clone()).into()
     }
 
     /// Creates a MixedEv from a GaussEv.
+    ///
     #[classmethod]
     pub fn from_gaussev(_cls: &Bound<'_, PyType>, ev: &PyGaussEv) -> Self {
         MixedEv::Gaussian(ev.lock().clone()).into()
     }
 
     /// Returns the string representation of the MixedEv.
+    ///
     pub fn __repr__(&self) -> String {
         let variant = match &*self.lock() {
             MixedEv::Categorical(_) => "Categorical",

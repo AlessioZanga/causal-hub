@@ -25,11 +25,13 @@ use pyo3::prelude::*;
 use pyo3_stub_gen::StubInfo;
 
 /// A Python module implemented in Rust.
+///
 #[pymodule]
 mod causal_hub {
     use super::*;
 
     /// Submodule `assets`.
+    ///
     #[pymodule]
     mod assets {
         use super::*;
@@ -79,6 +81,7 @@ mod causal_hub {
     }
 
     /// Submodule `datasets`.
+    ///
     #[pymodule]
     mod datasets {
         use super::*;
@@ -120,6 +123,7 @@ mod causal_hub {
     }
 
     /// Submodule `estimators`.
+    ///
     #[pymodule]
     mod estimators {
         use super::*;
@@ -147,6 +151,7 @@ mod causal_hub {
     }
 
     /// Submodule `models`.
+    ///
     #[pymodule]
     mod models {
         use super::*;
@@ -191,6 +196,7 @@ mod causal_hub {
 }
 
 /// Define a function to gather stub information.
+///
 pub fn stub_info() -> pyo3_stub_gen::Result<StubInfo> {
     StubInfo::from_pyproject_toml(PathBuf::from("pyproject.toml"))
 }

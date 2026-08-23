@@ -17,6 +17,7 @@ use pyo3_stub_gen::derive::*;
 use crate::{error::to_pyerr, impl_from_into_lock};
 
 /// A struct representing a categorical conditional intensity matrix (CIM).
+///
 #[gen_stub_pyclass]
 #[pyclass(name = "CatCIM", module = "causal_hub.models", eq, from_py_object)]
 #[derive(Clone, Debug)]

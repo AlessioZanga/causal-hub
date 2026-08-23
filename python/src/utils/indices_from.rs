@@ -1,4 +1,5 @@
 /// A macro to extract indices from a string or an iterable of strings.
+///
 #[macro_export]
 macro_rules! indices_from {
     ($x:expr, $labels:expr) => {

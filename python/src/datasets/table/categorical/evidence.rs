@@ -21,6 +21,7 @@ use crate::{
 };
 
 /// A categorical evidence.
+///
 #[gen_stub_pyclass]
 #[pyclass(name = "CatEv", module = "causal_hub.datasets", from_py_object)]
 #[derive(Clone, Debug)]
@@ -37,6 +38,7 @@ impl PyCatEv {
     /// Accepted inputs are:
     /// - `CatEv`
     /// - `dict[str, str]`
+    ///
     pub fn from_any(evidence: &Bound<'_, PyAny>, with_states: &CatSupport) -> PyResult<Self> {
         if let Ok(evidence) = evidence.extract::<PyCatEv>() {
             Ok(evidence)

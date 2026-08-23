@@ -18,6 +18,7 @@ use crate::{
 };
 
 /// A Gaussian evidence.
+///
 #[gen_stub_pyclass]
 #[pyclass(name = "GaussEv", module = "causal_hub.datasets", from_py_object)]
 #[derive(Clone, Debug)]
@@ -34,6 +35,7 @@ impl PyGaussEv {
     /// Accepted inputs are:
     /// - `GaussEv`
     /// - `dict[str, float]`
+    ///
     pub fn from_any(evidence: &Bound<'_, PyAny>, with_labels: &Labels) -> PyResult<Self> {
         if let Ok(evidence) = evidence.extract::<PyGaussEv>() {
             Ok(evidence)

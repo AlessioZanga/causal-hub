@@ -15,6 +15,7 @@ create_exception!(causal_hub, Error, PyException);
 /// Errors that originate from PyO3 itself (e.g., argument extraction errors,
 /// which surface as native `TypeError`s) must not be wrapped into the custom
 /// exception: convert them with `PyErr::from` (or the `?` operator) instead.
+///
 #[inline]
 pub fn to_pyerr(e: backend::types::Error) -> PyErr {
     Error::new_err(e.to_string())

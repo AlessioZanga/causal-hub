@@ -25,6 +25,7 @@ use crate::{
 };
 
 /// A categorical trajectory evidence.
+///
 #[gen_stub_pyclass]
 #[pyclass(name = "CatTrjEv", module = "causal_hub.datasets", from_py_object)]
 #[derive(Clone, Debug)]
@@ -468,6 +469,7 @@ impl PyCatTrjEv {
 }
 
 /// A collection of categorical trajectory evidences.
+///
 #[gen_stub_pyclass]
 #[pyclass(name = "CatTrjsEv", module = "causal_hub.datasets", from_py_object)]
 #[derive(Clone, Debug)]

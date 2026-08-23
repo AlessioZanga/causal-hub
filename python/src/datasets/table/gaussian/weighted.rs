@@ -11,6 +11,7 @@ use pyo3_stub_gen::derive::*;
 use crate::{datasets::PyGaussTable, error::to_pyerr, impl_from_into_lock};
 
 /// A Gaussian weighted tabular dataset.
+///
 #[gen_stub_pyclass]
 #[pyclass(name = "GaussWtdTable", module = "causal_hub.datasets", from_py_object)]
 #[derive(Clone, Debug)]

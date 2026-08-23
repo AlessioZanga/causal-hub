@@ -21,6 +21,7 @@ use crate::{
 };
 
 /// A mixed Bayesian network.
+///
 #[gen_stub_pyclass]
 #[pyclass(name = "MixedBN", module = "causal_hub.models", eq, from_py_object)]
 #[derive(Clone, Debug)]
@@ -40,6 +41,7 @@ impl PartialEq for PyMixedBN {
 #[pymethods]
 impl PyMixedBN {
     /// Constructs a new mixed Bayesian network.
+    ///
     #[new]
     pub fn new(graph: &Bound<'_, PyDiGraph>, cpds: &Bound<'_, PyAny>) -> PyResult<Self> {
         let graph: DiGraph = graph.extract::<PyDiGraph>()?.into();
@@ -52,26 +54,31 @@ impl PyMixedBN {
     }
 
     /// Returns the name of the model, if any.
+    ///
     pub fn name(&self) -> PyResult<Option<String>> {
         Ok(self.lock().name().map(Into::into))
     }
 
     /// Returns the description of the model, if any.
+    ///
     pub fn description(&self) -> PyResult<Option<String>> {
         Ok(self.lock().description().map(Into::into))
     }
 
     /// Returns the labels of the variables.
+    ///
     pub fn labels(&self) -> PyResult<Vec<String>> {
         Ok(self.lock().labels().iter().cloned().collect())
     }
 
     /// Returns the underlying graph.
+    ///
     pub fn graph(&self) -> PyResult<PyDiGraph> {
         Ok(self.lock().graph().clone().into())
     }
 
     /// Returns a map of labels to CPDs.
+    ///
     pub fn cpds(&self) -> PyResult<BTreeMap<String, PyMixedCPD>> {
         Ok(self
             .lock()
@@ -86,6 +93,7 @@ impl PyMixedBN {
     }
 
     /// Returns the parameters size.
+    ///
     pub fn parameters_size(&self) -> PyResult<usize> {
         Ok(self.lock().parameters_size())
     }
@@ -130,6 +138,7 @@ impl PyMixedBN {
     }
 
     /// Generate samples from the model.
+    ///
     #[pyo3(signature = (n, seed = 31, parallel = true))]
     pub fn sample(
         &self,
@@ -151,6 +160,7 @@ impl PyMixedBN {
     }
 
     /// Read instance from a JSON string.
+    ///
     #[classmethod]
     pub fn from_json_string(_cls: &Bound<'_, PyType>, json: &str) -> PyResult<Self> {
         MixedBN::from_json_string(json)
@@ -159,11 +169,13 @@ impl PyMixedBN {
     }
 
     /// Write instance to a JSON string.
+    ///
     pub fn to_json_string(&self) -> PyResult<String> {
         self.lock().to_json_string().map_err(to_pyerr)
     }
 
     /// Read instance from a JSON file.
+    ///
     #[classmethod]
     pub fn from_json_file(_cls: &Bound<'_, PyType>, path: &str) -> PyResult<Self> {
         MixedBN::from_json_file(path)
@@ -172,6 +184,7 @@ impl PyMixedBN {
     }
 
     /// Write instance to a JSON file.
+    ///
     pub fn to_json_file(&self, path: &str) -> PyResult<()> {
         self.lock().to_json_file(path).map_err(to_pyerr)
     }

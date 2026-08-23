@@ -82,49 +82,106 @@ class ScorerMethod(enum.Enum):
 
 def cthc(
     trajectories: datasets.CatTrjs,
-    estimator_method: EstimatorMethod = EstimatorMethod.BE,
     scorer_method: ScorerMethod = ScorerMethod.BIC,
     parallel: builtins.bool = True,
     **kwargs: typing.Any,
 ) -> models.DiGraph:
     r"""
-    A function to perform structure learning using the Continuous Time Hill Climbing (CTHC) algorithm.
+    Perform structure learning using the Continuous Time Hill Climbing (CTHC) algorithm.
 
-    The scorer method can be selected through the `scorer_method` argument
-    (one of `ScorerMethod.{LL, AIC, AICC, BIC, BICC, HQC}`), defaulting to `BIC`.
+    CTHC learns the structure of a Continuous Time Bayesian Network (CTBN)
+    from trajectories. It explores the space of directed graphs greedily: at
+    each iteration it evaluates all single-edge additions, deletions and
+    reversals, and applies the move that most increases the score of the
+    model until no improving move is found.
 
+    Parameters
+    ----------
+    trajectories: CatTrjs
+        The trajectories to learn the structure from.
+    scorer_method: ScorerMethod | None
+        The scoring criterion to maximize, one of `ScorerMethod.{LL, AIC,
+        AICC, BIC, BICC, HQC}` (default is `ScorerMethod.BIC`).
+    parallel: bool
+        Whether to run the algorithm in parallel (default is `True`).
     **kwargs: dict | None
         Optional keyword arguments:
 
-    - `estimator`: The parameter estimator to use (default is `EstimatorMethod.BE`).
-    - `prior_knowledge`: The prior knowledge to constrain the search (default is `None`).
-    - `initial_graph`: The initial graph to start the search from (default is an empty graph).
-    - `max_parents`: The maximum number of parents for each vertex (default is no limit).
+    - `estimator_method`: The parameter estimator used to fit the local
+      models, either `EstimatorMethod.MLE` or `EstimatorMethod.BE`
+      (default is `EstimatorMethod.BE`).
+    - `prior_knowledge`: The prior knowledge (`PK`) constraining the search,
+      e.g., forbidden and required edges or temporal tiers
+      (default is `None`).
+    - `initial_graph`: The initial graph (`DiGraph`) to start the search
+      from (default is an empty graph). Its labels must match the
+      trajectories.
+    - `max_parents`: The maximum number of parents for each vertex
+      (default is no limit).
+    - `missing_method`: The method (`MissingMethod`) used to handle missing
+      data, one of `MissingMethod.{LW, PW, IPW, AIPW}` (default is `None`).
+    - `missing_mechanism`: The missing data mechanism (`MissingMechanism`)
+      associated to the trajectories (default is `None`). It is required by
+      `MissingMethod.IPW` and `MissingMethod.AIPW`, and it must be `None`
+      otherwise.
 
-    parallel: bool
-        Whether to run the algorithm in parallel (default is `True`).
+    Returns
+    -------
+    DiGraph
+        The learned structure.
     """
 
 def ctpc(
     trajectories: datasets.CatTrjs,
     f_test: builtins.float = 0.01,
     c_test: builtins.float = 0.01,
-    estimator_method: EstimatorMethod = EstimatorMethod.BE,
     parallel: builtins.bool = True,
     **kwargs: typing.Any,
 ) -> models.DiGraph:
     r"""
-    A function to perform structure learning using the Continuous Time Peter-Clark (CTPC) algorithm.
+    Perform structure learning using the Continuous Time Peter-Clark (CTPC) algorithm.
 
+    CTPC learns the structure of a Continuous Time Bayesian Network (CTBN)
+    from trajectories. It is a constraint-based algorithm: it starts from a
+    complete graph and removes edges whose end-points are conditionally
+    independent given suitable separating sets, as assessed by the
+    significance tests below.
+
+    Parameters
+    ----------
+    trajectories: CatTrjs
+        The trajectories to learn the structure from.
+    f_test: float | None
+        The significance level of the F-test for the transition rates
+        (default is `0.01`). It must be in `[0, 1]`.
+    c_test: float | None
+        The significance level of the chi-squared test for the initial
+        distributions (default is `0.01`). It must be in `[0, 1]`.
+    parallel: bool
+        Whether to run the algorithm in parallel (default is `True`).
     **kwargs: dict | None
         Optional keyword arguments:
 
-    - `estimator`: The parameter estimator to use (default is `EstimatorMethod.BE`).
-    - `prior_knowledge`: The prior knowledge to constrain the search (default is `None`).
-    - `initial_graph`: The initial graph to start the search from (default is a complete graph).
+    - `estimator_method`: The parameter estimator used to fit the local
+      models, either `EstimatorMethod.MLE` or `EstimatorMethod.BE`
+      (default is `EstimatorMethod.BE`).
+    - `prior_knowledge`: The prior knowledge (`PK`) constraining the search,
+      e.g., forbidden and required edges or temporal tiers
+      (default is `None`).
+    - `initial_graph`: The initial graph (`DiGraph`) to start the search
+      from (default is a complete graph). Its labels must match the
+      trajectories.
+    - `missing_method`: The method (`MissingMethod`) used to handle missing
+      data, one of `MissingMethod.{LW, PW, IPW, AIPW}` (default is `None`).
+    - `missing_mechanism`: The missing data mechanism (`MissingMechanism`)
+      associated to the trajectories (default is `None`). It is required by
+      `MissingMethod.IPW` and `MissingMethod.AIPW`, and it must be `None`
+      otherwise.
 
-    parallel: bool
-        Whether to run the algorithm in parallel (default is `True`).
+    Returns
+    -------
+    DiGraph
+        The learned structure.
     """
 
 def em(
@@ -139,7 +196,6 @@ def em(
 
 def hc(
     dataset: datasets.Dataset,
-    estimator_method: EstimatorMethod = EstimatorMethod.BE,
     scorer_method: ScorerMethod = ScorerMethod.BIC,
     parallel: builtins.bool = True,
     **kwargs: typing.Any,
@@ -147,23 +203,41 @@ def hc(
     r"""
     Perform structure learning using the Hill Climbing (HC) algorithm.
 
+    HC explores the space of directed acyclic graphs (DAGs) greedily: at each
+    iteration it evaluates all single-edge additions, deletions and reversals,
+    and applies the move that most increases the score of the model until no
+    improving move is found.
+
     Parameters
     ----------
     dataset: CatTable | CatIncTable | CatWtdTable | GaussTable | GaussIncTable | GaussWtdTable
         The dataset to learn the structure from.
-    estimator_method: EstimatorMethod | None
-        The parameter estimator to use (default is `EstimatorMethod.BE`).
     scorer_method: ScorerMethod | None
-        The scorer method to use (default is `ScorerMethod.BIC`).
+        The scoring criterion to maximize, one of `ScorerMethod.{LL, AIC,
+        AICC, BIC, BICC, HQC}` (default is `ScorerMethod.BIC`).
     parallel: bool
         Whether to run the algorithm in parallel (default is `True`).
     **kwargs: dict | None
         Optional keyword arguments:
 
-    - `prior_knowledge`: The prior knowledge to constrain the search (default is `None`).
-    - `initial_graph`: The initial graph to start the search from (default is an empty graph).
-    - `max_parents`: The maximum number of parents for each vertex (default is no limit).
-    - `max_iter`: The maximum number of iterations (default is unlimited).
+    - `estimator_method`: The parameter estimator used to fit the local
+      models, either `EstimatorMethod.MLE` or `EstimatorMethod.BE`
+      (default is `EstimatorMethod.BE`).
+    - `prior_knowledge`: The prior knowledge (`PK`) constraining the search,
+      e.g., forbidden and required edges or temporal tiers
+      (default is `None`).
+    - `initial_graph`: The initial graph (`DiGraph`) to start the search
+      from (default is an empty graph). Its labels must match the dataset.
+    - `max_parents`: The maximum number of parents for each vertex
+      (default is no limit).
+    - `max_iter`: The maximum number of iterations of the search
+      (default is unlimited).
+    - `missing_method`: The method (`MissingMethod`) used to handle missing
+      data, one of `MissingMethod.{LW, PW, IPW, AIPW}` (default is `None`).
+    - `missing_mechanism`: The missing data mechanism (`MissingMechanism`)
+      associated to the dataset (default is `None`). It is required by
+      `MissingMethod.IPW` and `MissingMethod.AIPW`, and it must be `None`
+      otherwise.
 
     Returns
     -------

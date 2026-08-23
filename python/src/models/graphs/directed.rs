@@ -19,6 +19,7 @@ use rand_xoshiro::Xoshiro256PlusPlus;
 use crate::{error::to_pyerr, impl_from_into_lock, indices_from};
 
 /// A struct representing a directed graph using an adjacency matrix.
+///
 #[gen_stub_pyclass]
 #[pyclass(name = "DiGraph", module = "causal_hub.models", eq, from_py_object)]
 #[derive(Clone, Debug)]

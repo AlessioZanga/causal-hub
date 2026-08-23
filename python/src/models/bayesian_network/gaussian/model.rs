@@ -34,6 +34,7 @@ use crate::{
 };
 
 /// A Gaussian Bayesian network.
+///
 #[gen_stub_pyclass]
 #[pyclass(name = "GaussBN", module = "causal_hub.models", eq, from_py_object)]
 #[derive(Clone, Debug)]

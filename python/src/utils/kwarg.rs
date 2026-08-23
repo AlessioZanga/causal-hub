@@ -9,6 +9,7 @@ use pyo3::{exceptions::PyTypeError, prelude::*, types::PyDict};
 ///
 /// Consumed keys are removed from the dictionary, so that any leftover key
 /// can be rejected as unknown (see [`ensure_kwargs_consumed`]).
+///
 #[macro_export]
 macro_rules! kwarg {
     ($kwargs:ident, $key:expr, $type:ty) => {
@@ -33,6 +34,7 @@ macro_rules! kwarg {
 ///
 /// This makes stale or misspelled keyword arguments fail fast with a
 /// `TypeError`, instead of being silently ignored.
+///
 pub fn ensure_kwargs_consumed(kwargs: Option<&Bound<'_, PyDict>>) -> PyResult<()> {
     // Get the dictionary, if any.
     let Some(kwargs) = kwargs else {
