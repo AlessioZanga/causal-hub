@@ -195,8 +195,8 @@ impl PyCatCTBN {
     #[pyo3(signature = (
         dataset,
         graph,
-        estimator = None,
-        missing_method = None,
+        estimator_method = PyEstimatorMethod::MLE,
+        missing_method = PyMissingMethod::PW,
         missing_mechanism = None,
         parallel = true,
         **kwargs
@@ -207,8 +207,8 @@ impl PyCatCTBN {
         py: Python<'_>,
         dataset: &Bound<'_, PyCatTrjs>,
         graph: &Bound<'_, PyDiGraph>,
-        estimator: Option<PyEstimatorMethod>,
-        missing_method: Option<PyMissingMethod>,
+        estimator_method: PyEstimatorMethod,
+        missing_method: PyMissingMethod,
         missing_mechanism: Option<PyMissingMechanism>,
         parallel: bool,
         kwargs: Option<&Bound<'_, PyDict>>,
@@ -217,14 +217,13 @@ impl PyCatCTBN {
         let dataset: CatTrjs = dataset.extract::<PyCatTrjs>()?.into();
         let graph: DiGraph = graph.extract::<PyDiGraph>()?.into();
         // Get the estimator method.
-        let estimator = estimator.unwrap_or(PyEstimatorMethod::MLE);
         // Initialize the estimator.
-        let estimator: Box<dyn PyCTBNEstimator<CatCTBN>> = match estimator {
+        let estimator: Box<dyn PyCTBNEstimator<CatCTBN>> = match estimator_method {
             // Initialize the maximum likelihood estimator.
             PyEstimatorMethod::MLE => Box::new(
                 MLE::new(&dataset)
                     .with_missing_method(
-                        Some(missing_method.unwrap_or(PyMissingMethod::PW).into()),
+                        Some(missing_method.into()),
                         missing_mechanism.as_ref().map(|m| (*m.lock()).clone()),
                     )
                     .map_err(to_pyerr)?,
@@ -234,12 +233,12 @@ impl PyCatCTBN {
                 // Initialize the Bayesian estimator.
                 let estimator = BE::new(&dataset)
                     .with_missing_method(
-                        Some(missing_method.unwrap_or(PyMissingMethod::PW).into()),
+                        Some(missing_method.into()),
                         missing_mechanism.as_ref().map(|m| (*m.lock()).clone()),
                     )
                     .map_err(to_pyerr)?;
                 // Set the prior `alpha`, if any.
-                match kwarg!(kwargs, "alpha", (usize, f64)) {
+                match kwarg!(kwargs, "alpha", (usize, f64))? {
                     None => Box::new(estimator),
                     Some(alpha) => Box::new(estimator.with_prior(alpha)),
                 }

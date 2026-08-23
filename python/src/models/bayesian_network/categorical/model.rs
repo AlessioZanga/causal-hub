@@ -244,8 +244,8 @@ impl PyCatBN {
     #[pyo3(signature = (
         dataset,
         graph,
-        estimator = None,
-        missing_method = None,
+        estimator_method = PyEstimatorMethod::BE,
+        missing_method = PyMissingMethod::PW,
         missing_mechanism = None,
         parallel = true,
         **kwargs
@@ -256,8 +256,8 @@ impl PyCatBN {
         py: Python<'_>,
         dataset: PyDataset,
         graph: &Bound<'_, PyDiGraph>,
-        estimator: Option<PyEstimatorMethod>,
-        missing_method: Option<PyMissingMethod>,
+        estimator_method: PyEstimatorMethod,
+        missing_method: PyMissingMethod,
         missing_mechanism: Option<PyMissingMechanism>,
         parallel: bool,
         kwargs: Option<&Bound<'_, PyDict>>,
@@ -270,15 +270,13 @@ impl PyCatBN {
             ($type:ty, $dataset:expr) => {{
                 // Get the dataset.
                 let dataset: $type = $dataset.into();
-                // Get the estimator method.
-                let estimator = estimator.unwrap_or(PyEstimatorMethod::BE);
                 // Initialize the estimator.
-                let estimator: Box<dyn PyBNEstimator<CatBN>> = match estimator {
+                let estimator: Box<dyn PyBNEstimator<CatBN>> = match estimator_method {
                     // Initialize the maximum likelihood estimator.
                     PyEstimatorMethod::MLE => Box::new(
                         MLE::new(&dataset)
                             .with_missing_method(
-                                Some(missing_method.unwrap_or(PyMissingMethod::PW).into()),
+                                Some(missing_method.into()),
                                 missing_mechanism.as_ref().map(|m| (*m.lock()).clone()),
                             )
                             .map_err(to_pyerr)?,
@@ -288,12 +286,12 @@ impl PyCatBN {
                         // Initialize the Bayesian estimator.
                         let estimator = BE::new(&dataset)
                             .with_missing_method(
-                                Some(missing_method.unwrap_or(PyMissingMethod::PW).into()),
+                                Some(missing_method.into()),
                                 missing_mechanism.as_ref().map(|m| (*m.lock()).clone()),
                             )
                             .map_err(to_pyerr)?;
                         // Set the prior `alpha`, if any.
-                        match kwarg!(kwargs, "alpha", usize) {
+                        match kwarg!(kwargs, "alpha", usize)? {
                             None => Box::new(estimator),
                             Some(alpha) => Box::new(estimator.with_prior(alpha)),
                         }
@@ -401,8 +399,8 @@ impl PyCatBN {
         x,
         z,
         w = None,
-        estimator = None,
-        missing_method = None,
+        estimator_method = PyEstimatorMethod::BE,
+        missing_method = PyMissingMethod::PW,
         missing_mechanism = None,
         seed = 31,
         parallel = true
@@ -413,8 +411,8 @@ impl PyCatBN {
         x: &Bound<'_, PyAny>,
         z: &Bound<'_, PyAny>,
         w: Option<&Bound<'_, PyAny>>,
-        estimator: Option<PyEstimatorMethod>,
-        missing_method: Option<PyMissingMethod>,
+        estimator_method: PyEstimatorMethod,
+        missing_method: PyMissingMethod,
         missing_mechanism: Option<PyMissingMechanism>,
         seed: u64,
         parallel: bool,
@@ -432,10 +430,8 @@ impl PyCatBN {
         let mut rng = Xoshiro256PlusPlus::seed_from_u64(seed);
         // Initialize the inference engine.
         let engine = ApproximateInference::new(&mut rng, &*lock);
-        // Get the estimator method.
-        let estimator = estimator.unwrap_or(PyEstimatorMethod::BE);
         // Estimate from the model.
-        let estimate = match estimator {
+        let estimate = match estimator_method {
             // Initialize the maximum likelihood estimator.
             PyEstimatorMethod::MLE => {
                 // Estimate from the model.
@@ -446,7 +442,7 @@ impl PyCatBN {
                             .with_estimator(|d, x, z| {
                                 MLE::new(d)
                                     .with_missing_method(
-                                        Some(missing_method.unwrap_or(PyMissingMethod::PW).into()),
+                                        Some(missing_method.into()),
                                         missing_mechanism.as_ref().map(|m| (*m.lock()).clone()),
                                     )?
                                     .par_fit(x, z)
@@ -459,7 +455,7 @@ impl PyCatBN {
                         .with_estimator(|d, x, z| {
                             MLE::new(d)
                                 .with_missing_method(
-                                    Some(missing_method.unwrap_or(PyMissingMethod::PW).into()),
+                                    Some(missing_method.into()),
                                     missing_mechanism.as_ref().map(|m| (*m.lock()).clone()),
                                 )?
                                 .fit(x, z)
@@ -477,7 +473,7 @@ impl PyCatBN {
                             .with_estimator(|d, x, z| {
                                 BE::new(d)
                                     .with_missing_method(
-                                        Some(missing_method.unwrap_or(PyMissingMethod::PW).into()),
+                                        Some(missing_method.into()),
                                         missing_mechanism.as_ref().map(|m| (*m.lock()).clone()),
                                     )?
                                     .par_fit(x, z)
@@ -490,7 +486,7 @@ impl PyCatBN {
                         .with_estimator(|d, x, z| {
                             BE::new(d)
                                 .with_missing_method(
-                                    Some(missing_method.unwrap_or(PyMissingMethod::PW).into()),
+                                    Some(missing_method.into()),
                                     missing_mechanism.as_ref().map(|m| (*m.lock()).clone()),
                                 )?
                                 .fit(x, z)
@@ -537,8 +533,8 @@ impl PyCatBN {
         y,
         z,
         w = None,
-        estimator = None,
-        missing_method = None,
+        estimator_method = PyEstimatorMethod::BE,
+        missing_method = PyMissingMethod::PW,
         missing_mechanism = None,
         seed = 31,
         parallel = true
@@ -550,8 +546,8 @@ impl PyCatBN {
         y: &Bound<'_, PyAny>,
         z: &Bound<'_, PyAny>,
         w: Option<&Bound<'_, PyAny>>,
-        estimator: Option<PyEstimatorMethod>,
-        missing_method: Option<PyMissingMethod>,
+        estimator_method: PyEstimatorMethod,
+        missing_method: PyMissingMethod,
         missing_mechanism: Option<PyMissingMechanism>,
         seed: u64,
         parallel: bool,
@@ -570,10 +566,8 @@ impl PyCatBN {
         let mut rng = Xoshiro256PlusPlus::seed_from_u64(seed);
         // Initialize the inference engine.
         let engine = ApproximateInference::new(&mut rng, &*lock);
-        // Get the estimator method.
-        let estimator = estimator.unwrap_or(PyEstimatorMethod::BE);
         // Estimate from the model.
-        let estimate = match estimator {
+        let estimate = match estimator_method {
             // Initialize the maximum likelihood estimator.
             PyEstimatorMethod::MLE => {
                 // Estimate from the model.
@@ -583,7 +577,7 @@ impl PyCatBN {
                         let engine = engine.with_estimator(|d, x, z| {
                             MLE::new(d)
                                 .with_missing_method(
-                                    Some(missing_method.unwrap_or(PyMissingMethod::PW).into()),
+                                    Some(missing_method.into()),
                                     missing_mechanism.as_ref().map(|m| (*m.lock()).clone()),
                                 )?
                                 .par_fit(x, z)
@@ -595,7 +589,7 @@ impl PyCatBN {
                     let engine = engine.with_estimator(|d, x, z| {
                         MLE::new(d)
                             .with_missing_method(
-                                Some(missing_method.unwrap_or(PyMissingMethod::PW).into()),
+                                Some(missing_method.into()),
                                 missing_mechanism.as_ref().map(|m| (*m.lock()).clone()),
                             )?
                             .fit(x, z)
@@ -612,7 +606,7 @@ impl PyCatBN {
                         let engine = engine.with_estimator(|d, x, z| {
                             BE::new(d)
                                 .with_missing_method(
-                                    Some(missing_method.unwrap_or(PyMissingMethod::PW).into()),
+                                    Some(missing_method.into()),
                                     missing_mechanism.as_ref().map(|m| (*m.lock()).clone()),
                                 )?
                                 .par_fit(x, z)
@@ -624,7 +618,7 @@ impl PyCatBN {
                     let engine = engine.with_estimator(|d, x, z| {
                         BE::new(d)
                             .with_missing_method(
-                                Some(missing_method.unwrap_or(PyMissingMethod::PW).into()),
+                                Some(missing_method.into()),
                                 missing_mechanism.as_ref().map(|m| (*m.lock()).clone()),
                             )?
                             .fit(x, z)

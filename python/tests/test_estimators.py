@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import pytest
+from causal_hub.assets import load_eating
 from causal_hub.datasets import (
     CatIncTable,
     CatTable,
@@ -13,7 +14,16 @@ from causal_hub.datasets import (
 )
 from causal_hub.datasets import MissingMethod as MM
 from causal_hub.datasets import MissingType as MT
-from causal_hub.estimators import PK, EstimatorMethod, em, sem
+from causal_hub.estimators import (
+    PK,
+    EstimatorMethod,
+    ScorerMethod,
+    cthc,
+    ctpc,
+    em,
+    hc,
+    sem,
+)
 from causal_hub.models import CatBN, CatCTBN, DiGraph, GaussBN
 
 
@@ -219,11 +229,11 @@ def test_structure_learning_sem() -> None:
     pk = PK(labels, forbidden, required, temporal_order)
 
     # Call SEM
-    # sem(evidence, prior_knowledge, algorithm, max_iter, seed, kwargs)
+    # sem(evidence, algorithm, max_iter, seed, f_test, c_test, kwargs)
     # Algorithm "cthc" (Continuous Time Hill Climbing)
     # kwargs might refer to estimator args or search args.
     # Usually "score" is needed for HC.
-    result = sem(evidence, pk, "cthc", max_iter=2, seed=42, score="BIC")
+    result = sem(evidence, "cthc", max_iter=2, seed=42, prior_knowledge=pk)
 
     assert isinstance(result, dict)
     assert "models" in result
@@ -247,6 +257,400 @@ def test_structure_learning_sem() -> None:
     w0 = weighted_trjs[0]
     assert w0.labels() == ["A", "B"]
     assert w0.weight() > 0.0
+
+
+def test_structure_learning_hc() -> None:
+    """Test structure learning using Hill Climbing (HC)."""
+    # 1. Create Data
+    # 2 variables A, B. A = B.
+    size = 100
+    a = np.random.choice(["0", "1"], size=size)
+    b = a.copy()
+
+    df = pd.DataFrame({"A": a, "B": b})
+    df = df.astype("category")
+
+    dataset = CatTable.from_pandas(df)
+
+    # 2. Define Prior Knowledge
+    pk = PK(["A", "B"], [], [], [])
+
+    # 3. Learn Structure
+    graph = hc(dataset, prior_knowledge=pk)
+
+    assert isinstance(graph, DiGraph)
+    assert set(graph.vertices()) == {"A", "B"}
+    # The learned edge is Markov-equivalent in both directions.
+    assert set(graph.edges()) in [{("A", "B")}, {("B", "A")}]
+
+
+def test_structure_learning_hc_no_prior_knowledge() -> None:
+    """Test structure learning using Hill Climbing (HC) without prior knowledge."""
+    # A = B.
+    size = 100
+    a = np.random.choice(["0", "1"], size=size)
+    b = a.copy()
+
+    df = pd.DataFrame({"A": a, "B": b})
+    df = df.astype("category")
+
+    dataset = CatTable.from_pandas(df)
+
+    graph = hc(dataset)
+
+    assert isinstance(graph, DiGraph)
+    assert set(graph.vertices()) == {"A", "B"}
+    assert set(graph.edges()) in [{("A", "B")}, {("B", "A")}]
+
+
+def test_structure_learning_hc_initial_graph() -> None:
+    """Test structure learning using Hill Climbing (HC) with an initial graph."""
+    # A = B.
+    size = 100
+    a = np.random.choice(["0", "1"], size=size)
+    b = a.copy()
+
+    df = pd.DataFrame({"A": a, "B": b})
+    df = df.astype("category")
+
+    dataset = CatTable.from_pandas(df)
+
+    initial_graph = DiGraph.empty(["A", "B"])
+
+    graph = hc(dataset, initial_graph=initial_graph)
+
+    assert isinstance(graph, DiGraph)
+    assert set(graph.vertices()) == {"A", "B"}
+    assert set(graph.edges()) in [{("A", "B")}, {("B", "A")}]
+
+
+def test_structure_learning_hc_initial_graph_mismatch() -> None:
+    """Test that HC raises an error for an initial graph with mismatching labels."""  # A = B.
+    size = 100
+    a = np.random.choice(["0", "1"], size=size)
+    b = a.copy()
+
+    df = pd.DataFrame({"A": a, "B": b})
+    df = df.astype("category")
+
+    dataset = CatTable.from_pandas(df)
+
+    initial_graph = DiGraph.empty(["A", "C"])
+
+    with pytest.raises(Exception) as excinfo:
+        hc(dataset, initial_graph=initial_graph)
+    assert "label" in str(excinfo.value).lower()
+
+
+def test_structure_learning_hc_prior_knowledge() -> None:
+    """Test structure learning using Hill Climbing (HC) with prior knowledge."""
+    # A = B.
+    size = 100
+    a = np.random.choice(["0", "1"], size=size)
+    b = a.copy()
+
+    df = pd.DataFrame({"A": a, "B": b})
+    df = df.astype("category")
+
+    dataset = CatTable.from_pandas(df)
+
+    # Forbid the edge A -> B.
+    pk = PK(["A", "B"], [("A", "B")], [], [])
+
+    graph = hc(dataset, prior_knowledge=pk, max_parents=1)
+
+    assert isinstance(graph, DiGraph)
+    assert not graph.has_edge("A", "B")
+    # Every vertex has at most one parent.
+    for v in graph.vertices():
+        assert len(graph.parents(v)) <= 1
+
+
+def test_structure_learning_hc_invalid_dataset() -> None:
+    """Test that HC raises an error for unsupported dataset types."""
+    df = pd.DataFrame(
+        {
+            "time": [0.0, 1.0, 2.0],
+            "A": ["0", "1", "1"],
+            "B": ["0", "0", "0"],
+        }
+    )
+    df["time"] = df["time"].astype("float64")
+    df["A"] = df["A"].astype("category")
+    df["B"] = df["B"].astype("category")
+
+    dataset = CatTrjs.from_pandas([df])
+    pk = PK(["A", "B"], [], [], [])
+
+    with pytest.raises(TypeError) as excinfo:
+        hc(dataset, prior_knowledge=pk)
+    assert "CatTable" in str(excinfo.value) or "GaussTable" in str(excinfo.value)
+
+
+def test_structure_learning_hc_incomplete_dataset() -> None:
+    """Test that HC raises an error for incomplete datasets."""
+    states = {"X": ["0", "1"], "Y": ["0", "1"]}
+    model = CatBN.random(states, p=0.5, seed=42)
+
+    cat_table = model.sample(50, seed=42)
+    mechanism = MissingMechanism.random(model.graph(), MT.MCAR, 1.0, seed=42)
+    inc_table = CatIncTable.random(cat_table, mechanism, 0.1, 0.5, seed=42)
+
+    with pytest.raises(ValueError) as excinfo:
+        hc(inc_table)
+    assert "complete dataset" in str(excinfo.value)
+
+
+def test_structure_learning_hc_gauss() -> None:
+    """Test structure learning using Hill Climbing (HC) for Gaussian BNs."""
+    # X ~ N(0, 1), Y = 2*X + noise.
+    size = 200
+    x = np.random.normal(0, 1, size)
+    y = 2 * x + np.random.normal(0, 0.1, size)
+
+    df = pd.DataFrame({"X": x, "Y": y})
+    dataset = GaussTable.from_pandas(df)
+
+    pk = PK(["X", "Y"], [], [], [])
+
+    graph = hc(dataset, prior_knowledge=pk)
+
+    assert isinstance(graph, DiGraph)
+    assert set(graph.vertices()) == {"X", "Y"}
+    assert set(graph.edges()) in [{("X", "Y")}, {("Y", "X")}]
+
+
+def test_structure_learning_ctpc() -> None:
+    """Test structure learning using Continuous Time Peter-Clark (CTPC)."""
+    # Load the Eating model and sample trajectories from it.
+    model = load_eating()
+    dataset = model.sample(100, max_len=100, seed=42)
+
+    pk = PK(model.labels(), [], [], [])
+
+    graph = ctpc(dataset, prior_knowledge=pk, f_test=0.01, c_test=0.01)
+
+    assert isinstance(graph, DiGraph)
+    assert set(graph.vertices()) == set(model.labels())
+    # CTPC recovers the true structure on this dataset.
+    assert set(graph.edges()) == set(model.graph().edges())
+
+
+def test_structure_learning_ctpc_no_prior_knowledge() -> None:
+    """Test structure learning using Continuous Time Peter-Clark (CTPC) without prior knowledge."""
+    # Load the Eating model and sample trajectories from it.
+    model = load_eating()
+    dataset = model.sample(100, max_len=100, seed=42)
+
+    graph = ctpc(dataset)
+
+    assert isinstance(graph, DiGraph)
+    assert set(graph.vertices()) == set(model.labels())
+    assert set(graph.edges()) == set(model.graph().edges())
+
+
+def test_structure_learning_hc_scores() -> None:
+    """Test structure learning using Hill Climbing (HC) with all scoring criteria."""
+    # A = B.
+    size = 100
+    a = np.random.choice(["0", "1"], size=size)
+    b = a.copy()
+
+    df = pd.DataFrame({"A": a, "B": b})
+    df = df.astype("category")
+
+    dataset = CatTable.from_pandas(df)
+
+    pk = PK(["A", "B"], [], [], [])
+
+    for scorer_method in [
+        ScorerMethod.LL,
+        ScorerMethod.AIC,
+        ScorerMethod.AICC,
+        ScorerMethod.BIC,
+        ScorerMethod.BICC,
+        ScorerMethod.HQC,
+    ]:
+        graph = hc(dataset, prior_knowledge=pk, scorer_method=scorer_method)
+
+        assert isinstance(graph, DiGraph)
+        assert set(graph.vertices()) == {"A", "B"}
+        # The learned edge is Markov-equivalent in both directions.
+        assert set(graph.edges()) in [{("A", "B")}, {("B", "A")}]
+
+
+def test_structure_learning_hc_gauss_score() -> None:
+    """Test structure learning using Hill Climbing (HC) with a scoring criterion for Gaussian BNs."""
+    # X ~ N(0, 1), Y = 2*X + noise.
+    size = 200
+    x = np.random.normal(0, 1, size)
+    y = 2 * x + np.random.normal(0, 0.1, size)
+
+    df = pd.DataFrame({"X": x, "Y": y})
+    dataset = GaussTable.from_pandas(df)
+
+    pk = PK(["X", "Y"], [], [], [])
+
+    graph = hc(dataset, prior_knowledge=pk, scorer_method=ScorerMethod.AIC)
+
+    assert isinstance(graph, DiGraph)
+    assert set(graph.vertices()) == {"X", "Y"}
+    assert set(graph.edges()) in [{("X", "Y")}, {("Y", "X")}]
+
+
+def test_structure_learning_hc_invalid_score() -> None:
+    """Test that HC raises an error for unsupported score types."""
+    size = 100
+    a = np.random.choice(["0", "1"], size=size)
+    b = a.copy()
+
+    df = pd.DataFrame({"A": a, "B": b})
+    df = df.astype("category")
+
+    dataset = CatTable.from_pandas(df)
+
+    pk = PK(["A", "B"], [], [], [])
+
+    with pytest.raises(TypeError):
+        hc(dataset, prior_knowledge=pk, scorer_method="BIC")
+
+
+def test_structure_learning_cthc() -> None:
+    """Test structure learning using Continuous Time Hill Climbing (CTHC)."""
+    # Load the Eating model and sample trajectories from it.
+    model = load_eating()
+    dataset = model.sample(100, max_len=100, seed=42)
+
+    pk = PK(model.labels(), [], [], [])
+
+    graph = cthc(dataset, prior_knowledge=pk, max_parents=2)
+
+    assert isinstance(graph, DiGraph)
+    assert set(graph.vertices()) == set(model.labels())
+    # Every vertex has at most two parents.
+    for v in graph.vertices():
+        assert len(graph.parents(v)) <= 2
+
+
+def test_structure_learning_cthc_no_prior_knowledge() -> None:
+    """Test structure learning using Continuous Time Hill Climbing (CTHC) without prior knowledge."""
+    # Load the Eating model and sample trajectories from it.
+    model = load_eating()
+    dataset = model.sample(100, max_len=100, seed=42)
+
+    graph = cthc(dataset)
+
+    assert isinstance(graph, DiGraph)
+    assert set(graph.vertices()) == set(model.labels())
+
+
+def test_structure_learning_cthc_initial_graph() -> None:
+    """Test structure learning using Continuous Time Hill Climbing (CTHC) with an initial graph."""
+    # Load the Eating model and sample trajectories from it.
+    model = load_eating()
+    dataset = model.sample(100, max_len=100, seed=42)
+
+    initial_graph = DiGraph.empty(model.labels())
+
+    graph = cthc(dataset, initial_graph=initial_graph, max_parents=2)
+
+    assert isinstance(graph, DiGraph)
+    assert set(graph.vertices()) == set(model.labels())
+    # Every vertex has at most two parents.
+    for v in graph.vertices():
+        assert len(graph.parents(v)) <= 2
+
+
+def test_structure_learning_sequential() -> None:
+    """Test structure learning running HC and CTHC sequentially."""
+    # A = B.
+    size = 100
+    a = np.random.choice(["0", "1"], size=size)
+    b = a.copy()
+
+    df = pd.DataFrame({"A": a, "B": b})
+    df = df.astype("category")
+
+    dataset = CatTable.from_pandas(df)
+
+    pk = PK(["A", "B"], [], [], [])
+
+    graph = hc(dataset, prior_knowledge=pk, parallel=False)
+
+    assert isinstance(graph, DiGraph)
+    assert set(graph.vertices()) == {"A", "B"}
+    assert set(graph.edges()) in [{("A", "B")}, {("B", "A")}]
+
+    # Load the Eating model and sample trajectories from it.
+    model = load_eating()
+    trajectories = model.sample(100, max_len=100, seed=42)
+
+    graph = cthc(
+        trajectories, prior_knowledge=PK(model.labels(), [], [], []), parallel=False
+    )
+
+    assert isinstance(graph, DiGraph)
+    assert set(graph.vertices()) == set(model.labels())
+
+
+def test_structure_learning_cthc_score() -> None:
+    """Test structure learning using Continuous Time Hill Climbing (CTHC) with a scoring criterion."""
+    # Load the Eating model and sample trajectories from it.
+    model = load_eating()
+    dataset = model.sample(100, max_len=100, seed=42)
+
+    pk = PK(model.labels(), [], [], [])
+
+    graph = cthc(
+        dataset, prior_knowledge=pk, scorer_method=ScorerMethod.AICC, max_parents=2
+    )
+
+    assert isinstance(graph, DiGraph)
+    assert set(graph.vertices()) == set(model.labels())
+    # Every vertex has at most two parents.
+    for v in graph.vertices():
+        assert len(graph.parents(v)) <= 2
+
+
+def test_structure_learning_hc_estimator() -> None:
+    """Test structure learning using Hill Climbing (HC) with different parameter estimators."""
+    # A = B.
+    size = 100
+    a = np.random.choice(["0", "1"], size=size)
+    b = a.copy()
+
+    df = pd.DataFrame({"A": a, "B": b})
+    df = df.astype("category")
+
+    dataset = CatTable.from_pandas(df)
+
+    pk = PK(["A", "B"], [], [], [])
+
+    for estimator in [EstimatorMethod.MLE, EstimatorMethod.BE]:
+        graph = hc(dataset, prior_knowledge=pk, estimator_method=estimator)
+
+        assert isinstance(graph, DiGraph)
+        assert set(graph.vertices()) == {"A", "B"}
+        assert set(graph.edges()) in [{("A", "B")}, {("B", "A")}]
+
+
+def test_structure_learning_cthc_estimator() -> None:
+    """Test structure learning using Continuous Time Hill Climbing (CTHC) with parameter estimators."""
+    # Load the Eating model and sample trajectories from it.
+    model = load_eating()
+    dataset = model.sample(100, max_len=100, seed=42)
+
+    pk = PK(model.labels(), [], [], [])
+
+    graph = cthc(
+        dataset, prior_knowledge=pk, max_parents=2, estimator_method=EstimatorMethod.MLE
+    )
+
+    assert isinstance(graph, DiGraph)
+    assert set(graph.vertices()) == set(model.labels())
+    # Every vertex has at most two parents.
+    for v in graph.vertices():
+        assert len(graph.parents(v)) <= 2
 
 
 def test_prior_knowledge() -> None:

@@ -11,7 +11,11 @@ import causal_hub.models
 __all__ = [
     "EstimatorMethod",
     "PK",
+    "ScorerMethod",
+    "cthc",
+    "ctpc",
     "em",
+    "hc",
     "sem",
 ]
 
@@ -45,6 +49,84 @@ class EstimatorMethod(enum.Enum):
     Bayesian Estimator.
     """
 
+@typing.final
+class ScorerMethod(enum.Enum):
+    r"""
+    Scoring criteria for score-based structure learning algorithms.
+    """
+
+    LL = ...
+    r"""
+    Log Likelihood (`LL`).
+    """
+    AIC = ...
+    r"""
+    Akaike Information Criterion (`AIC`).
+    """
+    AICC = ...
+    r"""
+    Akaike Information Criterion Corrected (`AICc`).
+    """
+    BIC = ...
+    r"""
+    Bayesian Information Criterion (`BIC`).
+    """
+    BICC = ...
+    r"""
+    Bayesian Information Criterion Corrected (`BICc`).
+    """
+    HQC = ...
+    r"""
+    Hannan-Quinn Criterion (`HQC`).
+    """
+
+def cthc(
+    trajectories: datasets.CatTrjs,
+    estimator_method: EstimatorMethod = EstimatorMethod.BE,
+    scorer_method: ScorerMethod = ScorerMethod.BIC,
+    parallel: builtins.bool = True,
+    **kwargs: typing.Any,
+) -> models.DiGraph:
+    r"""
+    A function to perform structure learning using the Continuous Time Hill Climbing (CTHC) algorithm.
+
+    The scorer method can be selected through the `scorer_method` argument
+    (one of `ScorerMethod.{LL, AIC, AICC, BIC, BICC, HQC}`), defaulting to `BIC`.
+
+    **kwargs: dict | None
+        Optional keyword arguments:
+
+    - `estimator`: The parameter estimator to use (default is `EstimatorMethod.BE`).
+    - `prior_knowledge`: The prior knowledge to constrain the search (default is `None`).
+    - `initial_graph`: The initial graph to start the search from (default is an empty graph).
+    - `max_parents`: The maximum number of parents for each vertex (default is no limit).
+
+    parallel: bool
+        Whether to run the algorithm in parallel (default is `True`).
+    """
+
+def ctpc(
+    trajectories: datasets.CatTrjs,
+    f_test: builtins.float = 0.01,
+    c_test: builtins.float = 0.01,
+    estimator_method: EstimatorMethod = EstimatorMethod.BE,
+    parallel: builtins.bool = True,
+    **kwargs: typing.Any,
+) -> models.DiGraph:
+    r"""
+    A function to perform structure learning using the Continuous Time Peter-Clark (CTPC) algorithm.
+
+    **kwargs: dict | None
+        Optional keyword arguments:
+
+    - `estimator`: The parameter estimator to use (default is `EstimatorMethod.BE`).
+    - `prior_knowledge`: The prior knowledge to constrain the search (default is `None`).
+    - `initial_graph`: The initial graph to start the search from (default is a complete graph).
+
+    parallel: bool
+        Whether to run the algorithm in parallel (default is `True`).
+    """
+
 def em(
     evidence: datasets.CatTrjsEv,
     graph: models.DiGraph,
@@ -55,14 +137,53 @@ def em(
     A function to perform parameter learning using the Expectation Maximization (EM) algorithm.
     """
 
+def hc(
+    dataset: datasets.Dataset,
+    estimator_method: EstimatorMethod = EstimatorMethod.BE,
+    scorer_method: ScorerMethod = ScorerMethod.BIC,
+    parallel: builtins.bool = True,
+    **kwargs: typing.Any,
+) -> models.DiGraph:
+    r"""
+    Perform structure learning using the Hill Climbing (HC) algorithm.
+
+    Parameters
+    ----------
+    dataset: CatTable | GaussTable
+        The complete dataset to learn the structure from.
+    estimator_method: EstimatorMethod | None
+        The parameter estimator to use (default is `EstimatorMethod.BE`).
+    scorer_method: ScorerMethod | None
+        The scorer method to use (default is `ScorerMethod.BIC`).
+    parallel: bool
+        Whether to run the algorithm in parallel (default is `True`).
+    **kwargs: dict | None
+        Optional keyword arguments:
+
+    - `prior_knowledge`: The prior knowledge to constrain the search (default is `None`).
+    - `initial_graph`: The initial graph to start the search from (default is an empty graph).
+    - `max_parents`: The maximum number of parents for each vertex (default is no limit).
+    - `max_iter`: The maximum number of iterations (default is unlimited).
+
+    Returns
+    -------
+    DiGraph
+        The learned structure.
+    """
+
 def sem(
     evidence: datasets.CatTrjsEv,
-    prior_knowledge: PK,
     algorithm: builtins.str,
     max_iter: builtins.int = 10,
     seed: builtins.int = 42,
+    f_test: builtins.float = 0.01,
+    c_test: builtins.float = 0.01,
+    parallel: builtins.bool = True,
     **kwargs: typing.Any,
 ) -> dict:
     r"""
     A function to perform structure learning using the Structural Expectation Maximization (SEM) algorithm.
+
+    parallel: bool
+        Whether to run the algorithm in parallel (default is `True`).
     """

@@ -14,9 +14,34 @@ pub use structures::*;
     from_py_object
 )]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[non_exhaustive]
 pub enum PyEstimatorMethod {
     /// Maximum Likelihood Estimator.
     MLE,
     /// Bayesian Estimator.
     BE,
+}
+
+/// Scoring criteria for score-based structure learning algorithms.
+#[gen_stub_pyclass_enum]
+#[pyclass(
+    name = "ScorerMethod",
+    module = "causal_hub.estimators",
+    from_py_object
+)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[non_exhaustive]
+pub enum PyScorerMethod {
+    /// Log Likelihood (`LL`).
+    LL,
+    /// Akaike Information Criterion (`AIC`).
+    AIC,
+    /// Akaike Information Criterion Corrected (`AICc`).
+    AICC,
+    /// Bayesian Information Criterion (`BIC`).
+    BIC,
+    /// Bayesian Information Criterion Corrected (`BICc`).
+    BICC,
+    /// Hannan-Quinn Criterion (`HQC`).
+    HQC,
 }

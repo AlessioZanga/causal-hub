@@ -3,7 +3,10 @@ use paste::paste;
 use pyo3::prelude::*;
 use pyo3_stub_gen::derive::*;
 
-use crate::models::{PyCatBN, PyCatCTBN, PyGaussBN};
+use crate::{
+    error::to_pyerr,
+    models::{PyCatBN, PyCatCTBN, PyGaussBN},
+};
 
 macro_for!(
     $bn in [
@@ -17,7 +20,7 @@ macro_for!(
         #[pyfunction]
         pub fn [<load_ $bn>]() -> PyResult<PyCatBN> {
             backend::assets::[<load_ $bn>]()
-                .map_err(crate::error::to_pyerr)
+                .map_err(to_pyerr)
                 .map(Into::into)
         }
     }
@@ -33,7 +36,7 @@ macro_for!(
         #[pyfunction]
         pub fn [<load_ $bn>]() -> PyResult<PyGaussBN> {
             backend::assets::[<load_ $bn>]()
-                .map_err(crate::error::to_pyerr)
+                .map_err(to_pyerr)
                 .map(Into::into)
         }
     }
@@ -44,6 +47,6 @@ macro_for!(
 #[pyfunction]
 pub fn load_eating() -> PyResult<PyCatCTBN> {
     backend::assets::load_eating()
-        .map_err(crate::error::to_pyerr)
+        .map_err(to_pyerr)
         .map(Into::into)
 }

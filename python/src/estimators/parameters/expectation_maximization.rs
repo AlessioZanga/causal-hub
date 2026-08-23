@@ -63,14 +63,7 @@ pub fn em<'a>(
             // Log the initial model fitting.
             debug!("Fitting the initial model using the raw estimator ...");
             // Set the initial model.
-            let model = raw
-                .map_err(|e| {
-                    BackendError::Stats(&format!("Failed to initialize raw estimator: {}", e))
-                })?
-                .par_fit(graph.clone())
-                .map_err(|e| {
-                    BackendError::Stats(&format!("Failed to fit the initial model: {}", e))
-                })?;
+            let model = raw?.par_fit(graph.clone())?;
 
             // Wrap the random number generator in a RefCell to allow mutable borrowing.
             let rng = RefCell::new(rng);
@@ -136,15 +129,10 @@ pub fn em<'a>(
                 .with_e_step(&e_step)
                 .with_m_step(&m_step)
                 .with_stop(&stop)
-                .build()
-                .map_err(|e| {
-                    BackendError::Stats(&format!("Failed to build the EM algorithm: {}", e))
-                })?;
+                .build()?;
 
             // Fit the model.
-            em.fit().map_err(|e| {
-                BackendError::Stats(&format!("Failed to fit the model using EM: {}", e))
-            })
+            em.fit()
         })
         .map_err(to_pyerr)?;
 

@@ -133,8 +133,12 @@ mod causal_hub {
 
             m.add_function(wrap_pyfunction!(crate::estimators::em, m)?)?;
             m.add_function(wrap_pyfunction!(crate::estimators::sem, m)?)?;
+            m.add_function(wrap_pyfunction!(crate::estimators::hc, m)?)?;
+            m.add_function(wrap_pyfunction!(crate::estimators::cthc, m)?)?;
+            m.add_function(wrap_pyfunction!(crate::estimators::ctpc, m)?)?;
             m.add_class::<crate::estimators::PyPK>()?;
             m.add_class::<crate::estimators::PyEstimatorMethod>()?;
+            m.add_class::<crate::estimators::PyScorerMethod>()?;
 
             Ok(())
         }

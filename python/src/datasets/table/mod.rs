@@ -16,6 +16,7 @@ use pyo3_stub_gen_derive::gen_stub_pyclass_enum;
 #[gen_stub_pyclass_enum]
 #[pyclass(name = "Dataset", module = "causal_hub.datasets", skip_from_py_object)]
 #[derive(Clone, Debug, FromPyObject)]
+#[non_exhaustive]
 pub enum PyDataset {
     /// A categorical tabular dataset.
     Categorical(PyCatTable),

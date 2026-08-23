@@ -4,9 +4,8 @@ use backend::{
     datasets::{CatEv, GaussEv},
     io::JsonIO,
     models::{CatPhi, GaussPhi, Labelled, MixedPhi, Phi},
-    types::Error,
 };
-use pyo3::{prelude::*, types::PyType};
+use pyo3::{exceptions::PyTypeError, prelude::*, types::PyType};
 use pyo3_stub_gen::derive::*;
 
 use crate::{
@@ -93,10 +92,9 @@ impl PyMixedPhi {
                     .map(Into::into)
                     .map_err(to_pyerr)
             }
-            _ => Err(to_pyerr(Error::InvalidParameter(
-                "MixedPhi",
-                "unexpected potential variant",
-            ))),
+            _ => Err(PyTypeError::new_err(
+                "Unexpected MixedPhi potential variant.",
+            )),
         }
     }
 
@@ -144,10 +142,9 @@ impl PyMixedPhi {
             MixedPhi::Categorical(potential) => {
                 potential.into_cpd(&x, &z).map(Into::into).map_err(to_pyerr)
             }
-            _ => Err(to_pyerr(Error::InvalidParameter(
-                "MixedPhi",
-                "potential is not categorical",
-            ))),
+            _ => Err(PyTypeError::new_err(
+                "The MixedPhi potential is not categorical.",
+            )),
         }
     }
 
@@ -165,10 +162,9 @@ impl PyMixedPhi {
             MixedPhi::Gaussian(potential) => {
                 potential.into_cpd(&x, &z).map(Into::into).map_err(to_pyerr)
             }
-            _ => Err(to_pyerr(Error::InvalidParameter(
-                "MixedPhi",
-                "potential is not Gaussian",
-            ))),
+            _ => Err(PyTypeError::new_err(
+                "The MixedPhi potential is not Gaussian.",
+            )),
         }
     }
 

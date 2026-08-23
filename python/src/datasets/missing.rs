@@ -19,6 +19,7 @@ use crate::{error::to_pyerr, impl_from_into_lock, models::PyDiGraph};
 #[gen_stub_pyclass_enum]
 #[pyclass(name = "MissingType", module = "causal_hub.datasets", from_py_object)]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[non_exhaustive]
 pub enum PyMissingType {
     /// Missing Completely At Random.
     MCAR,
@@ -52,6 +53,7 @@ impl From<PyMissingType> for MissingType_ {
 #[gen_stub_pyclass_enum]
 #[pyclass(name = "MissingMethod", module = "causal_hub.datasets", from_py_object)]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[non_exhaustive]
 pub enum PyMissingMethod {
     /// List-wise deletion.
     LW,
