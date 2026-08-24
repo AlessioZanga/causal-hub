@@ -13,8 +13,12 @@ from causal_hub.assets import (
     load_sachs,
     load_survey,
 )
-from causal_hub.datasets import CatTrjs, GaussIncTable
-from causal_hub.estimators import EstimatorMethod
+from causal_hub.datasets import CatTable, CatTrjs, GaussIncTable, GaussTable
+from causal_hub.estimators import (
+    FitMethod,
+    ParametersEstimator,
+    StructureEstimator,
+)
 from causal_hub.models import CatBN, CatCTBN, DiGraph, GaussBN, UnGraph
 
 
@@ -173,7 +177,9 @@ def test_asia_fit() -> None:
     # Sample 1000 data points from the BN.
     sample = asia.sample(1000, seed=42)
     # Fit a new BN to the sample.
-    asia_fitted = CatBN.fit(sample, asia.graph(), estimator_method=EstimatorMethod.BE)
+    asia_fitted = CatBN.fit_parameters(
+        sample, asia.graph(), parameters_estimator=ParametersEstimator.BE
+    )
 
     # Check the labels of the fitted BN.
     assert asia_fitted.labels() == asia.labels(), "Wrong fitted BN labels."
@@ -335,7 +341,7 @@ def test_ecoli70_fit() -> None:
     # Sample 1000 data points from the BN.
     sample = ecoli70.sample(1000, seed=42)
     # Fit a new BN to the sample.
-    ecoli70_fitted = GaussBN.fit(sample, ecoli70.graph())
+    ecoli70_fitted = GaussBN.fit_parameters(sample, ecoli70.graph())
 
     # Check the labels of the fitted BN.
     assert ecoli70_fitted.labels() == ecoli70.labels(), "Wrong fitted BN labels."
@@ -412,8 +418,8 @@ def test_eating_fit() -> None:
     # Sample 1000 trajectories from the CTBN.
     sample = eating.sample(1000, max_time=10.0, seed=42)
     # Fit a new CTBN to the sample.
-    eating_fitted = CatCTBN.fit(
-        sample, eating.graph(), estimator_method=EstimatorMethod.BE
+    eating_fitted = CatCTBN.fit_parameters(
+        sample, eating.graph(), parameters_estimator=ParametersEstimator.BE
     )
 
     # Check the labels of the fitted CTBN.
@@ -468,7 +474,9 @@ def test_categorical_bayesian_network_fit_incomplete() -> None:
     graph = DiGraph.from_networkx(G)
 
     # Fit the model.
-    model = CatBN.fit(dataset, graph, estimator_method=EstimatorMethod.MLE)
+    model = CatBN.fit_parameters(
+        dataset, graph, parameters_estimator=ParametersEstimator.MLE
+    )
 
     # Check the labels and graph.
     assert model.labels() == ["A", "B"]
@@ -507,7 +515,9 @@ def test_gaussian_bayesian_network_fit_numerical() -> None:
     graph = DiGraph.from_networkx(nx.DiGraph([("A", "B")]))
 
     # Fit the model.
-    model = GaussBN.fit(dataset, graph, estimator_method=EstimatorMethod.MLE)
+    model = GaussBN.fit_parameters(
+        dataset, graph, parameters_estimator=ParametersEstimator.MLE
+    )
 
     # Check the parameters.
     cpds = model.cpds()
@@ -543,7 +553,7 @@ def test_ecoli70_fit_incomplete() -> None:
     dataset = GaussIncTable.from_pandas(df)
 
     # Fit a new BN to the sample.
-    fitted = GaussBN.fit(dataset, ecoli70.graph())
+    fitted = GaussBN.fit_parameters(dataset, ecoli70.graph())
 
     # Check the fit.
     assert fitted.labels() == ecoli70.labels()
@@ -783,3 +793,120 @@ def test_graph_del_vertex_removes_incident_edges(graph_type) -> None:
     # The incident edges are gone.
     assert graph.edges() == [], "Incident edges not removed."
     assert graph.vertices() == ["A", "C"], "Wrong vertices after deletion."
+
+
+def test_cat_bn_fit() -> None:
+    """Test CatBN.fit dispatching between parameter fitting and structure learning."""
+    # A = B.
+    size = 100
+    a = np.random.choice(["0", "1"], size=size)
+    b = a.copy()
+
+    df = pd.DataFrame({"A": a, "B": b})
+    df = df.astype("category")
+
+    dataset = CatTable.from_pandas(df)
+    graph = DiGraph.empty(["A", "B"])
+
+    # FitMethod.Parameters requires a graph ...
+    with pytest.raises(ValueError, match="graph is required"):
+        CatBN.fit(dataset, None, FitMethod.Parameters)
+
+    # ... and fits the CPDs over it.
+    model = CatBN.fit(dataset, graph, FitMethod.Parameters)
+    assert isinstance(model, CatBN)
+
+    # The default fit method is Parameters.
+    model = CatBN.fit(dataset, graph)
+    assert isinstance(model, CatBN)
+
+
+def test_cat_bn_fit_structure() -> None:
+    """Test CatBN.fit with FitMethod.Structure ignoring the graph."""
+    # A = B.
+    size = 100
+    a = np.random.choice(["0", "1"], size=size)
+    b = a.copy()
+
+    df = pd.DataFrame({"A": a, "B": b})
+    df = df.astype("category")
+
+    dataset = CatTable.from_pandas(df)
+    graph = DiGraph.empty(["A", "C"])
+
+    # FitMethod.Structure learns the structure from data, ignoring any given graph.
+    model = CatBN.fit(dataset, graph, FitMethod.Structure)
+
+    assert isinstance(model, CatBN)
+    assert set(model.graph().vertices()) == {"A", "B"}
+    # The learned edge is Markov-equivalent in both directions.
+    assert set(model.graph().edges()) in [{("A", "B")}, {("B", "A")}]
+
+    # Passing no graph at all is supported as well.
+    model = CatBN.fit(dataset, None, FitMethod.Structure)
+
+    assert isinstance(model, CatBN)
+
+
+def test_gauss_bn_fit_structure() -> None:
+    """Test GaussBN.fit with FitMethod.Structure."""
+    # X ~ N(0, 1), Y = 2*X + noise.
+    size = 200
+    x = np.random.normal(0, 1, size)
+    y = 2 * x + np.random.normal(0, 0.1, size)
+
+    df = pd.DataFrame({"X": x, "Y": y})
+    dataset = GaussTable.from_pandas(df)
+
+    model = GaussBN.fit(dataset, None, FitMethod.Structure)
+
+    assert isinstance(model, GaussBN)
+    assert set(model.graph().vertices()) == {"X", "Y"}
+    assert set(model.graph().edges()) in [{("X", "Y")}, {("Y", "X")}]
+
+
+def test_ctbn_fit_structure() -> None:
+    """Test CatCTBN.fit with FitMethod.Structure."""
+    # Load the Eating CTBN and sample trajectories from it.
+    eating = load_eating()
+    sample = eating.sample(50, max_len=50, seed=42)
+
+    # FitMethod.Structure learns the structure from the trajectories.
+    model = CatCTBN.fit(sample, None, FitMethod.Structure)
+
+    assert isinstance(model, CatCTBN)
+    assert set(model.graph().vertices()) == set(eating.labels())
+
+
+def test_ctbn_fit_structure_ctpc() -> None:
+    """Test CatCTBN.fit_structure with the CTPC algorithm."""
+    # Load the Eating CTBN and sample trajectories from it.
+    eating = load_eating()
+    sample = eating.sample(100, max_len=100, seed=42)
+
+    model = CatCTBN.fit_structure(sample, StructureEstimator.CTPC)
+
+    assert isinstance(model, CatCTBN)
+    assert set(model.graph().vertices()) == set(eating.labels())
+
+
+def test_ctbn_fit_structure_dispatch() -> None:
+    """Test CatCTBN.fit dispatching to structure learning with both algorithms."""
+    # Load the Eating CTBN and sample trajectories from it.
+    eating = load_eating()
+    sample = eating.sample(100, max_len=100, seed=42)
+
+    for structure_estimator in [
+        StructureEstimator.CTHC,
+        StructureEstimator.CTPC,
+    ]:
+        model = CatCTBN.fit(
+            sample,
+            None,
+            FitMethod.Structure,
+            structure_estimator=structure_estimator,
+            parallel=False,
+        )
+
+        assert isinstance(model, CatCTBN)
+        assert set(model.graph().vertices()) == set(eating.labels())

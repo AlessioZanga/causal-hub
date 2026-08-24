@@ -17,8 +17,9 @@ from causal_hub.datasets import MissingMethod as MM
 from causal_hub.datasets import MissingType as MT
 from causal_hub.estimators import (
     PK,
-    EstimatorMethod,
-    ScorerMethod,
+    ParametersEstimator,
+    Scorer,
+    StructureEstimator,
     cthc,
     ctpc,
     em,
@@ -48,7 +49,9 @@ def test_cat_bn_fit() -> None:
     graph.add_edge("A", "B")
 
     # 3. Fit Model
-    model = CatBN.fit(dataset, graph, estimator_method=EstimatorMethod.MLE)
+    model = CatBN.fit_parameters(
+        dataset, graph, parameters_estimator=ParametersEstimator.MLE
+    )
 
     assert isinstance(model, CatBN)
     assert set(model.labels()) == {"A", "B"}
@@ -78,7 +81,9 @@ def test_gauss_bn_fit() -> None:
     graph.add_edge("X", "Y")
 
     # 3. Fit
-    model = GaussBN.fit(dataset, graph, estimator_method=EstimatorMethod.MLE)
+    model = GaussBN.fit_parameters(
+        dataset, graph, parameters_estimator=ParametersEstimator.MLE
+    )
 
     assert isinstance(model, GaussBN)
 
@@ -133,7 +138,9 @@ def test_cat_ctbn_fit() -> None:
     graph.add_edge("A", "B")
 
     # 3. Fit
-    model = CatCTBN.fit(dataset, graph, estimator_method=EstimatorMethod.MLE)
+    model = CatCTBN.fit_parameters(
+        dataset, graph, parameters_estimator=ParametersEstimator.MLE
+    )
     assert isinstance(model, CatCTBN)
 
 
@@ -231,10 +238,14 @@ def test_structure_learning_sem() -> None:
 
     # Call SEM
     # sem(evidence, algorithm, max_iter, seed, f_test, c_test, kwargs)
-    # Algorithm "cthc" (Continuous Time Hill Climbing)
-    # kwargs might refer to estimator args or search args.
-    # Usually "score" is needed for HC.
-    result = sem(evidence, "cthc", max_iter=2, seed=42, prior_knowledge=pk)
+    # Algorithm StructureEstimator.CTHC (Continuous Time Hill Climbing)
+    result = sem(
+        evidence,
+        StructureEstimator.CTHC,
+        max_iter=2,
+        seed=42,
+        prior_knowledge=pk,
+    )
 
     assert isinstance(result, dict)
     assert "models" in result
@@ -485,15 +496,15 @@ def test_structure_learning_hc_scores() -> None:
 
     pk = PK(["A", "B"], [], [], [])
 
-    for scorer_method in [
-        ScorerMethod.LL,
-        ScorerMethod.AIC,
-        ScorerMethod.AICC,
-        ScorerMethod.BIC,
-        ScorerMethod.BICC,
-        ScorerMethod.HQC,
+    for scorer in [
+        Scorer.LL,
+        Scorer.AIC,
+        Scorer.AICC,
+        Scorer.BIC,
+        Scorer.BICC,
+        Scorer.HQC,
     ]:
-        fitted_model = hc(dataset, prior_knowledge=pk, scorer_method=scorer_method)
+        fitted_model = hc(dataset, prior_knowledge=pk, scorer=scorer)
 
         assert isinstance(fitted_model, CatBN)
         assert set(fitted_model.graph().vertices()) == {"A", "B"}
@@ -513,7 +524,7 @@ def test_structure_learning_hc_gauss_score() -> None:
 
     pk = PK(["X", "Y"], [], [], [])
 
-    fitted_model = hc(dataset, prior_knowledge=pk, scorer_method=ScorerMethod.AIC)
+    fitted_model = hc(dataset, prior_knowledge=pk, scorer=Scorer.AIC)
 
     assert isinstance(fitted_model, GaussBN)
     assert set(fitted_model.graph().vertices()) == {"X", "Y"}
@@ -535,7 +546,7 @@ def test_structure_learning_hc_rejects_unknown_kwarg() -> None:
     pk = PK(["A", "B"], [], [], [])
 
     with pytest.raises(TypeError) as excinfo:
-        hc(dataset, prior_knowledge=pk, estimator=EstimatorMethod.MLE)
+        hc(dataset, prior_knowledge=pk, estimator=ParametersEstimator.MLE)
     assert "estimator" in str(excinfo.value)
 
 
@@ -553,7 +564,7 @@ def test_structure_learning_hc_invalid_score() -> None:
     pk = PK(["A", "B"], [], [], [])
 
     with pytest.raises(TypeError):
-        hc(dataset, prior_knowledge=pk, scorer_method="BIC")
+        hc(dataset, prior_knowledge=pk, scorer="BIC")
 
 
 def test_structure_learning_cthc() -> None:
@@ -642,9 +653,7 @@ def test_structure_learning_cthc_score() -> None:
 
     pk = PK(model.labels(), [], [], [])
 
-    fitted_model = cthc(
-        dataset, prior_knowledge=pk, scorer_method=ScorerMethod.AICC, max_parents=2
-    )
+    fitted_model = cthc(dataset, prior_knowledge=pk, scorer=Scorer.AICC, max_parents=2)
 
     assert isinstance(fitted_model, CatCTBN)
     assert set(fitted_model.graph().vertices()) == set(model.labels())
@@ -667,8 +676,8 @@ def test_structure_learning_hc_estimator() -> None:
 
     pk = PK(["A", "B"], [], [], [])
 
-    for estimator in [EstimatorMethod.MLE, EstimatorMethod.BE]:
-        fitted_model = hc(dataset, prior_knowledge=pk, estimator_method=estimator)
+    for estimator in [ParametersEstimator.MLE, ParametersEstimator.BE]:
+        fitted_model = hc(dataset, prior_knowledge=pk, parameters_estimator=estimator)
 
         assert isinstance(fitted_model, CatBN)
         assert set(fitted_model.graph().vertices()) == {"A", "B"}
@@ -684,7 +693,10 @@ def test_structure_learning_cthc_estimator() -> None:
     pk = PK(model.labels(), [], [], [])
 
     fitted_model = cthc(
-        dataset, prior_knowledge=pk, max_parents=2, estimator_method=EstimatorMethod.MLE
+        dataset,
+        prior_knowledge=pk,
+        max_parents=2,
+        parameters_estimator=ParametersEstimator.MLE,
     )
 
     assert isinstance(fitted_model, CatCTBN)
@@ -721,7 +733,7 @@ def test_cat_bn_missing_data_flow(missing_method, missing_type):
     mechanism = MissingMechanism.random(graph, missing_type, 1.0, seed=42)
     inc_table = CatIncTable.random(cat_table, mechanism, 0.1, 0.5, seed=42)
 
-    new_model = CatBN.fit(
+    new_model = CatBN.fit_parameters(
         inc_table,
         graph,
         missing_method=missing_method,
@@ -756,7 +768,7 @@ def test_cat_bn_invalid_mechanism_validation():
     inc_table = CatIncTable.random(cat_table, mechanism, 0.1, 0.5, seed=42)
 
     with pytest.raises(Exception) as excinfo:
-        CatBN.fit(
+        CatBN.fit_parameters(
             inc_table,
             graph,
             missing_method=MM.LW,
@@ -778,7 +790,7 @@ def test_gauss_bn_missing_data_flow(missing_method, missing_type):
     mechanism = MissingMechanism.random(graph, missing_type, 1.0, seed=42)
     inc_table = GaussIncTable.random(gauss_table, mechanism, 0.1, 0.5, seed=42)
 
-    new_model = GaussBN.fit(
+    new_model = GaussBN.fit_parameters(
         inc_table,
         graph,
         missing_method=missing_method,
@@ -813,7 +825,7 @@ def test_gauss_bn_invalid_mechanism_validation():
     inc_table = GaussIncTable.random(gauss_table, mechanism, 0.1, 0.5, seed=42)
 
     with pytest.raises(Exception) as excinfo:
-        GaussBN.fit(
+        GaussBN.fit_parameters(
             inc_table,
             graph,
             missing_method=MM.LW,

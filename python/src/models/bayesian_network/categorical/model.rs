@@ -27,7 +27,7 @@ use rand_xoshiro::Xoshiro256PlusPlus;
 use crate::{
     datasets::{PyCatEv, PyCatTable, PyDataset, PyMissingMechanism, PyMissingMethod},
     error::to_pyerr,
-    estimators::{PyBNEstimator, PyEstimatorMethod},
+    estimators::{PyBNEstimator, PyFitMethod, PyParametersEstimator, PyScorer, hc},
     impl_from_into_lock, indices_from, kwarg,
     models::{PyCatCPD, PyDiGraph},
 };
@@ -215,7 +215,81 @@ impl PyCatBN {
             .map_err(to_pyerr)
     }
 
-    /// Fit the model to a dataset and a given graph.
+    /// Fit the model to a dataset, either fitting the parameters given the
+    /// structure (`FitMethod.Parameters`) or learning the structure from data
+    /// and fitting the parameters over it (`FitMethod.Structure`).
+    ///
+    /// Parameters
+    /// ----------
+    /// dataset: CatTable | CatIncTable | CatWtdTable
+    ///     The dataset to fit the model to.
+    /// graph: DiGraph | None
+    ///     The graph to fit the parameters to. It is required by
+    ///     `FitMethod.Parameters`, and it is ignored by `FitMethod.Structure`.
+    /// fit_method: FitMethod | None
+    ///     The fitting method to use, one of `FitMethod.{Parameters,
+    ///     Structure}` (default is `FitMethod.Parameters`).
+    /// **kwargs: dict | None
+    ///     Optional keyword arguments, forwarded to the underlying method:
+    ///
+    /// - `parameters_estimator`: The parameter estimator used to fit the local
+    ///   models, either `ParametersEstimator.MLE` or `ParametersEstimator.BE`
+    ///   (default is `ParametersEstimator.BE`).
+    /// - `scorer`: The scoring criterion to maximize for structure
+    ///   learning, one of `Scorer.{LL, AIC, AICC, BIC, BICC, HQC}`
+    ///   (default is `Scorer.BIC`). Any other keyword argument of the
+    ///   selected method is supported.
+    ///
+    /// Returns
+    /// -------
+    /// CatBN
+    ///     A new fitted model.
+    ///
+    #[classmethod]
+    #[pyo3(signature = (
+        dataset,
+        graph = None,
+        fit_method = PyFitMethod::Parameters,
+        **kwargs
+    ))]
+    pub fn fit(
+        _cls: &Bound<'_, PyType>,
+        py: Python<'_>,
+        dataset: PyDataset,
+        graph: Option<&Bound<'_, PyDiGraph>>,
+        fit_method: PyFitMethod,
+        kwargs: Option<&Bound<'_, PyDict>>,
+    ) -> PyResult<Self> {
+        // Match the fit method.
+        match fit_method {
+            PyFitMethod::Parameters => {
+                // Get the graph, which is required to fit the parameters.
+                let Some(graph) = graph else {
+                    return Err(PyErr::new::<PyValueError, _>(
+                        "A graph is required to fit the model parameters.",
+                    ));
+                };
+                // Get the estimator method from the keyword arguments, or default to the BE
+                // estimator.
+                let parameters_estimator = kwarg!(
+                    kwargs,
+                    "parameters_estimator",
+                    PyParametersEstimator,
+                    PyParametersEstimator::BE
+                )?;
+                // Fit the model parameters over the given graph.
+                Self::fit_parameters(_cls, py, dataset, graph, parameters_estimator, kwargs)
+            }
+            PyFitMethod::Structure => {
+                // Get the scoring criterion from the keyword arguments, or default to the BIC.
+                let scorer = kwarg!(kwargs, "scorer", PyScorer, PyScorer::BIC)?;
+                // Learn the structure and fit the model over it, ignoring the given graph, if any.
+                Self::fit_structure(_cls, py, dataset, scorer, kwargs)
+            }
+        }
+    }
+
+    /// Fit the model parameters to a dataset and a given graph.
     ///
     /// Parameters
     /// ----------
@@ -223,8 +297,8 @@ impl PyCatBN {
     ///     The dataset to fit the model to.
     /// graph: DiGraph
     ///     The graph to fit the model to.
-    /// estimator: EstimatorMethod | None
-    ///     The estimator to use for fitting (default is `EstimatorMethod.BE`).
+    /// estimator: ParametersEstimator | None
+    ///     The estimator to use for fitting (default is `ParametersEstimator.BE`).
     /// **kwargs: dict | None
     ///     Optional keyword arguments:
     ///
@@ -246,15 +320,15 @@ impl PyCatBN {
     #[pyo3(signature = (
         dataset,
         graph,
-        estimator_method = PyEstimatorMethod::BE,
+        parameters_estimator = PyParametersEstimator::BE,
         **kwargs
     ))]
-    pub fn fit(
+    pub fn fit_parameters(
         _cls: &Bound<'_, PyType>,
         py: Python<'_>,
         dataset: PyDataset,
         graph: &Bound<'_, PyDiGraph>,
-        estimator_method: PyEstimatorMethod,
+        parameters_estimator: PyParametersEstimator,
         kwargs: Option<&Bound<'_, PyDict>>,
     ) -> PyResult<Self> {
         // Get the graph.
@@ -288,9 +362,9 @@ impl PyCatBN {
                 let dataset: $type = $dataset.into();
 
                 // Initialize the estimator.
-                let estimator: Box<dyn PyBNEstimator<CatBN>> = match estimator_method {
+                let estimator: Box<dyn PyBNEstimator<CatBN>> = match parameters_estimator {
                     // Initialize the maximum likelihood estimator.
-                    PyEstimatorMethod::MLE => Box::new(
+                    PyParametersEstimator::MLE => Box::new(
                         MLE::new(&dataset)
                             .with_missing_method(
                                 Some(missing_method),
@@ -299,7 +373,7 @@ impl PyCatBN {
                             .map_err(to_pyerr)?,
                     ),
                     // Initialize the Bayesian estimator.
-                    PyEstimatorMethod::BE => {
+                    PyParametersEstimator::BE => {
                         // Initialize the Bayesian estimator.
                         let estimator = BE::new(&dataset)
                             .with_missing_method(
@@ -336,6 +410,69 @@ impl PyCatBN {
                 "Expected a Categorical dataset for a Categorical Bayesian network.",
             )),
         }
+    }
+
+    /// Fit the model structure to a dataset using the Hill Climbing (HC) algorithm.
+    ///
+    /// Parameters
+    /// ----------
+    /// dataset: CatTable | CatIncTable | CatWtdTable
+    ///     The dataset to learn the structure from.
+    /// scorer: Scorer | None
+    ///     The scoring criterion to maximize, one of `Scorer.{LL, AIC,
+    ///     AICC, BIC, BICC, HQC}` (default is `Scorer.BIC`).
+    /// **kwargs: dict | None
+    ///     Optional keyword arguments:
+    ///
+    /// - `parameters_estimator`: The parameter estimator used to fit the local
+    ///   models, either `ParametersEstimator.MLE` or `ParametersEstimator.BE`
+    ///   (default is `ParametersEstimator.BE`).
+    /// - `initial_graph`: The initial graph (`DiGraph`) to start the search
+    ///   from (default is an empty graph). Its labels must match the dataset.
+    /// - `max_parents`: The maximum number of parents for each vertex
+    ///   (default is no limit).
+    /// - `max_iter`: The maximum number of iterations of the search
+    ///   (default is unlimited).
+    /// - `missing_method`: The method (`MissingMethod`) used to handle missing
+    ///   data, one of `MissingMethod.{LW, PW, IPW, AIPW}` (default is `None`).
+    /// - `missing_mechanism`: The missing data mechanism (`MissingMechanism`)
+    ///   associated to the dataset (default is `None`). It is required by
+    ///   `MissingMethod.IPW` and `MissingMethod.AIPW`, and it must be `None`
+    ///   otherwise.
+    /// - `parallel`: Whether to run the algorithm in parallel (default is `True`).
+    /// - `prior_knowledge`: The prior knowledge (`PK`) constraining the search,
+    ///   e.g., forbidden and required edges or temporal tiers
+    ///   (default is `None`).
+    ///
+    /// Returns
+    /// -------
+    /// CatBN
+    ///     A new fitted model over the learned structure.
+    ///
+    #[classmethod]
+    #[pyo3(signature = (dataset, scorer = PyScorer::BIC, **kwargs))]
+    pub fn fit_structure(
+        _cls: &Bound<'_, PyType>,
+        py: Python<'_>,
+        dataset: PyDataset,
+        scorer: PyScorer,
+        kwargs: Option<&Bound<'_, PyDict>>,
+    ) -> PyResult<Self> {
+        // Check the dataset type is categorical.
+        if !matches!(
+            dataset,
+            PyDataset::Categorical(_)
+                | PyDataset::CategoricalIncomplete(_)
+                | PyDataset::CategoricalWeighted(_)
+        ) {
+            return Err(PyErr::new::<PyValueError, _>(
+                "Expected a Categorical dataset for a Categorical Bayesian network.",
+            ));
+        }
+        // Learn the structure and fit the model using HC.
+        let model = hc(py, dataset, scorer, kwargs)?;
+        // Extract the fitted model.
+        model.extract::<Self>(py).map_err(PyErr::from)
     }
 
     /// Generate samples from the model.
@@ -408,8 +545,8 @@ impl PyCatBN {
     ///     A conditioning variable or an iterable of conditioning variables.
     /// w: CatEv | dict[str, str] | None
     ///     Optional evidence to condition on during inference.
-    /// estimator: EstimatorMethod | None
-    ///     The estimator to use for estimation (default is `EstimatorMethod.BE`).
+    /// estimator: ParametersEstimator | None
+    ///     The estimator to use for estimation (default is `ParametersEstimator.BE`).
     /// **kwargs: dict | None
     ///     Optional keyword arguments:
     ///
@@ -431,7 +568,7 @@ impl PyCatBN {
         x,
         z,
         w = None,
-        estimator_method = PyEstimatorMethod::BE,
+        parameters_estimator = PyParametersEstimator::BE,
         **kwargs
     ))]
     pub fn estimate(
@@ -440,7 +577,7 @@ impl PyCatBN {
         x: &Bound<'_, PyAny>,
         z: &Bound<'_, PyAny>,
         w: Option<&Bound<'_, PyAny>>,
-        estimator_method: PyEstimatorMethod,
+        parameters_estimator: PyParametersEstimator,
         kwargs: Option<&Bound<'_, PyDict>>,
     ) -> PyResult<PyCatCPD> {
         // Get a lock on the inner field.
@@ -479,9 +616,9 @@ impl PyCatBN {
         // Initialize the inference engine.
         let engine = ApproximateInference::new(&mut rng, &*lock);
         // Estimate from the model.
-        let estimate = match estimator_method {
+        let estimate = match parameters_estimator {
             // Initialize the maximum likelihood estimator.
-            PyEstimatorMethod::MLE => {
+            PyParametersEstimator::MLE => {
                 // Estimate from the model.
                 if parallel {
                     // Release the GIL to allow parallel execution.
@@ -512,7 +649,7 @@ impl PyCatBN {
                 }
             }
             // Initialize the Bayesian estimator.
-            PyEstimatorMethod::BE => {
+            PyParametersEstimator::BE => {
                 // Estimate from the model.
                 if parallel {
                     // Release the GIL to allow parallel execution.
@@ -559,8 +696,8 @@ impl PyCatBN {
     ///     A conditioning variable or an iterable of conditioning variables.
     /// w: CatEv | dict[str, str] | None
     ///     Optional evidence to condition on during inference.
-    /// estimator: EstimatorMethod | None
-    ///     The estimator to use for estimation (default is `EstimatorMethod.BE`).
+    /// estimator: ParametersEstimator | None
+    ///     The estimator to use for estimation (default is `ParametersEstimator.BE`).
     /// **kwargs: dict | None
     ///     Optional keyword arguments:
     ///
@@ -583,10 +720,10 @@ impl PyCatBN {
         y,
         z,
         w = None,
-        estimator_method = PyEstimatorMethod::BE,
+        parameters_estimator = PyParametersEstimator::BE,
         **kwargs
     ))]
-    // NOTE: `x`, `y`, `z`, `w` and `estimator_method` are part of the public API,
+    // NOTE: `x`, `y`, `z`, `w` and `parameters_estimator` are part of the public API,
     // hence `do_estimate` cannot fit within the argument limit.
     #[allow(clippy::too_many_arguments)]
     pub fn do_estimate(
@@ -596,7 +733,7 @@ impl PyCatBN {
         y: &Bound<'_, PyAny>,
         z: &Bound<'_, PyAny>,
         w: Option<&Bound<'_, PyAny>>,
-        estimator_method: PyEstimatorMethod,
+        parameters_estimator: PyParametersEstimator,
         kwargs: Option<&Bound<'_, PyDict>>,
     ) -> PyResult<Option<PyCatCPD>> {
         // Get a lock on the inner field.
@@ -636,9 +773,9 @@ impl PyCatBN {
         // Initialize the inference engine.
         let engine = ApproximateInference::new(&mut rng, &*lock);
         // Estimate from the model.
-        let estimate = match estimator_method {
+        let estimate = match parameters_estimator {
             // Initialize the maximum likelihood estimator.
-            PyEstimatorMethod::MLE => {
+            PyParametersEstimator::MLE => {
                 // Estimate from the model.
                 if parallel {
                     // Release the GIL to allow parallel execution.
@@ -667,7 +804,7 @@ impl PyCatBN {
                 }
             }
             // Initialize the Bayesian estimator.
-            PyEstimatorMethod::BE => {
+            PyParametersEstimator::BE => {
                 // Estimate from the model.
                 if parallel {
                     // Release the GIL to allow parallel execution.

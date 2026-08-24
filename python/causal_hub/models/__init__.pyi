@@ -148,12 +148,52 @@ class CatBN:
     def fit(
         cls,
         dataset: datasets.Dataset,
-        graph: DiGraph,
-        estimator_method: estimators.EstimatorMethod = estimators.EstimatorMethod.BE,
+        graph: typing.Optional[DiGraph] = None,
+        fit_method: estimators.FitMethod = estimators.FitMethod.Parameters,
         **kwargs: typing.Any,
     ) -> CatBN:
         r"""
-        Fit the model to a dataset and a given graph.
+        Fit the model to a dataset, either fitting the parameters given the
+        structure (`FitMethod.Parameters`) or learning the structure from data
+        and fitting the parameters over it (`FitMethod.Structure`).
+
+        Parameters
+        ----------
+        dataset: CatTable | CatIncTable | CatWtdTable
+            The dataset to fit the model to.
+        graph: DiGraph | None
+            The graph to fit the parameters to. It is required by
+            `FitMethod.Parameters`, and it is ignored by `FitMethod.Structure`.
+        fit_method: FitMethod | None
+            The fitting method to use, one of `FitMethod.{Parameters,
+            Structure}` (default is `FitMethod.Parameters`).
+        **kwargs: dict | None
+            Optional keyword arguments, forwarded to the underlying method:
+
+        - `parameters_estimator`: The parameter estimator used to fit the local
+          models, either `ParametersEstimator.MLE` or `ParametersEstimator.BE`
+          (default is `ParametersEstimator.BE`).
+        - `scorer`: The scoring criterion to maximize for structure
+          learning, one of `Scorer.{LL, AIC, AICC, BIC, BICC, HQC}`
+          (default is `Scorer.BIC`). Any other keyword argument of the
+          selected method is supported.
+
+        Returns
+        -------
+        CatBN
+            A new fitted model.
+        """
+
+    @classmethod
+    def fit_parameters(
+        cls,
+        dataset: datasets.Dataset,
+        graph: DiGraph,
+        parameters_estimator: estimators.ParametersEstimator = estimators.ParametersEstimator.BE,
+        **kwargs: typing.Any,
+    ) -> CatBN:
+        r"""
+        Fit the model parameters to a dataset and a given graph.
 
         Parameters
         ----------
@@ -161,8 +201,8 @@ class CatBN:
             The dataset to fit the model to.
         graph: DiGraph
             The graph to fit the model to.
-        estimator: EstimatorMethod | None
-            The estimator to use for fitting (default is `EstimatorMethod.BE`).
+        estimator: ParametersEstimator | None
+            The estimator to use for fitting (default is `ParametersEstimator.BE`).
         **kwargs: dict | None
             Optional keyword arguments:
 
@@ -179,6 +219,52 @@ class CatBN:
         -------
         CatBN
             A new fitted model.
+        """
+
+    @classmethod
+    def fit_structure(
+        cls,
+        dataset: datasets.Dataset,
+        scorer: estimators.Scorer = estimators.Scorer.BIC,
+        **kwargs: typing.Any,
+    ) -> CatBN:
+        r"""
+        Fit the model structure to a dataset using the Hill Climbing (HC) algorithm.
+
+        Parameters
+        ----------
+        dataset: CatTable | CatIncTable | CatWtdTable
+            The dataset to learn the structure from.
+        scorer: Scorer | None
+            The scoring criterion to maximize, one of `Scorer.{LL, AIC,
+            AICC, BIC, BICC, HQC}` (default is `Scorer.BIC`).
+        **kwargs: dict | None
+            Optional keyword arguments:
+
+        - `parameters_estimator`: The parameter estimator used to fit the local
+          models, either `ParametersEstimator.MLE` or `ParametersEstimator.BE`
+          (default is `ParametersEstimator.BE`).
+        - `initial_graph`: The initial graph (`DiGraph`) to start the search
+          from (default is an empty graph). Its labels must match the dataset.
+        - `max_parents`: The maximum number of parents for each vertex
+          (default is no limit).
+        - `max_iter`: The maximum number of iterations of the search
+          (default is unlimited).
+        - `missing_method`: The method (`MissingMethod`) used to handle missing
+          data, one of `MissingMethod.{LW, PW, IPW, AIPW}` (default is `None`).
+        - `missing_mechanism`: The missing data mechanism (`MissingMechanism`)
+          associated to the dataset (default is `None`). It is required by
+          `MissingMethod.IPW` and `MissingMethod.AIPW`, and it must be `None`
+          otherwise.
+        - `parallel`: Whether to run the algorithm in parallel (default is `True`).
+        - `prior_knowledge`: The prior knowledge (`PK`) constraining the search,
+          e.g., forbidden and required edges or temporal tiers
+          (default is `None`).
+
+        Returns
+        -------
+        CatBN
+            A new fitted model over the learned structure.
         """
 
     def sample(self, n: builtins.int, **kwargs: typing.Any) -> datasets.CatTable:
@@ -212,7 +298,7 @@ class CatBN:
         x: typing.Any,
         z: typing.Any,
         w: typing.Optional[typing.Any] = None,
-        estimator_method: estimators.EstimatorMethod = estimators.EstimatorMethod.BE,
+        parameters_estimator: estimators.ParametersEstimator = estimators.ParametersEstimator.BE,
         **kwargs: typing.Any,
     ) -> CatCPD:
         r"""
@@ -226,8 +312,8 @@ class CatBN:
             A conditioning variable or an iterable of conditioning variables.
         w: CatEv | dict[str, str] | None
             Optional evidence to condition on during inference.
-        estimator: EstimatorMethod | None
-            The estimator to use for estimation (default is `EstimatorMethod.BE`).
+        estimator: ParametersEstimator | None
+            The estimator to use for estimation (default is `ParametersEstimator.BE`).
         **kwargs: dict | None
             Optional keyword arguments:
 
@@ -252,7 +338,7 @@ class CatBN:
         y: typing.Any,
         z: typing.Any,
         w: typing.Optional[typing.Any] = None,
-        estimator_method: estimators.EstimatorMethod = estimators.EstimatorMethod.BE,
+        parameters_estimator: estimators.ParametersEstimator = estimators.ParametersEstimator.BE,
         **kwargs: typing.Any,
     ) -> typing.Optional[CatCPD]:
         r"""
@@ -268,8 +354,8 @@ class CatBN:
             A conditioning variable or an iterable of conditioning variables.
         w: CatEv | dict[str, str] | None
             Optional evidence to condition on during inference.
-        estimator: EstimatorMethod | None
-            The estimator to use for estimation (default is `EstimatorMethod.BE`).
+        estimator: ParametersEstimator | None
+            The estimator to use for estimation (default is `ParametersEstimator.BE`).
         **kwargs: dict | None
             Optional keyword arguments:
 
@@ -868,13 +954,53 @@ class CatCTBN:
     @classmethod
     def fit(
         cls,
-        dataset: datasets.CatTrjs,
-        graph: DiGraph,
-        estimator_method: estimators.EstimatorMethod = estimators.EstimatorMethod.MLE,
+        trajectories: datasets.CatTrjs,
+        graph: typing.Optional[DiGraph] = None,
+        fit_method: estimators.FitMethod = estimators.FitMethod.Parameters,
         **kwargs: typing.Any,
     ) -> CatCTBN:
         r"""
-        Fit the model to a dataset and a given graph.
+        Fit the model to trajectories, either fitting the parameters given the
+        structure (`FitMethod.Parameters`) or learning the structure from data
+        and fitting the parameters over it (`FitMethod.Structure`).
+
+        Parameters
+        ----------
+        trajectories: CatTrjs
+            The trajectories to fit the model to.
+        graph: DiGraph | None
+            The graph to fit the parameters to. It is required by
+            `FitMethod.Parameters`, and it is ignored by `FitMethod.Structure`.
+        fit_method: FitMethod | None
+            The fitting method to use, one of `FitMethod.{Parameters,
+            Structure}` (default is `FitMethod.Parameters`).
+        **kwargs: dict | None
+            Optional keyword arguments, forwarded to the underlying method:
+
+        - `structure_estimator`: The structure learning algorithm used by
+          `FitMethod.Structure`, one of `StructureEstimator.{CTHC, CTPC}`
+          (default is `StructureEstimator.CTHC`).
+        - `parameters_estimator`: The parameter estimator used to fit the local
+          models, either `ParametersEstimator.MLE` or `ParametersEstimator.BE`
+          (default is `ParametersEstimator.MLE`). Any further keyword
+          argument supported by the selected method is forwarded.
+
+        Returns
+        -------
+        CatCTBN
+            A new fitted model.
+        """
+
+    @classmethod
+    def fit_parameters(
+        cls,
+        dataset: datasets.CatTrjs,
+        graph: DiGraph,
+        parameters_estimator: estimators.ParametersEstimator = estimators.ParametersEstimator.BE,
+        **kwargs: typing.Any,
+    ) -> CatCTBN:
+        r"""
+        Fit the model parameters to a dataset and a given graph.
 
         Parameters
         ----------
@@ -882,8 +1008,8 @@ class CatCTBN:
             The dataset to fit the model to.
         graph: DiGraph
             The graph to fit the model to.
-        estimator: EstimatorMethod | None
-            The estimator to use for fitting (default is `EstimatorMethod.MLE`).
+        estimator: ParametersEstimator | None
+            The estimator to use for fitting (default is `ParametersEstimator.BE`).
         **kwargs: dict | None
             Optional keyword arguments:
 
@@ -900,6 +1026,62 @@ class CatCTBN:
         -------
         CatCTBN
             A new fitted model.
+        """
+
+    @classmethod
+    def fit_structure(
+        cls,
+        trajectories: datasets.CatTrjs,
+        structure_estimator: estimators.StructureEstimator = estimators.StructureEstimator.CTHC,
+        **kwargs: typing.Any,
+    ) -> CatCTBN:
+        r"""
+        Fit the model structure to trajectories using a structure learning
+        algorithm, either Continuous Time Hill Climbing (`CTHC`) or Continuous
+        Time Peter-Clark (`CTPC`).
+
+        Parameters
+        ----------
+        trajectories: CatTrjs
+            The trajectories to learn the structure from.
+        structure_estimator: StructureEstimator | None
+            The structure learning algorithm to use, one of
+            `StructureEstimator.{CTHC, CTPC}` (default is
+            `StructureEstimator.CTHC`).
+        **kwargs: dict | None
+            Optional keyword arguments, forwarded to the selected algorithm:
+
+        - `c_test`: The significance level of the chi-squared test for the
+          initial distributions, used by `CTPC` (default is `0.01`). It must be
+          in `[0, 1]`.
+        - `parameters_estimator`: The parameter estimator used to fit the local
+          models, either `ParametersEstimator.MLE` or `ParametersEstimator.BE`
+          (default is `ParametersEstimator.BE`).
+        - `f_test`: The significance level of the F-test for the transition
+          rates, used by `CTPC` (default is `0.01`). It must be in `[0, 1]`.
+        - `initial_graph`: The initial graph (`DiGraph`) to start the search
+          from (default is an empty graph for `CTHC`, a complete graph for
+          `CTPC`). Its labels must match the trajectories.
+        - `max_parents`: The maximum number of parents for each vertex, used
+          by `CTHC` (default is no limit).
+        - `missing_method`: The method (`MissingMethod`) used to handle missing
+          data, one of `MissingMethod.{LW, PW, IPW, AIPW}` (default is `None`).
+        - `missing_mechanism`: The missing data mechanism (`MissingMechanism`)
+          associated to the trajectories (default is `None`). It is required by
+          `MissingMethod.IPW` and `MissingMethod.AIPW`, and it must be `None`
+          otherwise.
+        - `parallel`: Whether to run the algorithm in parallel (default is `True`).
+        - `prior_knowledge`: The prior knowledge (`PK`) constraining the search,
+          e.g., forbidden and required edges or temporal tiers
+          (default is `None`).
+        - `scorer`: The scoring criterion to maximize, used by `CTHC`,
+          one of `Scorer.{LL, AIC, AICC, BIC, BICC, HQC}` (default is
+          `Scorer.BIC`).
+
+        Returns
+        -------
+        CatCTBN
+            A new fitted model over the learned structure.
         """
 
     def sample(
@@ -1934,12 +2116,52 @@ class GaussBN:
     def fit(
         cls,
         dataset: datasets.Dataset,
-        graph: DiGraph,
-        estimator_method: estimators.EstimatorMethod = estimators.EstimatorMethod.BE,
+        graph: typing.Optional[DiGraph] = None,
+        fit_method: estimators.FitMethod = estimators.FitMethod.Parameters,
         **kwargs: typing.Any,
     ) -> GaussBN:
         r"""
-        Fit the model to a dataset and a given graph.
+        Fit the model to a dataset, either fitting the parameters given the
+        structure (`FitMethod.Parameters`) or learning the structure from data
+        and fitting the parameters over it (`FitMethod.Structure`).
+
+        Parameters
+        ----------
+        dataset: GaussTable | GaussIncTable | GaussWtdTable
+            The dataset to fit the model to.
+        graph: DiGraph | None
+            The graph to fit the parameters to. It is required by
+            `FitMethod.Parameters`, and it is ignored by `FitMethod.Structure`.
+        fit_method: FitMethod | None
+            The fitting method to use, one of `FitMethod.{Parameters,
+            Structure}` (default is `FitMethod.Parameters`).
+        **kwargs: dict | None
+            Optional keyword arguments, forwarded to the underlying method:
+
+        - `parameters_estimator`: The parameter estimator used to fit the local
+          models, either `ParametersEstimator.MLE` or `ParametersEstimator.BE`
+          (default is `ParametersEstimator.BE`).
+        - `scorer`: The scoring criterion to maximize for structure
+          learning, one of `Scorer.{LL, AIC, AICC, BIC, BICC, HQC}`
+          (default is `Scorer.BIC`). Any other keyword argument of the
+          selected method is supported.
+
+        Returns
+        -------
+        GaussBN
+            A new fitted model.
+        """
+
+    @classmethod
+    def fit_parameters(
+        cls,
+        dataset: datasets.Dataset,
+        graph: DiGraph,
+        parameters_estimator: estimators.ParametersEstimator = estimators.ParametersEstimator.BE,
+        **kwargs: typing.Any,
+    ) -> GaussBN:
+        r"""
+        Fit the model parameters to a dataset and a given graph.
 
         Parameters
         ----------
@@ -1947,8 +2169,8 @@ class GaussBN:
             The dataset to fit the model to.
         graph: DiGraph
             The graph to fit the model to.
-        estimator: EstimatorMethod | None
-            The estimator to use for fitting (default is `EstimatorMethod.BE`).
+        estimator: ParametersEstimator | None
+            The estimator to use for fitting (default is `ParametersEstimator.BE`).
         **kwargs: dict | None
             Optional keyword arguments:
 
@@ -1965,6 +2187,52 @@ class GaussBN:
         -------
         GaussBN
             A new fitted model.
+        """
+
+    @classmethod
+    def fit_structure(
+        cls,
+        dataset: datasets.Dataset,
+        scorer: estimators.Scorer = estimators.Scorer.BIC,
+        **kwargs: typing.Any,
+    ) -> GaussBN:
+        r"""
+        Fit the model structure to a dataset using the Hill Climbing (HC) algorithm.
+
+        Parameters
+        ----------
+        dataset: GaussTable | GaussIncTable | GaussWtdTable
+            The dataset to learn the structure from.
+        scorer: Scorer | None
+            The scoring criterion to maximize, one of `Scorer.{LL, AIC,
+            AICC, BIC, BICC, HQC}` (default is `Scorer.BIC`).
+        **kwargs: dict | None
+            Optional keyword arguments:
+
+        - `parameters_estimator`: The parameter estimator used to fit the local
+          models, either `ParametersEstimator.MLE` or `ParametersEstimator.BE`
+          (default is `ParametersEstimator.BE`).
+        - `initial_graph`: The initial graph (`DiGraph`) to start the search
+          from (default is an empty graph). Its labels must match the dataset.
+        - `max_parents`: The maximum number of parents for each vertex
+          (default is no limit).
+        - `max_iter`: The maximum number of iterations of the search
+          (default is unlimited).
+        - `missing_method`: The method (`MissingMethod`) used to handle missing
+          data, one of `MissingMethod.{LW, PW, IPW, AIPW}` (default is `None`).
+        - `missing_mechanism`: The missing data mechanism (`MissingMechanism`)
+          associated to the dataset (default is `None`). It is required by
+          `MissingMethod.IPW` and `MissingMethod.AIPW`, and it must be `None`
+          otherwise.
+        - `parallel`: Whether to run the algorithm in parallel (default is `True`).
+        - `prior_knowledge`: The prior knowledge (`PK`) constraining the search,
+          e.g., forbidden and required edges or temporal tiers
+          (default is `None`).
+
+        Returns
+        -------
+        GaussBN
+            A new fitted model over the learned structure.
         """
 
     def sample(self, n: builtins.int, **kwargs: typing.Any) -> datasets.GaussTable:
@@ -1992,7 +2260,7 @@ class GaussBN:
         x: typing.Any,
         z: typing.Any,
         w: typing.Optional[typing.Any] = None,
-        estimator_method: estimators.EstimatorMethod = estimators.EstimatorMethod.BE,
+        parameters_estimator: estimators.ParametersEstimator = estimators.ParametersEstimator.BE,
         **kwargs: typing.Any,
     ) -> GaussCPD:
         r"""
@@ -2006,8 +2274,8 @@ class GaussBN:
             A conditioning variable or an iterable of conditioning variables.
         w: GaussEv | dict[str, float] | None
             Optional evidence to condition on during inference.
-        estimator: EstimatorMethod | None
-            The estimator to use for estimation (default is `EstimatorMethod.BE`).
+        estimator: ParametersEstimator | None
+            The estimator to use for estimation (default is `ParametersEstimator.BE`).
         **kwargs: dict | None
             Optional keyword arguments:
 
@@ -2032,7 +2300,7 @@ class GaussBN:
         y: typing.Any,
         z: typing.Any,
         w: typing.Optional[typing.Any] = None,
-        estimator_method: estimators.EstimatorMethod = estimators.EstimatorMethod.BE,
+        parameters_estimator: estimators.ParametersEstimator = estimators.ParametersEstimator.BE,
         **kwargs: typing.Any,
     ) -> typing.Optional[GaussCPD]:
         r"""
@@ -2048,8 +2316,8 @@ class GaussBN:
             A conditioning variable or an iterable of conditioning variables.
         w: GaussEv | dict[str, float] | None
             Optional evidence to condition on during inference.
-        estimator: EstimatorMethod | None
-            The estimator to use for estimation (default is `EstimatorMethod.BE`).
+        estimator: ParametersEstimator | None
+            The estimator to use for estimation (default is `ParametersEstimator.BE`).
         **kwargs: dict | None
             Optional keyword arguments:
 

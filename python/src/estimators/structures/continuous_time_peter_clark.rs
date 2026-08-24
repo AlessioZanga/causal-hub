@@ -9,9 +9,9 @@ use pyo3_stub_gen::derive::*;
 
 use crate::{
     datasets::{PyCatTrjs, PyMissingMechanism, PyMissingMethod},
-    dispatch_estimator_method,
+    dispatch_parameters_estimator,
     error::to_pyerr,
-    estimators::{PyEstimatorMethod, PyPK},
+    estimators::{PyPK, PyParametersEstimator},
     kwarg,
     models::{PyCatCTBN, PyDiGraph},
 };
@@ -37,9 +37,9 @@ use crate::{
 /// **kwargs: dict | None
 ///     Optional keyword arguments:
 ///
-/// - `estimator_method`: The parameter estimator used to fit the local
-///   models, either `EstimatorMethod.MLE` or `EstimatorMethod.BE`
-///   (default is `EstimatorMethod.BE`).
+/// - `parameters_estimator`: The parameter estimator used to fit the local
+///   models, either `ParametersEstimator.MLE` or `ParametersEstimator.BE`
+///   (default is `ParametersEstimator.BE`).
 /// - `initial_graph`: The initial graph (`DiGraph`) to start the search
 ///   from (default is a complete graph). Its labels must match the
 ///   trajectories.
@@ -75,11 +75,11 @@ pub fn ctpc(
     let trajectories: &CatTrjs = &trajectories.lock();
 
     // Get the estimator method from the keyword arguments, or default to the BE estimator.
-    let estimator_method = kwarg!(
+    let parameters_estimator = kwarg!(
         kwargs,
-        "estimator_method",
-        PyEstimatorMethod,
-        PyEstimatorMethod::BE
+        "parameters_estimator",
+        PyParametersEstimator,
+        PyParametersEstimator::BE
     )?;
 
     // Get the initial graph from the keyword arguments, if any.
@@ -110,9 +110,9 @@ pub fn ctpc(
     crate::utils::ensure_kwargs_consumed(kwargs)?;
 
     // Dispatch over the estimator method and run the CTPC algorithm.
-    dispatch_estimator_method!(
+    dispatch_parameters_estimator!(
         trajectories,
-        estimator_method,
+        parameters_estimator,
         missing_method,
         missing_mechanism,
         |estimator| {

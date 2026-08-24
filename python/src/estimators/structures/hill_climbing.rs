@@ -8,9 +8,9 @@ use pyo3_stub_gen::derive::*;
 
 use crate::{
     datasets::{PyDataset, PyMissingMechanism, PyMissingMethod},
-    dispatch_estimator_method, dispatch_scorer_method,
+    dispatch_parameters_estimator, dispatch_scorer,
     error::to_pyerr,
-    estimators::{PyEstimatorMethod, PyPK, PyScorerMethod},
+    estimators::{PyPK, PyParametersEstimator, PyScorer},
     kwarg,
     models::{PyCatBN, PyDiGraph, PyGaussBN},
 };
@@ -26,15 +26,15 @@ use crate::{
 /// ----------
 /// dataset: CatTable | CatIncTable | CatWtdTable | GaussTable | GaussIncTable | GaussWtdTable
 ///     The dataset to learn the structure from.
-/// scorer_method: ScorerMethod | None
-///     The scoring criterion to maximize, one of `ScorerMethod.{LL, AIC,
-///     AICC, BIC, BICC, HQC}` (default is `ScorerMethod.BIC`).
+/// scorer: Scorer | None
+///     The scoring criterion to maximize, one of `Scorer.{LL, AIC,
+///     AICC, BIC, BICC, HQC}` (default is `Scorer.BIC`).
 /// **kwargs: dict | None
 ///     Optional keyword arguments:
 ///
-/// - `estimator_method`: The parameter estimator used to fit the local
-///   models, either `EstimatorMethod.MLE` or `EstimatorMethod.BE`
-///   (default is `EstimatorMethod.BE`).
+/// - `parameters_estimator`: The parameter estimator used to fit the local
+///   models, either `ParametersEstimator.MLE` or `ParametersEstimator.BE`
+///   (default is `ParametersEstimator.BE`).
 /// - `initial_graph`: The initial graph (`DiGraph`) to start the search
 ///   from (default is an empty graph). Its labels must match the dataset.
 /// - `max_parents`: The maximum number of parents for each vertex
@@ -64,19 +64,19 @@ use crate::{
     imports = ("typing")
 ))]
 #[pyfunction]
-#[pyo3(signature = (dataset, scorer_method = PyScorerMethod::BIC, **kwargs))]
+#[pyo3(signature = (dataset, scorer = PyScorer::BIC, **kwargs))]
 pub fn hc(
     py: Python<'_>,
     dataset: PyDataset,
-    scorer_method: PyScorerMethod,
+    scorer: PyScorer,
     kwargs: Option<&Bound<'_, PyDict>>,
 ) -> PyResult<Py<PyAny>> {
     // Get the estimator method from the keyword arguments, or default to the BE estimator.
-    let estimator_method = kwarg!(
+    let parameters_estimator = kwarg!(
         kwargs,
-        "estimator_method",
-        PyEstimatorMethod,
-        PyEstimatorMethod::BE
+        "parameters_estimator",
+        PyParametersEstimator,
+        PyParametersEstimator::BE
     )?;
 
     // Get the initial graph from the keyword arguments, if any.
@@ -118,18 +118,18 @@ pub fn hc(
             // Get a read lock on the table.
             let dataset = $dataset.lock();
             // Dispatch over the estimator method and scoring criterion, and run HC.
-            dispatch_estimator_method!(
+            dispatch_parameters_estimator!(
                 &*dataset,
-                estimator_method,
+                parameters_estimator,
                 missing_method,
                 missing_mechanism,
                 |estimator| {
                     // Cache the parameter estimator.
                     let cache = Cache::new(estimator);
                     // Dispatch over the scorer method and run HC.
-                    dispatch_scorer_method!(&cache, scorer_method, |scorer_method| {
+                    dispatch_scorer!(&cache, scorer, |scorer| {
                         // Initialize the HC algorithm.
-                        let mut hc = HC::new(scorer_method);
+                        let mut hc = HC::new(scorer);
                         // Set the initial graph, if any.
                         if let Some(initial_graph) = initial_graph.as_ref() {
                             hc = hc.with_initial_graph(initial_graph).map_err(to_pyerr)?;

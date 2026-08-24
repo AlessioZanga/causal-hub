@@ -13,7 +13,6 @@ use backend::{
 };
 use log::debug;
 use pyo3::{
-    exceptions::PyValueError,
     prelude::*,
     types::{PyDict, PyList},
 };
@@ -25,12 +24,21 @@ use rayon::prelude::*;
 use crate::{
     datasets::{PyCatTrjsEv, PyCatWtdTrjs},
     error::to_pyerr,
-    estimators::PyPK,
+    estimators::{PyPK, PyStructureEstimator},
     kwarg,
     models::{PyCatCTBN, PyDiGraph},
 };
 
 /// A function to perform structure learning using the Structural Expectation Maximization (SEM) algorithm.
+///
+/// Parameters
+/// ----------
+/// evidence: CatTrjsEv
+///     The evidence to learn the structure from.
+/// structure_estimator: StructureEstimator | None
+///     The structure learning algorithm to use, one of
+///     `StructureEstimator.{CTHC, CTPC}` (default is
+///     `StructureEstimator.CTHC`).
 ///
 /// **kwargs: dict | None
 ///     Optional keyword arguments:
@@ -41,7 +49,7 @@ use crate::{
 #[pyfunction]
 #[pyo3(signature = (
     evidence,
-    algorithm,
+    structure_estimator = PyStructureEstimator::CTHC,
     max_iter = 10,
     f_test = 0.01,
     c_test = 0.01,
@@ -50,7 +58,7 @@ use crate::{
 pub fn sem<'a>(
     py: Python<'a>,
     evidence: &Bound<'_, PyCatTrjsEv>,
-    algorithm: &str,
+    structure_estimator: PyStructureEstimator,
     max_iter: usize,
     f_test: f64,
     c_test: f64,
@@ -86,14 +94,6 @@ pub fn sem<'a>(
 
     // Reject any unknown keyword arguments.
     crate::utils::ensure_kwargs_consumed(kwargs)?;
-
-    // Check the structure learning algorithm is supported.
-    if !matches!(algorithm, "ctpc" | "cthc") {
-        return Err(PyValueError::new_err(format!(
-            "Failed to get the structure learning algorithm: expected 'ctpc' or 'cthc', found '{}'",
-            algorithm
-        )));
-    }
 
     // Initialize the random number generator.
     let rng = Xoshiro256PlusPlus::seed_from_u64(seed);
@@ -217,8 +217,8 @@ pub fn sem<'a>(
         // Cache the parameter estimator.
         let cache = Cache::new(&estimator);
         // Learn the structure and fit the new model using the expectation.
-        match algorithm {
-            "ctpc" => {
+        match structure_estimator {
+            PyStructureEstimator::CTPC => {
                 // Initialize the F test, shadowing the alpha value.
                 let f_test = FTest::new(&cache, f_test)?;
                 // Initialize the chi-squared test, shadowing the alpha value.
@@ -236,7 +236,7 @@ pub fn sem<'a>(
                 // Fit the new structure using CTPC.
                 if parallel { ctpc.par_fit() } else { ctpc.fit() }
             }
-            "cthc" => {
+            PyStructureEstimator::CTHC => {
                 // Initialize the scoring criterion.
                 let bic = BIC::new(&cache);
                 // Initialize the CTHC algorithm.
@@ -256,9 +256,6 @@ pub fn sem<'a>(
                 // Fit the new structure using CTHC.
                 if parallel { cthc.par_fit() } else { cthc.fit() }
             }
-            _ => Err(BackendError::Unreachable(
-                "Unsupported structure learning algorithm.",
-            )),
         }
     };
 

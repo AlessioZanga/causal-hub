@@ -9,9 +9,11 @@ import causal_hub.datasets
 import causal_hub.models
 
 __all__ = [
-    "EstimatorMethod",
+    "FitMethod",
     "PK",
-    "ScorerMethod",
+    "ParametersEstimator",
+    "Scorer",
+    "StructureEstimator",
     "cthc",
     "ctpc",
     "em",
@@ -35,7 +37,22 @@ class PK:
     ) -> PK: ...
 
 @typing.final
-class EstimatorMethod(enum.Enum):
+class FitMethod(enum.Enum):
+    r"""
+    Fitting methods for models: parameter fitting or structure learning.
+    """
+
+    Parameters = ...
+    r"""
+    Fit the model parameters given the structure.
+    """
+    Structure = ...
+    r"""
+    Learn the model structure from data, then fit the parameters.
+    """
+
+@typing.final
+class ParametersEstimator(enum.Enum):
     r"""
     estimator methods.
     """
@@ -50,7 +67,7 @@ class EstimatorMethod(enum.Enum):
     """
 
 @typing.final
-class ScorerMethod(enum.Enum):
+class Scorer(enum.Enum):
     r"""
     Scoring criteria for score-based structure learning algorithms.
     """
@@ -80,10 +97,24 @@ class ScorerMethod(enum.Enum):
     Hannan-Quinn Criterion (`HQC`).
     """
 
+@typing.final
+class StructureEstimator(enum.Enum):
+    r"""
+    Structure estimator methods for score- and constraint-based structure
+    learning algorithms.
+    """
+
+    CTHC = ...
+    r"""
+    Continuous Time Hill Climbing (`CTHC`).
+    """
+    CTPC = ...
+    r"""
+    Continuous Time Peter-Clark (`CTPC`).
+    """
+
 def cthc(
-    trajectories: datasets.CatTrjs,
-    scorer_method: ScorerMethod = ScorerMethod.BIC,
-    **kwargs: typing.Any,
+    trajectories: datasets.CatTrjs, scorer: Scorer = Scorer.BIC, **kwargs: typing.Any
 ) -> models.CatCTBN:
     r"""
     Perform structure learning using the Continuous Time Hill Climbing (CTHC) algorithm.
@@ -98,15 +129,15 @@ def cthc(
     ----------
     trajectories: CatTrjs
         The trajectories to learn the structure from.
-    scorer_method: ScorerMethod | None
-        The scoring criterion to maximize, one of `ScorerMethod.{LL, AIC,
-        AICC, BIC, BICC, HQC}` (default is `ScorerMethod.BIC`).
+    scorer: Scorer | None
+        The scoring criterion to maximize, one of `Scorer.{LL, AIC,
+        AICC, BIC, BICC, HQC}` (default is `Scorer.BIC`).
     **kwargs: dict | None
         Optional keyword arguments:
 
-    - `estimator_method`: The parameter estimator used to fit the local
-      models, either `EstimatorMethod.MLE` or `EstimatorMethod.BE`
-      (default is `EstimatorMethod.BE`).
+    - `parameters_estimator`: The parameter estimator used to fit the local
+      models, either `ParametersEstimator.MLE` or `ParametersEstimator.BE`
+      (default is `ParametersEstimator.BE`).
     - `initial_graph`: The initial graph (`DiGraph`) to start the search
       from (default is an empty graph). Its labels must match the
       trajectories.
@@ -157,9 +188,9 @@ def ctpc(
     **kwargs: dict | None
         Optional keyword arguments:
 
-    - `estimator_method`: The parameter estimator used to fit the local
-      models, either `EstimatorMethod.MLE` or `EstimatorMethod.BE`
-      (default is `EstimatorMethod.BE`).
+    - `parameters_estimator`: The parameter estimator used to fit the local
+      models, either `ParametersEstimator.MLE` or `ParametersEstimator.BE`
+      (default is `ParametersEstimator.BE`).
     - `initial_graph`: The initial graph (`DiGraph`) to start the search
       from (default is a complete graph). Its labels must match the
       trajectories.
@@ -196,9 +227,7 @@ def em(
     """
 
 def hc(
-    dataset: datasets.Dataset,
-    scorer_method: ScorerMethod = ScorerMethod.BIC,
-    **kwargs: typing.Any,
+    dataset: datasets.Dataset, scorer: Scorer = Scorer.BIC, **kwargs: typing.Any
 ) -> typing.Union[models.CatBN, models.GaussBN]:
     r"""
     Perform structure learning using the Hill Climbing (HC) algorithm.
@@ -212,15 +241,15 @@ def hc(
     ----------
     dataset: CatTable | CatIncTable | CatWtdTable | GaussTable | GaussIncTable | GaussWtdTable
         The dataset to learn the structure from.
-    scorer_method: ScorerMethod | None
-        The scoring criterion to maximize, one of `ScorerMethod.{LL, AIC,
-        AICC, BIC, BICC, HQC}` (default is `ScorerMethod.BIC`).
+    scorer: Scorer | None
+        The scoring criterion to maximize, one of `Scorer.{LL, AIC,
+        AICC, BIC, BICC, HQC}` (default is `Scorer.BIC`).
     **kwargs: dict | None
         Optional keyword arguments:
 
-    - `estimator_method`: The parameter estimator used to fit the local
-      models, either `EstimatorMethod.MLE` or `EstimatorMethod.BE`
-      (default is `EstimatorMethod.BE`).
+    - `parameters_estimator`: The parameter estimator used to fit the local
+      models, either `ParametersEstimator.MLE` or `ParametersEstimator.BE`
+      (default is `ParametersEstimator.BE`).
     - `initial_graph`: The initial graph (`DiGraph`) to start the search
       from (default is an empty graph). Its labels must match the dataset.
     - `max_parents`: The maximum number of parents for each vertex
@@ -247,7 +276,7 @@ def hc(
 
 def sem(
     evidence: datasets.CatTrjsEv,
-    algorithm: builtins.str,
+    structure_estimator: StructureEstimator = StructureEstimator.CTHC,
     max_iter: builtins.int = 10,
     f_test: builtins.float = 0.01,
     c_test: builtins.float = 0.01,
@@ -255,6 +284,15 @@ def sem(
 ) -> dict:
     r"""
     A function to perform structure learning using the Structural Expectation Maximization (SEM) algorithm.
+
+    Parameters
+    ----------
+    evidence: CatTrjsEv
+        The evidence to learn the structure from.
+    structure_estimator: StructureEstimator | None
+        The structure learning algorithm to use, one of
+        `StructureEstimator.{CTHC, CTPC}` (default is
+        `StructureEstimator.CTHC`).
 
     **kwargs: dict | None
         Optional keyword arguments:

@@ -10,13 +10,13 @@ pub use structures::*;
 ///
 #[gen_stub_pyclass_enum]
 #[pyclass(
-    name = "EstimatorMethod",
+    name = "ParametersEstimator",
     module = "causal_hub.estimators",
     from_py_object
 )]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[non_exhaustive]
-pub enum PyEstimatorMethod {
+pub enum PyParametersEstimator {
     /// Maximum Likelihood Estimator.
     MLE,
     /// Bayesian Estimator.
@@ -26,14 +26,10 @@ pub enum PyEstimatorMethod {
 /// Scoring criteria for score-based structure learning algorithms.
 ///
 #[gen_stub_pyclass_enum]
-#[pyclass(
-    name = "ScorerMethod",
-    module = "causal_hub.estimators",
-    from_py_object
-)]
+#[pyclass(name = "Scorer", module = "causal_hub.estimators", from_py_object)]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[non_exhaustive]
-pub enum PyScorerMethod {
+pub enum PyScorer {
     /// Log Likelihood (`LL`).
     LL,
     /// Akaike Information Criterion (`AIC`).
@@ -46,4 +42,35 @@ pub enum PyScorerMethod {
     BICC,
     /// Hannan-Quinn Criterion (`HQC`).
     HQC,
+}
+
+/// Fitting methods for models: parameter fitting or structure learning.
+///
+#[gen_stub_pyclass_enum]
+#[pyclass(name = "FitMethod", module = "causal_hub.estimators", from_py_object)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[non_exhaustive]
+pub enum PyFitMethod {
+    /// Fit the model parameters given the structure.
+    Parameters,
+    /// Learn the model structure from data, then fit the parameters.
+    Structure,
+}
+
+/// Structure estimator methods for score- and constraint-based structure
+/// learning algorithms.
+///
+#[gen_stub_pyclass_enum]
+#[pyclass(
+    name = "StructureEstimator",
+    module = "causal_hub.estimators",
+    from_py_object
+)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[non_exhaustive]
+pub enum PyStructureEstimator {
+    /// Continuous Time Hill Climbing (`CTHC`).
+    CTHC,
+    /// Continuous Time Peter-Clark (`CTPC`).
+    CTPC,
 }

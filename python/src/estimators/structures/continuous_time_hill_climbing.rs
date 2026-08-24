@@ -9,9 +9,9 @@ use pyo3_stub_gen::derive::*;
 
 use crate::{
     datasets::{PyCatTrjs, PyMissingMechanism, PyMissingMethod},
-    dispatch_estimator_method, dispatch_scorer_method,
+    dispatch_parameters_estimator, dispatch_scorer,
     error::to_pyerr,
-    estimators::{PyEstimatorMethod, PyPK, PyScorerMethod},
+    estimators::{PyPK, PyParametersEstimator, PyScorer},
     kwarg,
     models::{PyCatCTBN, PyDiGraph},
 };
@@ -28,15 +28,15 @@ use crate::{
 /// ----------
 /// trajectories: CatTrjs
 ///     The trajectories to learn the structure from.
-/// scorer_method: ScorerMethod | None
-///     The scoring criterion to maximize, one of `ScorerMethod.{LL, AIC,
-///     AICC, BIC, BICC, HQC}` (default is `ScorerMethod.BIC`).
+/// scorer: Scorer | None
+///     The scoring criterion to maximize, one of `Scorer.{LL, AIC,
+///     AICC, BIC, BICC, HQC}` (default is `Scorer.BIC`).
 /// **kwargs: dict | None
 ///     Optional keyword arguments:
 ///
-/// - `estimator_method`: The parameter estimator used to fit the local
-///   models, either `EstimatorMethod.MLE` or `EstimatorMethod.BE`
-///   (default is `EstimatorMethod.BE`).
+/// - `parameters_estimator`: The parameter estimator used to fit the local
+///   models, either `ParametersEstimator.MLE` or `ParametersEstimator.BE`
+///   (default is `ParametersEstimator.BE`).
 /// - `initial_graph`: The initial graph (`DiGraph`) to start the search
 ///   from (default is an empty graph). Its labels must match the
 ///   trajectories.
@@ -60,11 +60,11 @@ use crate::{
 ///
 #[gen_stub_pyfunction(module = "causal_hub.estimators")]
 #[pyfunction]
-#[pyo3(signature = (trajectories, scorer_method = PyScorerMethod::BIC, **kwargs))]
+#[pyo3(signature = (trajectories, scorer = PyScorer::BIC, **kwargs))]
 pub fn cthc(
     py: Python<'_>,
     trajectories: &Bound<'_, PyCatTrjs>,
-    scorer_method: PyScorerMethod,
+    scorer: PyScorer,
     kwargs: Option<&Bound<'_, PyDict>>,
 ) -> PyResult<PyCatCTBN> {
     // Get the trajectories.
@@ -74,11 +74,11 @@ pub fn cthc(
 
     // Get the estimator method from the keyword arguments, if any.
     // Get the estimator method from the keyword arguments, or default to the BE estimator.
-    let estimator_method = kwarg!(
+    let parameters_estimator = kwarg!(
         kwargs,
-        "estimator_method",
-        PyEstimatorMethod,
-        PyEstimatorMethod::BE
+        "parameters_estimator",
+        PyParametersEstimator,
+        PyParametersEstimator::BE
     )?;
 
     // Get the initial graph from the keyword arguments, if any.
@@ -112,18 +112,18 @@ pub fn cthc(
     crate::utils::ensure_kwargs_consumed(kwargs)?;
 
     // Dispatch over the estimator method and scoring criterion, and run the CTHC algorithm.
-    dispatch_estimator_method!(
+    dispatch_parameters_estimator!(
         trajectories,
-        estimator_method,
+        parameters_estimator,
         missing_method,
         missing_mechanism,
         |estimator| {
             // Cache the parameter estimator.
             let cache = Cache::new(estimator);
             // Dispatch over the scoring criterion and run the CTHC algorithm.
-            dispatch_scorer_method!(&cache, scorer_method, |scorer_method| {
+            dispatch_scorer!(&cache, scorer, |scorer| {
                 // Initialize the CTHC algorithm.
-                let mut cthc = CTHC::new(scorer_method);
+                let mut cthc = CTHC::new(scorer);
                 // Set the initial graph, if any.
                 if let Some(initial_graph) = initial_graph.as_ref() {
                     cthc = cthc.with_initial_graph(initial_graph).map_err(to_pyerr)?;
