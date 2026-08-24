@@ -3,15 +3,15 @@ mod tests {
     use causal_hub::{
         datasets::{CatTable, Dataset},
         labels,
-        models::Labelled,
-        states,
+        models::HasLabels,
+        support,
         types::{Result, Set},
     };
     use ndarray::prelude::*;
 
     #[test]
     fn new() -> Result<()> {
-        let states = states![
+        let support = support![
             ("B", ["no", "yes"]),
             ("C", ["yes", "no"]),
             ("A", ["no", "yes"]),
@@ -22,12 +22,12 @@ mod tests {
             [1, 0, 0], //
             [1, 0, 1]
         ];
-        let dataset = CatTable::new(states, values.clone())?;
+        let dataset = CatTable::new(support, values.clone())?;
 
         assert_eq!(dataset.labels(), &labels!["A", "B", "C"]);
         assert!(
             dataset
-                .states()
+                .support()
                 .values()
                 .all(|x| x.iter().eq(["no", "yes"]))
         );
@@ -46,7 +46,7 @@ mod tests {
 
     #[test]
     fn new_unordered_states() -> Result<()> {
-        let states = states![
+        let support = support![
             ("B", ["no", "yes"]),
             ("C", ["yes", "no", "maybe"]),
             ("A", ["no", "yes"]),
@@ -57,7 +57,7 @@ mod tests {
             [1, 0, 0], //
             [1, 0, 1]
         ];
-        let dataset = CatTable::new(states, values)?;
+        let dataset = CatTable::new(support, values)?;
 
         assert_eq!(dataset.labels(), &labels!["A", "B", "C"]);
         assert_eq!(
@@ -77,7 +77,7 @@ mod tests {
     fn new_unordered_states_2() -> Result<()> {
         // Initialize the dataset.
         let dataset = CatTable::new(
-            states![
+            support![
                 ("A", ["0", "1", "2", "3"]), //
                 ("B", ["1", "2", "3", "0"]), //
             ],
@@ -92,10 +92,10 @@ mod tests {
 
         // Check the labels.
         assert_eq!(dataset.labels(), &labels!["A", "B"]);
-        // Check the states.
+        // Check the support.
         assert_eq!(
-            dataset.states(),
-            &states![
+            dataset.support(),
+            &support![
                 ("A", ["0", "1", "2", "3"]), //
                 ("B", ["0", "1", "2", "3"]), //
             ]
@@ -117,7 +117,7 @@ mod tests {
 
     #[test]
     fn new_non_unique_labels() -> Result<()> {
-        let states = states![
+        let support = support![
             ("B", ["no", "yes"]),
             ("C", ["yes", "no"]),
             ("A", ["no", "yes"]),
@@ -129,7 +129,7 @@ mod tests {
             [1, 0, 0, 1], //
             [1, 0, 1, 0]
         ];
-        assert!(CatTable::new(states, values).is_err());
+        assert!(CatTable::new(support, values).is_err());
 
         Ok(())
     }
@@ -137,9 +137,12 @@ mod tests {
     #[test]
     fn new_too_many_states() -> Result<()> {
         let too_many_states: Vec<_> = (0..256).map(|i| i.to_owned()).collect();
-        let too_many_states: Set<_> = too_many_states.iter().map(|s| s.to_string()).collect();
-        let mut states = states![("B", ["no", "yes"]), ("C", ["yes", "no"]),];
-        states.insert("A".to_owned(), too_many_states);
+        let too_many_states: Set<_> = too_many_states
+            .iter()
+            .map(|stats| stats.to_string())
+            .collect();
+        let mut support = support![("B", ["no", "yes"]), ("C", ["yes", "no"]),];
+        support.insert("A".to_owned(), too_many_states);
 
         let values = array![
             [0, 1, 0], //
@@ -147,14 +150,14 @@ mod tests {
             [1, 0, 0], //
             [1, 0, 1]
         ];
-        assert!(CatTable::new(states, values).is_err());
+        assert!(CatTable::new(support, values).is_err());
 
         Ok(())
     }
 
     #[test]
     fn new_wrong_variables_and_columns() -> Result<()> {
-        let states = states![
+        let support = support![
             ("B", ["no", "yes"]),
             ("C", ["yes", "no"]),
             ("A", ["no", "yes"]),
@@ -165,14 +168,14 @@ mod tests {
             [1, 0], //
             [1, 0]
         ];
-        assert!(CatTable::new(states, values).is_err());
+        assert!(CatTable::new(support, values).is_err());
 
         Ok(())
     }
 
     #[test]
     fn new_wrong_values() -> Result<()> {
-        let states = states![
+        let support = support![
             ("B", ["no", "yes"]),
             ("C", ["yes", "no"]),
             ("A", ["no", "yes"]),
@@ -183,14 +186,14 @@ mod tests {
             [1, 0, 0],
             [1, 0, 1]
         ];
-        assert!(CatTable::new(states, values).is_err());
+        assert!(CatTable::new(support, values).is_err());
 
         Ok(())
     }
 
     #[test]
     fn display() -> Result<()> {
-        let states = states![
+        let support = support![
             ("B", ["no", "yes"]),
             ("C", ["yes", "no"]),
             ("A", ["no", "yes"]),
@@ -201,7 +204,7 @@ mod tests {
             [1, 0, 0], //
             [1, 0, 1]
         ];
-        let dataset = CatTable::new(states, values)?;
+        let dataset = CatTable::new(support, values)?;
 
         assert_eq!(
             dataset.to_string(),

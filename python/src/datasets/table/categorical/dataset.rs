@@ -5,8 +5,8 @@ use std::{
 
 use backend::{
     datasets::{CatTable, CatType, Dataset},
-    models::Labelled,
-    types::{Set, States},
+    models::{CatSupport, HasLabels},
+    types::Set,
 };
 use numpy::{PyArray1, PyArray2, PyArrayMethods, ToPyArray, ndarray::prelude::*};
 use pyo3::{
@@ -21,6 +21,7 @@ use crate::{
 };
 
 /// A categorical tabular dataset.
+///
 #[gen_stub_pyclass]
 #[pyclass(name = "CatTable", module = "causal_hub.datasets", from_py_object)]
 #[derive(Clone, Debug)]
@@ -45,16 +46,16 @@ impl PyCatTable {
         Ok(self.lock().labels().iter().cloned().collect())
     }
 
-    /// Returns the states of the dataset.
+    /// Returns the support of the dataset.
     ///
     /// Returns
     /// -------
     /// dict[str, tuple[str, ...]]
     ///     A dictionary mapping each label to a tuple of its possible states.
     ///
-    pub fn states<'a>(&'a self, py: Python<'a>) -> PyResult<BTreeMap<String, Bound<'a, PyTuple>>> {
+    pub fn support<'a>(&'a self, py: Python<'a>) -> PyResult<BTreeMap<String, Bound<'a, PyTuple>>> {
         self.lock()
-            .states()
+            .support()
             .iter()
             .map(|(label, states)| {
                 // Get reference to the label and states.
@@ -150,30 +151,33 @@ impl PyCatTable {
             );
         }
 
-        // Convert the columns categories to states.
-        let states: States = columns
+        // Convert the columns categories to support.
+        let support: CatSupport = columns
             .into_iter()
             // Return the column name and the set of unique values.
             .map(|name| {
                 // Extract the column from the data frame.
                 let column = df.get_item(&name)?;
                 // Invoke the 'cat' accessory method.
-                let states = column.getattr("cat")?.getattr("categories")?;
-                // Iterate over the states and convert them to a Vec<String>.
-                let states: Set<String> = states
+                let categories = column.getattr("cat")?.getattr("categories")?;
+                // Iterate over the categories and convert them to a Vec<String>.
+                let categories: Set<String> = categories
                     .try_iter()?
                     .map(|x| x?.extract::<String>())
                     .collect::<PyResult<_>>()?;
 
-                Ok((name, states))
+                Ok((name, categories))
             })
             .collect::<PyResult<_>>()?;
 
         // Initialize the categorical variables values.
         let mut values = Array2::from_elem(shape, CatType::default());
         // Extract the categorical variables values.
-        values.columns_mut().into_iter().zip(&states).try_for_each(
-            |(mut value, (name, states))| {
+        values
+            .columns_mut()
+            .into_iter()
+            .zip(&support)
+            .try_for_each(|(mut value, (name, states))| {
                 // Extract the column from the data frame.
                 let column = df.get_item(name)?;
                 // Invoke the to_numpy method on the column.
@@ -198,11 +202,10 @@ impl PyCatTable {
                 value.assign(&column);
 
                 Ok::<_, PyErr>(())
-            },
-        )?;
+            })?;
 
         // Construct the dataset.
-        CatTable::new(states, values)
+        CatTable::new(support, values)
             .map(Into::into)
             .map_err(to_pyerr)
     }
@@ -255,12 +258,12 @@ impl PyCatTable {
             );
         }
 
-        // Extract states.
-        let states: States = columns
+        // Extract support.
+        let support: CatSupport = columns
             .into_iter()
             .map(|name| {
                 let column = df.call_method1("get_column", (&name,))?;
-                let categories = column.getattr("cat")?.call_method0("get_categories")?;
+                let categories = column.call_method0("drop_nulls")?.call_method0("unique")?;
                 let categories: Set<String> = categories
                     .try_iter()?
                     .map(|x| x?.extract::<String>())
@@ -271,8 +274,11 @@ impl PyCatTable {
 
         // Extract values.
         let mut values = Array2::from_elem(shape, CatType::default());
-        values.columns_mut().into_iter().zip(&states).try_for_each(
-            |(mut value, (name, states))| {
+        values
+            .columns_mut()
+            .into_iter()
+            .zip(&support)
+            .try_for_each(|(mut value, (name, states))| {
                 let column = df.call_method1("get_column", (name,))?;
                 let column: Vec<Option<String>> = column.call_method0("to_list")?.extract()?;
                 let column: Result<Vec<CatType>, _> = column
@@ -290,10 +296,9 @@ impl PyCatTable {
                 value.assign(&Array1::from_vec(column?));
 
                 Ok::<_, PyErr>(())
-            },
-        )?;
+            })?;
 
-        CatTable::new(states, values)
+        CatTable::new(support, values)
             .map(Into::into)
             .map_err(to_pyerr)
     }
@@ -314,12 +319,12 @@ impl PyCatTable {
 
         // Get lock on the inner field.
         let lock = self.lock();
-        // Get states and values.
-        let states = lock.states().iter();
+        // Get support and values.
+        let support = lock.support().iter();
         let values = lock.values().columns();
 
         // For each column, create a Pandas Series and insert it into the dictionary.
-        for ((label, states), values) in states.zip(values) {
+        for ((label, states), values) in support.zip(values) {
             // Map the values to the corresponding states.
             let values: Vec<_> = values.iter().map(|&x| &states[x as usize]).collect();
             // Set the categorical states.
@@ -354,10 +359,10 @@ impl PyCatTable {
 
         // Get lock on the inner field.
         let lock = self.lock();
-        let states = lock.states().iter();
+        let support = lock.support().iter();
         let values = lock.values().columns();
 
-        for ((label, states), values) in states.zip(values) {
+        for ((label, states), values) in support.zip(values) {
             let values: Vec<String> = values.iter().map(|&x| states[x as usize].clone()).collect();
             let series = pl.getattr("Series")?.call1((label.clone(), values))?;
             let series = series.call_method1("cast", (pl.getattr("Categorical")?,))?;

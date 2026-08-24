@@ -2,8 +2,8 @@ use itertools::Itertools;
 use rayon::prelude::*;
 
 use crate::{
-    estimators::{PK, ScoringCriterion},
-    models::{DiGraph, Graph, Labelled},
+    estimators::{CTBNEstimator, HasEstimator, PK, ParCTBNEstimator, ScoringCriterion},
+    models::{DiGraph, Graph, HasLabels},
     set,
     types::{Error, Result, Set},
 };
@@ -11,43 +11,69 @@ use crate::{
 /// The hill climbing algorithm for structure learning in CTBNs.
 #[derive(Clone, Debug)]
 pub struct CTHC<'a, S> {
-    initial_graph: &'a DiGraph,
     score: &'a S,
+    initial_graph: Option<&'a DiGraph>,
     max_parents: Option<usize>,
     prior_knowledge: Option<&'a PK>,
 }
 
 impl<'a, S> CTHC<'a, S>
 where
-    S: ScoringCriterion + Labelled,
+    S: ScoringCriterion + HasLabels,
 {
     /// Creates a new continuous time hill climbing instance.
     ///
     /// # Arguments
     ///
-    /// * `initial_graph` - The initial directed graph.
     /// * `score` - The scoring criterion to use.
     ///
     /// # Returns
     ///
     /// A new `ContinuousTimeHillClimbing` instance.
     ///
+    /// # Notes
+    ///
+    /// By default, the search starts from an empty graph over the labels of the
+    /// scoring criterion. Use [`CTHC::with_initial_graph`] to provide a different
+    /// starting point.
+    ///
     #[inline]
-    pub fn new(initial_graph: &'a DiGraph, score: &'a S) -> Result<Self> {
-        // Check labels of the initial graph and the estimator are the same.
-        if initial_graph.labels() != score.labels() {
-            return Err(Error::LabelMismatch(
-                &format!("{:?}", initial_graph.labels()),
-                &format!("{:?}", score.labels()),
-            ));
-        }
-
-        Ok(Self {
-            initial_graph,
+    pub fn new(score: &'a S) -> Self {
+        Self {
+            initial_graph: None,
             score,
             max_parents: None,
             prior_knowledge: None,
-        })
+        }
+    }
+
+    /// Sets the initial directed graph.
+    ///
+    /// # Arguments
+    ///
+    /// * `initial_graph` - The initial directed graph.
+    ///
+    /// # Errors
+    ///
+    /// * If the labels of the initial graph and the scoring criterion do not match.
+    ///
+    /// # Returns
+    ///
+    /// The modified instance.
+    ///
+    #[inline]
+    pub fn with_initial_graph(mut self, initial_graph: &'a DiGraph) -> Result<Self> {
+        // Check labels of the initial graph and the scoring criterion are the same.
+        if initial_graph.labels() != self.score.labels() {
+            return Err(Error::LabelMismatch(
+                &format!("{:?}", initial_graph.labels()),
+                &format!("{:?}", self.score.labels()),
+            ));
+        }
+        // Set the initial graph.
+        self.initial_graph = Some(initial_graph);
+
+        Ok(self)
     }
 
     /// Sets the maximum number of parents for each vertex.
@@ -78,19 +104,24 @@ where
     ///
     #[inline]
     pub fn with_prior_knowledge(mut self, prior_knowledge: &'a PK) -> Result<Self> {
+        // Get the initial graph, or an empty graph over the labels of the scoring criterion.
+        let initial_graph = match self.initial_graph {
+            Some(graph) => graph.clone(),
+            None => DiGraph::empty(self.score.labels())?,
+        };
         // Check labels of prior knowledge and initial graph are the same.
-        if self.initial_graph.labels() != prior_knowledge.labels() {
+        if initial_graph.labels() != prior_knowledge.labels() {
             return Err(Error::LabelMismatch(
-                &format!("{:?}", self.initial_graph.labels()),
+                &format!("{:?}", initial_graph.labels()),
                 &format!("{:?}", prior_knowledge.labels()),
             ));
         }
         // Check prior knowledge is consistent with initial graph.
-        for edge in self.initial_graph.vertices().into_iter().permutations(2) {
+        for edge in initial_graph.vertices().into_iter().permutations(2) {
             // Get the edge indices.
             let (i, j) = (edge[0], edge[1]);
             // Check edge must be either present and not forbidden ...
-            if self.initial_graph.has_edge(i, j)? {
+            if initial_graph.has_edge(i, j)? {
                 if prior_knowledge.is_forbidden(i, j) {
                     return Err(Error::PriorKnowledgeConflict(&format!(
                         "Initial graph contains forbidden edge ({i}, {j})."
@@ -110,21 +141,34 @@ where
 
     /// Execute the CTHC algorithm.
     ///
+    /// # Errors
+    ///
+    /// * If the scoring criterion fails.
+    ///
     /// # Returns
     ///
-    /// The fitted graph.
+    /// The fitted model over the learned structure.
     ///
-    pub fn fit(&self) -> Result<DiGraph> {
-        // Clone the initial graph.
-        let mut graph = DiGraph::empty(self.initial_graph.labels())?;
+    pub fn fit<M>(&self) -> Result<M>
+    where
+        S: HasEstimator,
+        S::Estimator: CTBNEstimator<M>,
+    {
+        // Get the initial graph, or an empty graph over the labels of the scoring criterion.
+        let initial_graph = match self.initial_graph {
+            Some(graph) => graph.clone(),
+            None => DiGraph::empty(self.score.labels())?,
+        };
+        // Initialize the output graph.
+        let mut graph = DiGraph::empty(initial_graph.labels())?;
 
         // For each vertex in the graph ...
-        for i in self.initial_graph.vertices() {
+        for i in initial_graph.vertices() {
             // Initialize the previous score to negative infinity.
             let mut prev_score = f64::NEG_INFINITY;
 
             // Set the initial parent set as the current parent set.
-            let mut curr_pa = self.initial_graph.parents(&set![i])?;
+            let mut curr_pa = initial_graph.parents(&set![i])?;
             // Compute the score of the current parent set.
             let mut curr_score = self.score.call(&set![i], &curr_pa)?;
 
@@ -145,7 +189,7 @@ where
                         }
                     ).flat_map(|curr_pa| {
                         // Get the vertices that are not in the current parent set.
-                        self.initial_graph
+                        initial_graph
                             .vertices()
                             .into_iter()
                             .filter_map(move |j| {
@@ -196,25 +240,38 @@ where
             }
         }
 
-        // Return the final graph.
-        Ok(graph)
+        // Fit the model over the learned structure.
+        self.score.estimator().fit(graph)
     }
 }
 
 impl<'a, S> CTHC<'a, S>
 where
-    S: ScoringCriterion + Sync,
+    S: ScoringCriterion + HasLabels + Sync,
 {
     /// Execute the CTHC algorithm in parallel.
     ///
+    /// # Errors
+    ///
+    /// * If the scoring criterion fails.
+    ///
     /// # Returns
     ///
-    /// The fitted graph.
+    /// The fitted model over the learned structure.
     ///
-    pub fn par_fit(&self) -> Result<DiGraph> {
+    pub fn par_fit<M>(&self) -> Result<M>
+    where
+        S: HasEstimator,
+        S::Estimator: ParCTBNEstimator<M>,
+    {
+        // Get the initial graph, or an empty graph over the labels of the scoring criterion.
+        let initial_graph = match self.initial_graph {
+            Some(graph) => graph.clone(),
+            None => DiGraph::empty(self.score.labels())?,
+        };
+
         // For each vertex in the graph ...
-        let parents: Vec<_> = self
-            .initial_graph
+        let parents: Vec<_> = initial_graph
             .vertices()
             .into_par_iter()
             .map(|i| {
@@ -222,7 +279,7 @@ where
                 let mut prev_score = f64::NEG_INFINITY;
 
                 // Set the initial parent set as the current parent set.
-                let mut curr_pa = self.initial_graph.parents(&set![i])?;
+                let mut curr_pa = initial_graph.parents(&set![i])?;
                 // Compute the score of the current parent set.
                 let mut curr_score = self.score.call(&set![i], &curr_pa)?;
 
@@ -243,7 +300,7 @@ where
                             }
                         ).flat_map(|curr_pa| {
                             // Get the vertices that are not in the current parent set.
-                            self.initial_graph
+                            initial_graph
                                 .vertices()
                                 .into_iter()
                                 .filter_map(move |j| {
@@ -279,10 +336,14 @@ where
                     let scores = poss_pa
                         .into_par_iter()
                         // Compute the score of the candidate parent set in parallel.
-                        .map(|next_pa| self.score.call(&set![i], &next_pa).map(|s| (s, next_pa)))
+                        .map(|next_pa| {
+                            self.score
+                                .call(&set![i], &next_pa)
+                                .map(|stats| (stats, next_pa))
+                        })
                         .collect::<Result<Vec<_>>>()?;
 
-                    if scores.iter().any(|(s, _)| s.is_nan()) {
+                    if scores.iter().any(|(stats, _)| stats.is_nan()) {
                         return Err(Error::NanValue());
                     }
 
@@ -308,8 +369,8 @@ where
             })
             .collect::<Result<_>>()?;
 
-        // Clone the initial graph.
-        let mut graph = DiGraph::empty(self.initial_graph.labels())?;
+        // Initialize the output graph.
+        let mut graph = DiGraph::empty(initial_graph.labels())?;
 
         // Set the current parent set.
         for (i, curr_pa) in parents.into_iter().enumerate() {
@@ -319,7 +380,7 @@ where
             }
         }
 
-        // Return the final graph.
-        Ok(graph)
+        // Fit the model over the learned structure.
+        self.score.estimator().par_fit(graph)
     }
 }

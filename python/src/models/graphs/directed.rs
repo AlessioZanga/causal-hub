@@ -1,13 +1,13 @@
 use std::sync::{Arc, RwLock};
 
 use backend::{
-    inference::{BackdoorCriterion, GraphicalSeparation},
-    io::JsonIO,
-    models::{DiGraph, Graph, Labelled},
+    inference::{BackdoorCriterion, GraphicalSeparation, TopologicalOrder},
+    io::{DotIO, GmlIO, JsonIO},
+    models::{DiGraph, Graph, HasLabels},
     random::{Random, RngDag, RngDiGraph},
     types::Labels,
 };
-use numpy::prelude::*;
+use numpy::{PyArray2, prelude::*};
 use pyo3::{
     prelude::*,
     types::{PyDict, PyType},
@@ -19,6 +19,7 @@ use rand_xoshiro::Xoshiro256PlusPlus;
 use crate::{error::to_pyerr, impl_from_into_lock, indices_from};
 
 /// A struct representing a directed graph using an adjacency matrix.
+///
 #[gen_stub_pyclass]
 #[pyclass(name = "DiGraph", module = "causal_hub.models", eq, from_py_object)]
 #[derive(Clone, Debug)]
@@ -121,6 +122,54 @@ impl PyDiGraph {
         let x = lock.label_to_index(x).map_err(to_pyerr)?;
         // Check if the vertex exists in the graph.
         Ok(lock.has_vertex(x))
+    }
+
+    /// Adds a new vertex with the given label to the graph.
+    ///
+    /// Parameters
+    /// ----------
+    /// x: str
+    ///     The label of the vertex to add.
+    ///
+    /// Returns
+    /// -------
+    /// int
+    ///     The index of the (possibly new) vertex.
+    ///     Vertices are kept sorted in alphabetical order:
+    ///     adding a vertex may shift the indices of other vertices.
+    ///
+    pub fn add_vertex(&mut self, x: &str) -> PyResult<usize> {
+        // Get a mutable lock on the inner field.
+        let mut lock = self.lock_mut();
+        // Add the vertex to the graph.
+        Ok(lock.add_vertex(x))
+    }
+
+    /// Deletes the vertex with the given label from the graph,
+    /// together with all its incident edges.
+    ///
+    /// Parameters
+    /// ----------
+    /// x: str
+    ///     The label of the vertex to delete.
+    ///
+    /// Returns
+    /// -------
+    /// bool
+    ///     `true` if the vertex was deleted, `false` if it did not exist.
+    ///     Vertices are kept sorted in alphabetical order:
+    ///     deleting a vertex may shift the indices of other vertices.
+    ///
+    pub fn del_vertex(&mut self, x: &str) -> PyResult<bool> {
+        // Get a mutable lock on the inner field.
+        let mut lock = self.lock_mut();
+        // Get the index of the vertex, if any.
+        let Ok(x) = lock.label_to_index(x) else {
+            // If the label does not exist, the vertex does not exist.
+            return Ok(false);
+        };
+        // Delete the vertex from the graph.
+        Ok(lock.del_vertex(x))
     }
 
     /// Returns the edges of the graph.
@@ -907,5 +956,222 @@ impl PyDiGraph {
     ///
     pub fn to_json_file(&self, path: &str) -> PyResult<()> {
         self.lock().to_json_file(path).map_err(to_pyerr)
+    }
+
+    /// Restrict the graph to the specified variables.
+    ///
+    /// Parameters
+    /// ----------
+    /// x: str | Iterable[str]
+    ///     A variable or an iterable of variables to select.
+    ///
+    /// Returns
+    /// -------
+    /// DiGraph
+    ///     A graph restricted to the specified variables.
+    ///
+    pub fn select(&self, x: &Bound<'_, PyAny>) -> PyResult<Self> {
+        // Get a lock on the inner field.
+        let lock = self.lock();
+        // Convert the Python iterable into a set of indices.
+        let x = indices_from!(x, lock)?;
+        // Restrict the graph.
+        lock.select(&x).map(Into::into).map_err(to_pyerr)
+    }
+
+    /// Returns a topological order of the graph, if it is a DAG.
+    ///
+    /// Returns
+    /// -------
+    /// list[str] | None
+    ///     A topological ordering of the vertices, or `None` if the graph is
+    ///     not a directed acyclic graph.
+    ///
+    pub fn topological_order(&self) -> PyResult<Option<Vec<String>>> {
+        // Get a lock on the inner field.
+        let lock = self.lock();
+        // Delegate to the inner method.
+        match lock.topological_order() {
+            Some(order) => {
+                // Convert the indices back to labels.
+                let labels = order
+                    .iter()
+                    .map(|&i| lock.index_to_label(i).map(str::to_owned))
+                    .collect::<Result<Vec<_>, _>>()
+                    .map_err(to_pyerr)?;
+                // Return the labels.
+                Ok(Some(labels))
+            }
+            None => Ok(None),
+        }
+    }
+
+    /// Creates a directed graph from an adjacency matrix and labels.
+    ///
+    /// Parameters
+    /// ----------
+    /// labels: Iterable[str]
+    ///     The labels of the vertices.
+    /// adjacency_matrix: numpy.ndarray
+    ///     A 2D boolean array representing the adjacency matrix.
+    ///
+    /// Returns
+    /// -------
+    /// DiGraph
+    ///     A new graph instance.
+    ///
+    #[classmethod]
+    pub fn from_adjacency_matrix(
+        _cls: &Bound<'_, PyType>,
+        labels: &Bound<'_, PyAny>,
+        adjacency_matrix: &Bound<'_, PyAny>,
+    ) -> PyResult<Self> {
+        // Convert the PyIterator to a vector of labels.
+        let labels: Vec<String> = labels
+            .try_iter()?
+            .map(|x| x?.extract::<String>())
+            .collect::<PyResult<_>>()?;
+        let labels: Labels = labels.into_iter().collect();
+        // Convert the adjacency matrix.
+        let adjacency_matrix = adjacency_matrix.cast::<PyArray2<u8>>()?.to_owned_array();
+        let adjacency_matrix = adjacency_matrix.mapv(|x| x != 0);
+        // Create a new DiGraph from the adjacency matrix.
+        DiGraph::from_adjacency_matrix(labels, adjacency_matrix)
+            .map(Into::into)
+            .map_err(to_pyerr)
+    }
+
+    /// Converts the graph to an adjacency matrix.
+    ///
+    /// Returns
+    /// -------
+    /// numpy.ndarray
+    ///     A 2D boolean array representing the adjacency matrix.
+    ///
+    pub fn to_adjacency_matrix<'a>(&self, py: Python<'a>) -> PyResult<Bound<'a, PyArray2<u8>>> {
+        // Get a lock on the inner field.
+        let lock = self.lock();
+        // Convert the adjacency matrix to a NumPy array.
+        Ok(lock.to_adjacency_matrix().mapv(|b| b as u8).to_pyarray(py))
+    }
+
+    /// Read instance from a DOT string.
+    ///
+    /// Parameters
+    /// ----------
+    /// dot: str
+    ///     The DOT string to read from.
+    ///
+    /// Returns
+    /// -------
+    /// DiGraph
+    ///     A new instance.
+    ///
+    #[classmethod]
+    pub fn from_dot_string(_cls: &Bound<'_, PyType>, dot: &str) -> PyResult<Self> {
+        DiGraph::from_dot_string(dot)
+            .map(Into::into)
+            .map_err(to_pyerr)
+    }
+
+    /// Write instance to a DOT string.
+    ///
+    /// Returns
+    /// -------
+    /// str
+    ///     A DOT string representation of the instance.
+    ///
+    pub fn to_dot_string(&self) -> PyResult<String> {
+        self.lock().to_dot_string().map_err(to_pyerr)
+    }
+
+    /// Read instance from a DOT file.
+    ///
+    /// Parameters
+    /// ----------
+    /// path: str
+    ///     The path to the DOT file to read from.
+    ///
+    /// Returns
+    /// -------
+    /// DiGraph
+    ///     A new instance.
+    ///
+    #[classmethod]
+    pub fn from_dot_file(_cls: &Bound<'_, PyType>, path: &str) -> PyResult<Self> {
+        DiGraph::from_dot_file(path)
+            .map(Into::into)
+            .map_err(to_pyerr)
+    }
+
+    /// Write instance to a DOT file.
+    ///
+    /// Parameters
+    /// ----------
+    /// path: str
+    ///     The path to the DOT file to write to.
+    ///
+    pub fn to_dot_file(&self, path: &str) -> PyResult<()> {
+        self.lock().to_dot_file(path).map_err(to_pyerr)
+    }
+
+    /// Read instance from a GML string.
+    ///
+    /// Parameters
+    /// ----------
+    /// gml: str
+    ///     The GML string to read from.
+    ///
+    /// Returns
+    /// -------
+    /// DiGraph
+    ///     A new instance.
+    ///
+    #[classmethod]
+    pub fn from_gml_string(_cls: &Bound<'_, PyType>, gml: &str) -> PyResult<Self> {
+        DiGraph::from_gml_string(gml)
+            .map(Into::into)
+            .map_err(to_pyerr)
+    }
+
+    /// Write instance to a GML string.
+    ///
+    /// Returns
+    /// -------
+    /// str
+    ///     A GML string representation of the instance.
+    ///
+    pub fn to_gml_string(&self) -> PyResult<String> {
+        self.lock().to_gml_string().map_err(to_pyerr)
+    }
+
+    /// Read instance from a GML file.
+    ///
+    /// Parameters
+    /// ----------
+    /// path: str
+    ///     The path to the GML file to read from.
+    ///
+    /// Returns
+    /// -------
+    /// DiGraph
+    ///     A new instance.
+    ///
+    #[classmethod]
+    pub fn from_gml_file(_cls: &Bound<'_, PyType>, path: &str) -> PyResult<Self> {
+        DiGraph::from_gml_file(path)
+            .map(Into::into)
+            .map_err(to_pyerr)
+    }
+
+    /// Write instance to a GML file.
+    ///
+    /// Parameters
+    /// ----------
+    /// path: str
+    ///     The path to the GML file to write to.
+    ///
+    pub fn to_gml_file(&self, path: &str) -> PyResult<()> {
+        self.lock().to_gml_file(path).map_err(to_pyerr)
     }
 }

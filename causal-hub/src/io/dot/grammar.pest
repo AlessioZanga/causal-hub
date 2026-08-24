@@ -1,0 +1,41 @@
+file = _{ SOI ~ graph ~ EOI }
+
+graph = { strict? ~ graph_type ~ graph_id? ~ "{" ~ statements ~ "}" }
+
+strict = { "strict" }
+
+graph_type = { "digraph" | "graph" }
+
+graph_id = { id }
+
+id = { number | text | quoted_text }
+
+text = @{ ("_" | ASCII_ALPHA) ~ ("_" | ASCII_ALPHANUMERIC)* }
+
+quoted_text = @{ "\"" ~ (!"\"" ~ ANY)* ~ "\"" }
+
+number = @{ "-"? ~ ASCII_DIGIT+ ~ ("." ~ ASCII_DIGIT*)? }
+
+attribute = { id ~ "=" ~ id }
+
+attributes = { "[" ~ (attribute ~ ("," | ";")?)* ~ "]" }
+
+statements = { statement* }
+
+statement = _{ (attribute | global_attributes | path | vertex) ~ ";"? }
+
+global_attributes = { ("graph" | "node" | "edge") ~ attributes }
+
+vertex = { vertex_id ~ attributes? }
+
+vertex_id = { id ~ port? }
+
+port = { (":" ~ id ~ (":" ~ id)? | ":" ~ id) }
+
+path = { vertex_id ~ (path_direction ~ vertex_id)+ ~ attributes? }
+
+path_direction = { "->" | "--" }
+
+WHITESPACE = _{ (" " | "\t" | NEWLINE) }
+
+COMMENT = _{ ("/*" ~ (!"*/" ~ ANY)* ~ "*/" | "//" ~ (!"\n" ~ ANY)* | "#" ~ (!"\n" ~ ANY)*) }

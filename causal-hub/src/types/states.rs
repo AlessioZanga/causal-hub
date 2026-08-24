@@ -1,4 +1,3 @@
-use fxhash::FxBuildHasher;
 use indexmap::{IndexMap, IndexSet};
 
 /// A type alias for a hash map with a fast hash function.
@@ -7,8 +6,8 @@ pub type Map<K, V> = IndexMap<K, V, FxBuildHasher>;
 pub type Set<T> = IndexSet<T, FxBuildHasher>;
 /// A type alias for a set of labels, which are strings.
 pub type Labels = Set<String>;
-/// A type alias for a hash map of states, where keys are variable names and values are sets of states.
-pub type States = Map<String, Set<String>>;
+
+pub use fxhash::FxBuildHasher;
 
 /// Create a `Set` from a list of values.
 #[macro_export]
@@ -69,29 +68,29 @@ macro_rules! map {
     };
 }
 
-/// Create a `States` map from a list of variable-state pairs.
+/// Create a `CatSupport` map from a list of variable-value pairs.
 #[macro_export]
-macro_rules! states {
-    [] => { $crate::types::States::default() };
-    [$(($label:expr, [$($state:expr),* $(,)?]),)+] => { $crate::states!($(($label, [$($state),*])),+) };
-    [$(($label:expr, [$($state:expr),* $(,)?])),*] => {
+macro_rules! support {
+    [] => { $crate::models::CatSupport::default() };
+    [$(($label:expr, [$($value:expr),* $(,)?]),)+] => { $crate::support!($(($label, [$($value),*])),+) };
+    [$(($label:expr, [$($value:expr),* $(,)?])),*] => {
         {
-            const CAPACITY: usize = <[()]>::len(&[$({ stringify!($label); $( stringify!($state); )* }),*]);
-            let mut states = $crate::types::States::with_capacity_and_hasher(
+            const CAPACITY: usize = <[()]>::len(&[$({ stringify!($label); $( stringify!($value); )* }),*]);
+            let mut support: $crate::models::CatSupport = $crate::types::Map::with_capacity_and_hasher(
                 CAPACITY,
-                fxhash::FxBuildHasher::default(),
+                $crate::types::FxBuildHasher::default(),
             );
             $(
                 // Convert the label to a string.
                 let label = ::std::string::ToString::to_string(&$label);
-                // Create a set of states for the current label.
-                let state = $crate::set![$(
-                    ::std::string::ToString::to_string(&$state)
+                // Create a set of values for the current label.
+                let value = $crate::set![$(
+                    ::std::string::ToString::to_string(&$value)
                 ),*];
-                // Insert the label and the corresponding set of states into the map.
-                states.insert(label, state);
+                // Insert the label and the corresponding set of values into the map.
+                support.insert(label, value);
             )*
-            states
+            support
         }
     };
 }

@@ -17,18 +17,20 @@ classifiers = [
     "Programming Language :: Python :: Implementation :: PyPy",
 ]
 dependencies = [
-    "networkx>=3.4.2",
-    "numpy>=2.2.6",
-    "pandas>=2.3.3",
-    "polars>=1.40.1",
-    "scipy>=1.15.3",
+    "networkx>=3.4.2,<4.0.0",
+    "numpy>=2.2.6,<3.0.0",
+    "pandas>=3.0.0,<4.0.0",
+    "polars>=1.40.1,<2.0.0",
+    "scipy>=1.15.3,<2.0.0",
 ]
 
 [dependency-groups]
 dev = [
-    "maturin>=1.13.1",
-    "patchelf>=0.17.2.4 ; sys_platform != 'win32'",
-    "pytest>=9.0.3",
+    "maturin>=1.13.1,<2.0.0",
+    "patchelf>=0.17.2.4,<1.0.0 ; sys_platform != 'win32'",
+    "pytest>=9.0.3,<10.0.0",
+    "pydata-sphinx-theme>=0.16.0,<1.0.0",
+    "sphinx>=9.1.0,<10.0.0",
 ]
 
 [project.urls]

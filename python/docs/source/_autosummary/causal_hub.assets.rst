@@ -3,11 +3,11 @@
 
 .. automodule:: causal_hub.assets
 
-
+   
    .. rubric:: Functions
 
    .. autosummary::
-
+   
       load_alarm
       load_andes
       load_arth150
@@ -33,3 +33,4 @@
       load_survey
       load_water
       load_win95pts
+   

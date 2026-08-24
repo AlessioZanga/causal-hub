@@ -4,6 +4,11 @@ pub use categorical::*;
 mod gaussian;
 pub use gaussian::*;
 
+mod mixed;
+use std::borrow::Cow;
+
+pub use mixed::*;
+
 use crate::{
     models::graphs::DiGraph,
     types::{Map, Result, Set},
@@ -13,6 +18,8 @@ use crate::{
 pub trait BN {
     /// The type of the CPD.
     type CPD;
+    /// The type of the support metadata (variable ranges / state sets).
+    type Support: Clone;
     /// The type of the evidence.
     type Evidence;
     /// The type of the sample.
@@ -61,6 +68,14 @@ pub trait BN {
     /// The description of the model, if it exists.
     ///
     fn description(&self) -> Option<&str>;
+
+    /// Returns the support metadata of the BN.
+    ///
+    /// # Returns
+    ///
+    /// A reference to the support metadata.
+    ///
+    fn support(&self) -> Cow<'_, Self::Support>;
 
     /// Returns the underlying graph.
     ///

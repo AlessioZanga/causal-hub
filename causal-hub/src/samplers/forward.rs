@@ -12,10 +12,13 @@ use rayon::prelude::*;
 
 use crate::{
     datasets::{CatSample, CatTable, CatTrj, CatType, GaussTable},
-    models::{BN, CIM, CPD, CTBN, CatBN, CatCTBN, GaussBN, Labelled},
+    models::{
+        BN, CIM, CPD, CTBN, CatBN, CatCTBN, GaussBN, HasLabels, MixedBN, MixedCPD, MixedSample,
+        MixedSupport, MixedTable,
+    },
     samplers::{BNSampler, CTBNSampler, ParBNSampler, ParCTBNSampler},
     set,
-    types::{EPSILON, Error, Result},
+    types::{EPSILON, Error, Map, Result, Set},
 };
 
 /// A forward sampler.
@@ -86,7 +89,7 @@ impl<R: Rng> BNSampler<CatBN> for ForwardSampler<'_, R, CatBN> {
             })?;
 
         // Construct the dataset.
-        CatTable::new(self.model.states().clone(), dataset)
+        CatTable::new(self.model.support().clone(), dataset)
     }
 }
 
@@ -118,7 +121,7 @@ impl<R: Rng + SeedableRng> ParBNSampler<CatBN> for ForwardSampler<'_, R, CatBN> 
             })?;
 
         // Construct the dataset.
-        CatTable::new(self.model.states().clone(), samples)
+        CatTable::new(self.model.support().clone(), samples)
     }
 }
 
@@ -197,8 +200,173 @@ impl<R: Rng + SeedableRng> ParBNSampler<GaussBN> for ForwardSampler<'_, R, Gauss
     }
 }
 
+// ── MixedBN sampler helpers & macro ──────────────────────────────────
+
+macro_rules! mixed_pure_dispatch {
+    ($self:expr, $cat:block, $gauss:block) => {{
+        let ok = $self
+            .model
+            .cpds()
+            .values()
+            .all(|distribution| matches!(distribution, MixedCPD::Categorical(_)));
+        if ok {
+            $cat
+        } else {
+            let ok = $self
+                .model
+                .cpds()
+                .values()
+                .all(|distribution| matches!(distribution, MixedCPD::Gaussian(_)));
+            if ok {
+                $gauss
+            } else {
+                return Err(Error::InvalidParameter(
+                    "model",
+                    "mixed CPD types not yet supported for forward sampling",
+                ));
+            }
+        }
+    }};
+}
+
+fn extract_cat_support(
+    support: &crate::types::Map<String, MixedSupport>,
+) -> Map<String, Set<String>> {
+    support
+        .iter()
+        .map(|(label, mixed_supp)| match mixed_supp {
+            MixedSupport::Categorical(cpd_support) => {
+                let states = cpd_support[label].clone();
+                (label.clone(), states)
+            }
+            _ => unreachable!(), // A mixed-BN's support is always categorical.
+        })
+        .collect()
+}
+
+// ── MixedBN sampler ──────────────────────────────────────────────────
+
+impl<R: Rng> BNSampler<MixedBN> for ForwardSampler<'_, R, MixedBN> {
+    type Sample = MixedSample;
+    type Samples = MixedTable;
+
+    fn sample(&self) -> Result<Self::Sample> {
+        let mut rng = self.rng.borrow_mut();
+        let n_vars = self.model.labels().len();
+
+        mixed_pure_dispatch!(
+            self,
+            {
+                let mut sample = Array1::<CatType>::zeros(n_vars);
+                for &i in self.model.topological_order() {
+                    let cpd_i = &self.model.cpds()[i];
+                    let pa_i = self.model.graph().parents(&set![i])?;
+                    let pa_vals: Array1<CatType> = pa_i.iter().map(|&z| sample[z]).collect();
+                    let pa_sample = MixedSample::Categorical(pa_vals);
+                    let result = cpd_i.sample(&mut rng, &pa_sample)?;
+                    if let MixedSample::Categorical(v) = result {
+                        sample[i] = v[0];
+                    }
+                }
+                Ok(MixedSample::Categorical(sample))
+            },
+            {
+                let mut sample = Array1::<f64>::zeros(n_vars);
+                for &i in self.model.topological_order() {
+                    let cpd_i = &self.model.cpds()[i];
+                    let pa_i = self.model.graph().parents(&set![i])?;
+                    let pa_vals: Array1<f64> = pa_i.iter().map(|&z| sample[z]).collect();
+                    let pa_sample = MixedSample::Gaussian(pa_vals);
+                    let result = cpd_i.sample(&mut rng, &pa_sample)?;
+                    if let MixedSample::Gaussian(v) = result {
+                        sample[i] = v[0];
+                    }
+                }
+                Ok(MixedSample::Gaussian(sample))
+            }
+        )
+    }
+
+    fn sample_n(&self, n: usize) -> Result<Self::Samples> {
+        mixed_pure_dispatch!(
+            self,
+            {
+                let mut dataset = Array::zeros((n, self.model.labels().len()));
+                dataset
+                    .rows_mut()
+                    .into_iter()
+                    .try_for_each(|mut row| -> Result<_> {
+                        if let MixedSample::Categorical(stats) = self.sample()? {
+                            row.assign(&stats);
+                        }
+                        Ok(())
+                    })?;
+                let cat_support = extract_cat_support(&self.model.support());
+                CatTable::new(cat_support, dataset).map(MixedTable::Categorical)
+            },
+            {
+                let mut dataset = Array::zeros((n, self.model.labels().len()));
+                dataset
+                    .rows_mut()
+                    .into_iter()
+                    .try_for_each(|mut row| -> Result<_> {
+                        if let MixedSample::Gaussian(stats) = self.sample()? {
+                            row.assign(&stats);
+                        }
+                        Ok(())
+                    })?;
+                GaussTable::new(self.model.labels().clone(), dataset).map(MixedTable::Gaussian)
+            }
+        )
+    }
+}
+
+impl<R: Rng + SeedableRng> ParBNSampler<MixedBN> for ForwardSampler<'_, R, MixedBN> {
+    type Samples = MixedTable;
+
+    fn par_sample_n(&self, n: usize) -> Result<Self::Samples> {
+        let rng = self.rng.borrow_mut();
+        let seeds: Vec<_> = rng.random_iter().take(n).collect();
+
+        mixed_pure_dispatch!(
+            self,
+            {
+                let mut samples = Array::zeros((n, self.model.labels().len()));
+                seeds
+                    .into_par_iter()
+                    .zip(samples.axis_iter_mut(Axis(0)))
+                    .try_for_each(|(seed, mut row)| -> Result<()> {
+                        let mut rng = R::seed_from_u64(seed);
+                        let sampler = ForwardSampler::new(&mut rng, self.model)?;
+                        if let MixedSample::Categorical(stats) = sampler.sample()? {
+                            row.assign(&stats);
+                        }
+                        Ok(())
+                    })?;
+                let cat_support = extract_cat_support(&self.model.support());
+                CatTable::new(cat_support, samples).map(MixedTable::Categorical)
+            },
+            {
+                let mut samples = Array::zeros((n, self.model.labels().len()));
+                seeds
+                    .into_par_iter()
+                    .zip(samples.axis_iter_mut(Axis(0)))
+                    .try_for_each(|(seed, mut row)| -> Result<()> {
+                        let mut rng = R::seed_from_u64(seed);
+                        let sampler = ForwardSampler::new(&mut rng, self.model)?;
+                        if let MixedSample::Gaussian(stats) = sampler.sample()? {
+                            row.assign(&stats);
+                        }
+                        Ok(())
+                    })?;
+                GaussTable::new(self.model.labels().clone(), samples).map(MixedTable::Gaussian)
+            }
+        )
+    }
+}
+
 impl<R: Rng> ForwardSampler<'_, R, CatCTBN> {
-    /// Sample transition time for variable X_i with state x_i.
+    /// Sample transition time for variable `X_i` with state `x_i`.
     fn sample_time(&self, event: &CatSample, i: usize) -> Result<f64> {
         // Cast the state to usize.
         let x = event[i] as usize;
@@ -211,8 +379,8 @@ impl<R: Rng> ForwardSampler<'_, R, CatCTBN> {
         // Get the distribution of the vertex.
         let q_i_x = -cim_i.parameters()[[pa_i, x, x]];
         // Initialize the exponential distribution.
-        let exp_i_x =
-            Exp::new(q_i_x).map_err(|e| Error::RandDistr(&format!("Invalid lambda: {}", e)))?;
+        let exp_i_x = Exp::new(q_i_x)
+            .map_err(|evidence| Error::RandDistr(&format!("Invalid lambda: {}", evidence)))?;
         // Sample the transition time.
         Ok(exp_i_x.sample(&mut self.rng.borrow_mut()))
     }
@@ -251,7 +419,7 @@ impl<R: Rng> CTBNSampler<CatCTBN> for ForwardSampler<'_, R, CatCTBN> {
         let mut sample_events = Vec::new();
         let mut sample_times = Vec::new();
 
-        // Sample the initial states.
+        // Sample the initial support.
         let mut event = {
             let mut rng = self.rng.borrow_mut();
             let initial = self.model.initial_distribution();
@@ -270,7 +438,7 @@ impl<R: Rng> CTBNSampler<CatCTBN> for ForwardSampler<'_, R, CatCTBN> {
         // Get the variable that transitions first.
         let mut i = times
             .argmin()
-            .map_err(|e| Error::Stats(&format!("Failed to find min time: {}", e)))?;
+            .map_err(|evidence| Error::Stats(&format!("Failed to find min time: {}", evidence)))?;
         // Set global time.
         let mut time = times[i];
 
@@ -293,8 +461,9 @@ impl<R: Rng> CTBNSampler<CatCTBN> for ForwardSampler<'_, R, CatCTBN> {
             // Normalize the probabilities.
             q_i_zx /= q_i_zx.sum();
             // Initialize a weighted index sampler.
-            let s_i_zx = WeightedIndex::new(&q_i_zx)
-                .map_err(|e| Error::RandDistr(&format!("Invalid probabilities: {}", e)))?;
+            let s_i_zx = WeightedIndex::new(&q_i_zx).map_err(|evidence| {
+                Error::RandDistr(&format!("Invalid probabilities: {}", evidence))
+            })?;
             // Sample the next event.
             event[i] = s_i_zx.sample(&mut self.rng.borrow_mut()) as CatType;
             // Append the event to the trajectory.
@@ -308,26 +477,26 @@ impl<R: Rng> CTBNSampler<CatCTBN> for ForwardSampler<'_, R, CatCTBN> {
             // Add a small epsilon to avoid zero transition times.
             times += EPSILON;
             // Get the variable to transition first.
-            i = times
-                .argmin()
-                .map_err(|e| Error::Stats(&format!("Failed to find min time: {}", e)))?;
+            i = times.argmin().map_err(|evidence| {
+                Error::Stats(&format!("Failed to find min time: {}", evidence))
+            })?;
             // Update the global time.
             time = times[i];
         }
 
-        // Get the states of the CIMs.
-        let states = self.model.states().clone();
+        // Get the support of the CIMs.
+        let support = self.model.support().clone();
 
         // Convert the events to a 2D array.
         let shape = (sample_events.len(), sample_events[0].len());
         let sample_events = Array::from_iter(sample_events.into_iter().flatten())
             .into_shape_with_order(shape)
-            .map_err(|e| Error::Shape(&e.to_string()))?;
+            .map_err(|evidence| Error::Shape(&evidence.to_string()))?;
         // Convert the times to a 1D array.
         let sample_times = Array::from_iter(sample_times);
 
         // Return the trajectory.
-        CatTrj::new(states, sample_events, sample_times)
+        CatTrj::new(support, sample_events, sample_times)
     }
 
     #[inline]

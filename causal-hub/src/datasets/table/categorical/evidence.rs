@@ -1,15 +1,16 @@
 use approx::relative_eq;
 use ndarray::prelude::*;
+use serde::{Deserialize, Serialize};
 
 use crate::{
     datasets::CatTrjEvT,
-    models::Labelled,
-    types::{Error, Labels, Result, Set, States},
+    models::{CatSupport, HasLabels},
+    types::{Error, Labels, Result, Set},
 };
 
 /// Categorical evidence type.
 #[non_exhaustive]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum CatEvT {
     /// Certain positive evidence.
     CertainPositive {
@@ -22,21 +23,21 @@ pub enum CatEvT {
     CertainNegative {
         /// The observed event of the evidence.
         event: usize,
-        /// The states of the evidence.
+        /// The support of the evidence.
         not_states: Set<usize>,
     },
     /// Uncertain positive evidence.
     UncertainPositive {
         /// The observed event of the evidence.
         event: usize,
-        /// The probabilities of the states.
+        /// The probabilities of the support.
         p_states: Array1<f64>,
     },
     /// Uncertain negative evidence.
     UncertainNegative {
         /// The observed event of the evidence.
         event: usize,
-        /// The probabilities of the states.
+        /// The probabilities of the support.
         p_not_states: Array1<f64>,
     },
 }
@@ -91,24 +92,32 @@ impl CatEvT {
     ///
     pub const fn set_event(&mut self, event: usize) {
         match self {
-            Self::CertainPositive { event: e, .. }
-            | Self::CertainNegative { event: e, .. }
-            | Self::UncertainPositive { event: e, .. }
-            | Self::UncertainNegative { event: e, .. } => *e = event,
+            Self::CertainPositive {
+                event: evidence, ..
+            }
+            | Self::CertainNegative {
+                event: evidence, ..
+            }
+            | Self::UncertainPositive {
+                event: evidence, ..
+            }
+            | Self::UncertainNegative {
+                event: evidence, ..
+            } => *evidence = event,
         }
     }
 }
 
 /// Categorical evidence structure.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct CatEv {
     labels: Labels,
-    states: States,
+    support: CatSupport,
     shape: Array1<usize>,
     evidences: Vec<Option<CatEvT>>,
 }
 
-impl Labelled for CatEv {
+impl HasLabels for CatEv {
     fn labels(&self) -> &Labels {
         &self.labels
     }
@@ -119,14 +128,14 @@ impl CatEv {
     ///
     /// # Arguments
     ///
-    /// * `states` - A collection of states, where each state is a tuple of a string and an iterator of strings.
+    /// * `support` - A collection of support, where each state is a tuple of a string and an iterator of strings.
     /// * `values` - A collection of values, where each value is a categorical evidence type.
     ///
     /// # Returns
     ///
     /// A new categorical evidence structure.
     ///
-    pub fn new<I>(mut states: States, values: I) -> Result<Self>
+    pub fn new<I>(mut support: CatSupport, values: I) -> Result<Self>
     where
         I: IntoIterator<Item = CatEvT>,
     {
@@ -134,101 +143,101 @@ impl CatEv {
         use CatEvT as E;
 
         // Get the sorted labels.
-        let mut labels: Labels = states.keys().cloned().collect();
-        // Get the shape of the states.
-        let mut shape = Array::from_iter(states.values().map(Set::len));
+        let mut labels: Labels = support.keys().cloned().collect();
+        // Get the shape of the support.
+        let mut shape = Array::from_iter(support.values().map(Set::len));
         // Fill the evidences.
         let mut evidences = values.into_iter().try_fold(
-            vec![None; states.len()],
-            |mut evidences, e| -> Result<_> {
+            vec![None; support.len()],
+            |mut evidences, evidence| -> Result<_> {
                 // Get the event of the evidence.
-                let event = e.event();
+                let event = evidence.event();
                 // Check if event is in bounds.
                 if event >= evidences.len() {
                     return Err(Error::IndexOutOfBounds(event));
                 }
                 // Push the value into the variable events.
-                evidences[event] = Some(e);
+                evidences[event] = Some(evidence);
 
                 Ok(evidences)
             },
         )?;
 
-        // Sort states, if necessary.
-        if !states.keys().is_sorted() || !states.values().all(|x| x.iter().is_sorted()) {
-            // Clone the states.
-            let mut new_states = states.clone();
-            // Sort the states.
+        // Sort support, if necessary.
+        if !support.keys().is_sorted() || !support.values().all(|x| x.iter().is_sorted()) {
+            // Clone the support.
+            let mut new_states = support.clone();
+            // Sort the support.
             new_states.sort_keys();
             new_states.values_mut().for_each(Set::sort);
 
             // Allocate new evidences.
-            let mut new_evidences = vec![None; states.len()];
+            let mut new_evidences = vec![None; support.len()];
 
             // Iterate over the values and insert them into the events map using sorted indices.
-            for e in evidences.into_iter().flatten() {
-                // Get the event and states of the evidence.
-                let (event, states) = states
-                    .get_index(e.event())
-                    .ok_or_else(|| Error::IndexOutOfBounds(e.event()))?;
+            for evidence in evidences.into_iter().flatten() {
+                // Get the event and support of the evidence.
+                let (event, support) = support
+                    .get_index(evidence.event())
+                    .ok_or_else(|| Error::IndexOutOfBounds(evidence.event()))?;
                 // Sort the event index.
                 let (event, _, new_states) = new_states
                     .get_full(event)
                     .ok_or_else(|| Error::MissingLabel(event))?;
 
-                // Sort the variable states.
-                let e = match e {
+                // Sort the variable support.
+                let evidence = match evidence {
                     E::CertainPositive { state, .. } => {
-                        // Sort the variable states.
+                        // Sort the variable support.
                         let state = new_states
-                            .get_index_of(&states[state])
-                            .ok_or_else(|| Error::MissingState(&states[state]))?;
+                            .get_index_of(&support[state])
+                            .ok_or_else(|| Error::MissingState(&support[state]))?;
                         // Construct the sorted evidence.
                         E::CertainPositive { event, state }
                     }
                     E::CertainNegative { not_states, .. } => {
-                        // Sort the variable states.
+                        // Sort the variable support.
                         let not_states = not_states
                             .iter()
                             .map(|&state| {
                                 new_states
-                                    .get_index_of(&states[state])
-                                    .ok_or_else(|| Error::MissingState(&states[state]))
+                                    .get_index_of(&support[state])
+                                    .ok_or_else(|| Error::MissingState(&support[state]))
                             })
                             .collect::<Result<_>>()?;
                         // Construct the sorted evidence.
                         E::CertainNegative { event, not_states }
                     }
                     E::UncertainPositive { p_states, .. } => {
-                        // Allocate new variable states.
+                        // Allocate new variable support.
                         let mut new_p_states = Array::zeros(p_states.len());
-                        // Sort the variable states.
-                        for (i, &p) in p_states.indexed_iter() {
+                        // Sort the variable support.
+                        for (i, &probability) in p_states.indexed_iter() {
                             // Get sorted index.
                             let state = new_states
-                                .get_index_of(&states[i])
-                                .ok_or_else(|| Error::MissingState(&states[i]))?;
+                                .get_index_of(&support[i])
+                                .ok_or_else(|| Error::MissingState(&support[i]))?;
                             // Assign probability to sorted index.
-                            new_p_states[state] = p;
+                            new_p_states[state] = probability;
                         }
-                        // Substitute the sorted states.
+                        // Substitute the sorted support.
                         let p_states = new_p_states;
                         // Construct the sorted evidence.
                         E::UncertainPositive { event, p_states }
                     }
                     E::UncertainNegative { p_not_states, .. } => {
-                        // Allocate new variable states.
+                        // Allocate new variable support.
                         let mut new_p_not_states = Array::zeros(p_not_states.len());
-                        // Sort the variable states.
-                        for (i, &p) in p_not_states.indexed_iter() {
+                        // Sort the variable support.
+                        for (i, &probability) in p_not_states.indexed_iter() {
                             // Get sorted index.
                             let state = new_states
-                                .get_index_of(&states[i])
-                                .ok_or_else(|| Error::MissingState(&states[i]))?;
+                                .get_index_of(&support[i])
+                                .ok_or_else(|| Error::MissingState(&support[i]))?;
                             // Assign probability to sorted index.
-                            new_p_not_states[state] = p;
+                            new_p_not_states[state] = probability;
                         }
-                        // Substitute the sorted states.
+                        // Substitute the sorted support.
                         let p_not_states = new_p_not_states;
                         // Construct the sorted evidence.
                         E::UncertainNegative {
@@ -239,23 +248,23 @@ impl CatEv {
                 };
 
                 // Push the value into the variable events.
-                new_evidences[event] = Some(e);
+                new_evidences[event] = Some(evidence);
             }
 
-            // Update the states.
-            states = new_states;
+            // Update the support.
+            support = new_states;
             // Update the evidences.
             evidences = new_evidences;
             // Update the labels.
-            labels = states.keys().cloned().collect();
+            labels = support.keys().cloned().collect();
             // Update the shape.
-            shape = states.values().map(Set::len).collect();
+            shape = support.values().map(Set::len).collect();
         }
 
         // For each variable ...
-        for (i, e) in evidences.iter_mut().enumerate() {
-            if let Some(e) = e.as_ref() {
-                match e {
+        for (i, evidence) in evidences.iter_mut().enumerate() {
+            if let Some(evidence) = evidence.as_ref() {
+                match evidence {
                     E::CertainPositive { .. } => {}
                     E::CertainNegative { .. } => {}
                     E::UncertainPositive { p_states, .. } => {
@@ -267,12 +276,12 @@ impl CatEv {
                         }
                         if !p_states.iter().all(|&x| x >= 0.) {
                             return Err(Error::Probability(
-                                "Evidence states distributions must be non-negative.",
+                                "Evidence support distributions must be non-negative.",
                             ));
                         }
                         if !relative_eq!(p_states.sum(), 1.) {
                             return Err(Error::Probability(
-                                "Evidence states distributions must sum to 1.",
+                                "Evidence support distributions must sum to 1.",
                             ));
                         }
                     }
@@ -285,12 +294,12 @@ impl CatEv {
                         }
                         if !p_not_states.iter().all(|&x| x >= 0.) {
                             return Err(Error::Probability(
-                                "Evidence states distributions must be non-negative.",
+                                "Evidence support distributions must be non-negative.",
                             ));
                         }
                         if !relative_eq!(p_not_states.sum(), 1.) {
                             return Err(Error::Probability(
-                                "Evidence states distributions must sum to 1.",
+                                "Evidence support distributions must sum to 1.",
                             ));
                         }
                     }
@@ -300,21 +309,21 @@ impl CatEv {
 
         Ok(Self {
             labels,
-            states,
+            support,
             shape,
             evidences,
         })
     }
 
-    /// The states of the evidence.
+    /// The support of the evidence.
     ///
     /// # Returns
     ///
-    /// A reference to the states of the evidence.
+    /// A reference to the support of the evidence.
     ///
     #[inline]
-    pub const fn states(&self) -> &States {
-        &self.states
+    pub const fn support(&self) -> &CatSupport {
+        &self.support
     }
 
     /// The shape of the evidence.
@@ -370,13 +379,13 @@ impl CatEv {
         let mut x = x.clone();
         x.sort();
 
-        // Get the new states.
-        let states: States = x
+        // Get the new support.
+        let support: CatSupport = x
             .iter()
             .map(|&i| {
-                self.states
+                self.support
                     .get_index(i)
-                    .map(|(label, states)| (label.clone(), states.clone()))
+                    .map(|(label, support)| (label.clone(), support.clone()))
                     .ok_or_else(|| Error::IndexOutOfBounds(i))
             })
             .collect::<Result<_>>()?;
@@ -384,13 +393,13 @@ impl CatEv {
         // Get the new values.
         let evidences = x.into_iter().enumerate().filter_map(|(i, x)| {
             // Set the event index to the new index.
-            self.evidences[x].clone().map(|mut e| {
-                e.set_event(i);
-                e
+            self.evidences[x].clone().map(|mut evidence| {
+                evidence.set_event(i);
+                evidence
             })
         });
 
         // Create the new evidence.
-        Self::new(states, evidences)
+        Self::new(support, evidences)
     }
 }

@@ -6,8 +6,8 @@ mod tests {
         inference::{
             ApproximateInference, BNCausalInference, CausalInference, ParBNCausalInference,
         },
-        models::{CatCPD, Labelled},
-        set, states,
+        models::{CatCPD, HasLabels},
+        set, support,
         types::{Error, Result},
     };
     use ndarray::prelude::*;
@@ -37,8 +37,8 @@ mod tests {
             let pred_ace = engine.pace_estimate(&x, &y, None)?;
 
             // Set the true PACE.
-            let true_x = states![("bronc", ["no", "yes"])];
-            let true_y = states![("dysp", ["no", "yes"])];
+            let true_x = support![("bronc", ["no", "yes"])];
+            let true_y = support![("dysp", ["no", "yes"])];
             let true_p = array![
                 [0.855219672329841, 0.14478032767015905],
                 [0.2050478701174198, 0.7949521298825802]
@@ -82,8 +82,8 @@ mod tests {
             let pred_ace = engine.cpace_estimate(&x, &y, &z, None)?;
 
             // Set the true PACE.
-            let true_x = states![("asia", ["no", "yes"]), ("smoke", ["no", "yes"])];
-            let true_y = states![("either", ["no", "yes"])];
+            let true_x = support![("asia", ["no", "yes"]), ("smoke", ["no", "yes"])];
+            let true_y = support![("either", ["no", "yes"])];
             let true_p = array![
                 [0.978705636743215, 0.02129436325678497],
                 [0.885738468049090, 0.11426153195090986],
@@ -122,8 +122,8 @@ mod tests {
             let pred_ace = engine.par_pace_estimate(&x, &y, None)?;
 
             // Set the true PACE.
-            let true_x = states![("bronc", ["no", "yes"])];
-            let true_y = states![("dysp", ["no", "yes"])];
+            let true_x = support![("bronc", ["no", "yes"])];
+            let true_y = support![("dysp", ["no", "yes"])];
             let true_p = array![
                 [0.8522162481337745, 0.1477837518662255],
                 [0.1872079354775384, 0.8127920645224616]
@@ -161,8 +161,8 @@ mod tests {
             let pred_ace = engine.par_cpace_estimate(&x, &y, &z, None)?;
 
             // Set the true PACE.
-            let true_x = states![("asia", ["no", "yes"]), ("smoke", ["no", "yes"])];
-            let true_y = states![("either", ["no", "yes"])];
+            let true_x = support![("asia", ["no", "yes"]), ("smoke", ["no", "yes"])];
+            let true_y = support![("either", ["no", "yes"])];
             let true_p = array![
                 [0.9763113367174281, 0.0236886632825719],
                 [0.8872651356993737, 0.1127348643006263],

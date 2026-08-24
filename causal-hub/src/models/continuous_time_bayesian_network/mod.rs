@@ -1,4 +1,6 @@
 mod categorical;
+use std::borrow::Cow;
+
 pub use categorical::*;
 
 use crate::{
@@ -10,6 +12,8 @@ use crate::{
 pub trait CTBN {
     /// The type of the CIM.
     type CIM;
+    /// The type of the support metadata (variable ranges / state sets).
+    type Support: Clone;
     /// The type of the initial distribution.
     type InitialDistribution;
     /// The type of the observed event.
@@ -53,6 +57,14 @@ pub trait CTBN {
     /// A reference to the initial distribution.
     ///
     fn initial_distribution(&self) -> &Self::InitialDistribution;
+
+    /// Returns the support metadata of the CTBN.
+    ///
+    /// # Returns
+    ///
+    /// A reference to the support metadata.
+    ///
+    fn support(&self) -> Cow<'_, Self::Support>;
 
     /// Returns the underlying graph.
     ///

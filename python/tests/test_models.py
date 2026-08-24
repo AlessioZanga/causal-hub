@@ -13,9 +13,13 @@ from causal_hub.assets import (
     load_sachs,
     load_survey,
 )
-from causal_hub.datasets import GaussIncTable
-from causal_hub.estimators import EstimatorMethod
-from causal_hub.models import CatBN, CatCTBN, DiGraph, GaussBN
+from causal_hub.datasets import CatTable, CatTrjs, GaussIncTable, GaussTable
+from causal_hub.estimators import (
+    FitMethod,
+    ParametersEstimator,
+    StructureEstimator,
+)
+from causal_hub.models import CatBN, CatCTBN, DiGraph, GaussBN, UnGraph
 
 
 def test_digraph_from_networkx() -> None:
@@ -54,6 +58,62 @@ def test_digraph_to_networkx() -> None:
     # Check the vertices and edges in the NetworkX graph.
     assert list(G.nodes) == vertices, "Wrong vertices in the NetworkX graph."
     assert list(G.edges) == edges, "Wrong edges in the NetworkX graph."
+
+
+def test_digraph_gml_round_trip() -> None:
+    """Test GML read/write round-trip on a DiGraph."""
+    # Define vertices and edges for a simple directed graph.
+    vertices = ["A", "B", "C", "D"]
+    edges = [("A", "B"), ("B", "C"), ("C", "D")]
+
+    # Create a simple directed graph.
+    graph = DiGraph.empty(vertices)
+    for x, y in edges:
+        graph.add_edge(x, y)
+
+    # Serialize to a GML string and parse it back.
+    gml = graph.to_gml_string()
+    parsed = DiGraph.from_gml_string(gml)
+
+    # Check the vertices and edges are preserved.
+    assert parsed.vertices() == vertices, "Wrong vertices after GML round-trip."
+    assert parsed.edges() == edges, "Wrong edges after GML round-trip."
+
+    # Check file round-trip.
+    with tempfile.NamedTemporaryFile(suffix=".gml") as tmp:
+        path = tmp.name
+        graph.to_gml_file(path)
+        parsed = DiGraph.from_gml_file(path)
+    assert parsed.vertices() == vertices, "Wrong vertices after GML file round-trip."
+    assert parsed.edges() == edges, "Wrong edges after GML file round-trip."
+
+
+def test_digraph_dot_round_trip() -> None:
+    """Test DOT read/write round-trip on a DiGraph."""
+    # Define vertices and edges for a simple directed graph.
+    vertices = ["A", "B", "C", "D"]
+    edges = [("A", "B"), ("B", "C"), ("C", "D")]
+
+    # Create a simple directed graph.
+    graph = DiGraph.empty(vertices)
+    for x, y in edges:
+        graph.add_edge(x, y)
+
+    # Serialize to a DOT string and parse it back.
+    dot = graph.to_dot_string()
+    parsed = DiGraph.from_dot_string(dot)
+
+    # Check the vertices and edges are preserved.
+    assert parsed.vertices() == vertices, "Wrong vertices after DOT round-trip."
+    assert parsed.edges() == edges, "Wrong edges after DOT round-trip."
+
+    # Check file round-trip.
+    with tempfile.NamedTemporaryFile(suffix=".dot") as tmp:
+        path = tmp.name
+        graph.to_dot_file(path)
+        parsed = DiGraph.from_dot_file(path)
+    assert parsed.vertices() == vertices, "Wrong vertices after DOT file round-trip."
+    assert parsed.edges() == edges, "Wrong edges after DOT file round-trip."
 
 
 def test_digraph_graphical_separation() -> None:
@@ -117,7 +177,9 @@ def test_asia_fit() -> None:
     # Sample 1000 data points from the BN.
     sample = asia.sample(1000, seed=42)
     # Fit a new BN to the sample.
-    asia_fitted = CatBN.fit(sample, asia.graph(), estimator=EstimatorMethod.BE)
+    asia_fitted = CatBN.fit_parameters(
+        sample, asia.graph(), parameters_estimator=ParametersEstimator.BE
+    )
 
     # Check the labels of the fitted BN.
     assert asia_fitted.labels() == asia.labels(), "Wrong fitted BN labels."
@@ -131,7 +193,8 @@ def test_asia_read_to_json_file() -> None:
     asia = load_asia()
 
     # Get a named temp file for the JSON.
-    path = tempfile.NamedTemporaryFile().name
+    with tempfile.NamedTemporaryFile(suffix=".json") as tmp:
+        path = tmp.name
     # Write to a JSON file.
     asia.to_json_file(path)
     # Read from the JSON file.
@@ -278,7 +341,7 @@ def test_ecoli70_fit() -> None:
     # Sample 1000 data points from the BN.
     sample = ecoli70.sample(1000, seed=42)
     # Fit a new BN to the sample.
-    ecoli70_fitted = GaussBN.fit(sample, ecoli70.graph())
+    ecoli70_fitted = GaussBN.fit_parameters(sample, ecoli70.graph())
 
     # Check the labels of the fitted BN.
     assert ecoli70_fitted.labels() == ecoli70.labels(), "Wrong fitted BN labels."
@@ -292,7 +355,8 @@ def test_ecoli70_read_to_json_file() -> None:
     ecoli70 = load_ecoli70()
 
     # Get a named temp file for the JSON.
-    path = tempfile.NamedTemporaryFile().name
+    with tempfile.NamedTemporaryFile(suffix=".json") as tmp:
+        path = tmp.name
     # Write to a JSON file.
     ecoli70.to_json_file(path)
     # Read from the JSON file.
@@ -354,7 +418,9 @@ def test_eating_fit() -> None:
     # Sample 1000 trajectories from the CTBN.
     sample = eating.sample(1000, max_time=10.0, seed=42)
     # Fit a new CTBN to the sample.
-    eating_fitted = CatCTBN.fit(sample, eating.graph(), estimator=EstimatorMethod.BE)
+    eating_fitted = CatCTBN.fit_parameters(
+        sample, eating.graph(), parameters_estimator=ParametersEstimator.BE
+    )
 
     # Check the labels of the fitted CTBN.
     assert eating_fitted.labels() == eating.labels(), "Wrong fitted CTBN labels."
@@ -368,7 +434,8 @@ def test_eating_read_to_json_file() -> None:
     eating = load_eating()
 
     # Get a named temp file for the JSON.
-    path = tempfile.NamedTemporaryFile().name
+    with tempfile.NamedTemporaryFile(suffix=".json") as tmp:
+        path = tmp.name
     # Write to a JSON file.
     eating.to_json_file(path)
     # Read from the JSON file.
@@ -407,7 +474,9 @@ def test_categorical_bayesian_network_fit_incomplete() -> None:
     graph = DiGraph.from_networkx(G)
 
     # Fit the model.
-    model = CatBN.fit(dataset, graph, estimator=EstimatorMethod.MLE)
+    model = CatBN.fit_parameters(
+        dataset, graph, parameters_estimator=ParametersEstimator.MLE
+    )
 
     # Check the labels and graph.
     assert model.labels() == ["A", "B"]
@@ -446,7 +515,9 @@ def test_gaussian_bayesian_network_fit_numerical() -> None:
     graph = DiGraph.from_networkx(nx.DiGraph([("A", "B")]))
 
     # Fit the model.
-    model = GaussBN.fit(dataset, graph, estimator=EstimatorMethod.MLE)
+    model = GaussBN.fit_parameters(
+        dataset, graph, parameters_estimator=ParametersEstimator.MLE
+    )
 
     # Check the parameters.
     cpds = model.cpds()
@@ -482,7 +553,7 @@ def test_ecoli70_fit_incomplete() -> None:
     dataset = GaussIncTable.from_pandas(df)
 
     # Fit a new BN to the sample.
-    fitted = GaussBN.fit(dataset, ecoli70.graph())
+    fitted = GaussBN.fit_parameters(dataset, ecoli70.graph())
 
     # Check the fit.
     assert fitted.labels() == ecoli70.labels()
@@ -546,9 +617,7 @@ def test_ecoli70_fit_incomplete() -> None:
         ),
     ],
 )
-def test_inference_accuracy(  # noqa: PLR0913
-    loader, x, z, target, expected, tol
-) -> None:
+def test_inference_accuracy(loader, x, z, target, expected, tol) -> None:
     """Test inference accuracy against precomputed values."""
     # Load the model.
     bn = loader()
@@ -577,8 +646,8 @@ def test_inference_accuracy(  # noqa: PLR0913
         return idx
 
     # Get states mapping
-    t_states = est_cpd.states()
-    c_states = est_cpd.conditioning_states()
+    t_states = est_cpd.support()
+    c_states = est_cpd.conditioning_support()
 
     # Calculate indices
     # Conditioning index (rows)
@@ -614,6 +683,30 @@ def test_inference_accuracy(  # noqa: PLR0913
     assert abs(prob - expected) < tol
 
 
+def test_cat_ctbn_sample_by_length_and_time() -> None:
+    """Test CTBN sampling with both max_len and max_time."""
+    from causal_hub.assets import load_eating
+
+    eating = load_eating()
+    sampled = eating.sample(n=2, max_len=10, max_time=5.0, seed=42)
+    assert isinstance(sampled, CatTrjs)
+    sdfs = sampled.to_pandas()
+    assert len(sdfs) == 2
+    for trj in sdfs:
+        assert len(trj) <= 10
+        assert trj["time"].max() <= 5.0
+
+
+def test_cat_ctbn_sample_error_no_limit() -> None:
+    """Test CTBN sample errors when neither max_len nor max_time is set."""
+    import pytest
+    from causal_hub.assets import load_eating
+
+    eating = load_eating()
+    with pytest.raises(ValueError, match="At least one"):
+        eating.sample(n=2, seed=42)
+
+
 def test_inference_with_evidence_dict() -> None:
     """Test estimate/do_estimate with evidence dictionaries."""
     bn = load_earthquake()
@@ -634,3 +727,186 @@ def test_inference_with_evidence_dict() -> None:
         seed=42,
     )
     assert est_do is not None
+
+
+@pytest.mark.parametrize("graph_type", [DiGraph, UnGraph])
+def test_graph_add_vertex(graph_type) -> None:
+    """Test adding a new vertex to a graph."""
+    # Create an empty graph.
+    graph = graph_type.empty(["A", "C"])
+
+    # Add a vertex that does not exist.
+    i = graph.add_vertex("B")
+    assert i == 1, "Wrong index for the new vertex."
+    assert graph.vertices() == ["A", "B", "C"], "Wrong vertices after addition."
+
+    # Adding a vertex that already exists returns its index.
+    assert graph.add_vertex("A") == 0, "Wrong index for the existing vertex."
+    assert graph.vertices() == ["A", "B", "C"], "Vertices changed by existing addition."
+
+
+@pytest.mark.parametrize("graph_type", [DiGraph, UnGraph])
+def test_graph_add_vertex_preserves_edges(graph_type) -> None:
+    """Test that edges are preserved when adding a vertex in between."""
+    # Create a graph with an edge.
+    graph = graph_type.empty(["A", "C"])
+    graph.add_edge("A", "C")
+
+    # Add a vertex in between.
+    graph.add_vertex("B")
+
+    # The former edge is preserved.
+    assert graph.edges() == [("A", "C")], "Edge lost by vertex addition."
+
+
+@pytest.mark.parametrize("graph_type", [DiGraph, UnGraph])
+def test_graph_del_vertex(graph_type) -> None:
+    """Test deleting a vertex from a graph."""
+    # Create a graph.
+    graph = graph_type.empty(["A", "B", "C"])
+
+    # Delete an existing vertex.
+    assert graph.del_vertex("B") is True, "Vertex deletion failed."
+    assert graph.vertices() == ["A", "C"], "Wrong vertices after deletion."
+
+    # Deleting a vertex that does not exist returns False.
+    assert (
+        graph.del_vertex("B") is False
+    ), "Deletion of missing vertex must return False."
+    assert (
+        graph.del_vertex("Z") is False
+    ), "Deletion of unknown vertex must return False."
+    assert graph.vertices() == ["A", "C"], "Vertices changed by failed deletion."
+
+
+@pytest.mark.parametrize("graph_type", [DiGraph, UnGraph])
+def test_graph_del_vertex_removes_incident_edges(graph_type) -> None:
+    """Test that incident edges are removed when deleting a vertex."""
+    # Create a graph with edges.
+    graph = graph_type.empty(["A", "B", "C"])
+    graph.add_edge("A", "B")
+    graph.add_edge("B", "C")
+
+    # Delete the middle vertex.
+    assert graph.del_vertex("B") is True, "Vertex deletion failed."
+
+    # The incident edges are gone.
+    assert graph.edges() == [], "Incident edges not removed."
+    assert graph.vertices() == ["A", "C"], "Wrong vertices after deletion."
+
+
+def test_cat_bn_fit() -> None:
+    """Test CatBN.fit dispatching between parameter fitting and structure learning."""
+    # A = B.
+    size = 100
+    a = np.random.choice(["0", "1"], size=size)
+    b = a.copy()
+
+    df = pd.DataFrame({"A": a, "B": b})
+    df = df.astype("category")
+
+    dataset = CatTable.from_pandas(df)
+    graph = DiGraph.empty(["A", "B"])
+
+    # FitMethod.Parameters requires a graph ...
+    with pytest.raises(ValueError, match="graph is required"):
+        CatBN.fit(dataset, None, FitMethod.Parameters)
+
+    # ... and fits the CPDs over it.
+    model = CatBN.fit(dataset, graph, FitMethod.Parameters)
+    assert isinstance(model, CatBN)
+
+    # The default fit method is Parameters.
+    model = CatBN.fit(dataset, graph)
+    assert isinstance(model, CatBN)
+
+
+def test_cat_bn_fit_structure() -> None:
+    """Test CatBN.fit with FitMethod.Structure ignoring the graph."""
+    # A = B.
+    size = 100
+    a = np.random.choice(["0", "1"], size=size)
+    b = a.copy()
+
+    df = pd.DataFrame({"A": a, "B": b})
+    df = df.astype("category")
+
+    dataset = CatTable.from_pandas(df)
+    graph = DiGraph.empty(["A", "C"])
+
+    # FitMethod.Structure learns the structure from data, ignoring any given graph.
+    model = CatBN.fit(dataset, graph, FitMethod.Structure)
+
+    assert isinstance(model, CatBN)
+    assert set(model.graph().vertices()) == {"A", "B"}
+    # The learned edge is Markov-equivalent in both directions.
+    assert set(model.graph().edges()) in [{("A", "B")}, {("B", "A")}]
+
+    # Passing no graph at all is supported as well.
+    model = CatBN.fit(dataset, None, FitMethod.Structure)
+
+    assert isinstance(model, CatBN)
+
+
+def test_gauss_bn_fit_structure() -> None:
+    """Test GaussBN.fit with FitMethod.Structure."""
+    # X ~ N(0, 1), Y = 2*X + noise.
+    size = 200
+    x = np.random.normal(0, 1, size)
+    y = 2 * x + np.random.normal(0, 0.1, size)
+
+    df = pd.DataFrame({"X": x, "Y": y})
+    dataset = GaussTable.from_pandas(df)
+
+    model = GaussBN.fit(dataset, None, FitMethod.Structure)
+
+    assert isinstance(model, GaussBN)
+    assert set(model.graph().vertices()) == {"X", "Y"}
+    assert set(model.graph().edges()) in [{("X", "Y")}, {("Y", "X")}]
+
+
+def test_ctbn_fit_structure() -> None:
+    """Test CatCTBN.fit with FitMethod.Structure."""
+    # Load the Eating CTBN and sample trajectories from it.
+    eating = load_eating()
+    sample = eating.sample(50, max_len=50, seed=42)
+
+    # FitMethod.Structure learns the structure from the trajectories.
+    model = CatCTBN.fit(sample, None, FitMethod.Structure)
+
+    assert isinstance(model, CatCTBN)
+    assert set(model.graph().vertices()) == set(eating.labels())
+
+
+def test_ctbn_fit_structure_ctpc() -> None:
+    """Test CatCTBN.fit_structure with the CTPC algorithm."""
+    # Load the Eating CTBN and sample trajectories from it.
+    eating = load_eating()
+    sample = eating.sample(100, max_len=100, seed=42)
+
+    model = CatCTBN.fit_structure(sample, StructureEstimator.CTPC)
+
+    assert isinstance(model, CatCTBN)
+    assert set(model.graph().vertices()) == set(eating.labels())
+
+
+def test_ctbn_fit_structure_dispatch() -> None:
+    """Test CatCTBN.fit dispatching to structure learning with both algorithms."""
+    # Load the Eating CTBN and sample trajectories from it.
+    eating = load_eating()
+    sample = eating.sample(100, max_len=100, seed=42)
+
+    for structure_estimator in [
+        StructureEstimator.CTHC,
+        StructureEstimator.CTPC,
+    ]:
+        model = CatCTBN.fit(
+            sample,
+            None,
+            FitMethod.Structure,
+            structure_estimator=structure_estimator,
+            parallel=False,
+        )
+
+        assert isinstance(model, CatCTBN)
+        assert set(model.graph().vertices()) == set(eating.labels())

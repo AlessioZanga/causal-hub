@@ -2,8 +2,8 @@ use ndarray::{Zip, prelude::*};
 use statrs::distribution::{ChiSquared, ContinuousCDF, FisherSnedecor};
 
 use crate::{
-    estimators::CPDEstimator,
-    models::{CIM, CatCIM, Labelled},
+    estimators::{CPDEstimator, HasEstimator},
+    models::{CIM, CatCIM, HasLabels},
     types::{Error, Labels, Result, Set},
 };
 
@@ -53,13 +53,22 @@ impl<'a, E> ChiSquaredTest<'a, E> {
     }
 }
 
-impl<'a, E> Labelled for ChiSquaredTest<'a, E>
+impl<'a, E> HasLabels for ChiSquaredTest<'a, E>
 where
-    E: Labelled,
+    E: HasLabels,
 {
     #[inline]
     fn labels(&self) -> &Labels {
         self.estimator.labels()
+    }
+}
+
+impl<E> HasEstimator for ChiSquaredTest<'_, E> {
+    type Estimator = E;
+
+    #[inline]
+    fn estimator(&self) -> &Self::Estimator {
+        self.estimator
     }
 }
 
@@ -78,27 +87,27 @@ where
         }
 
         // Compute the extended separation set.
-        let mut s = z.clone();
+        let mut stats = z.clone();
         // Get the ordered position of Y in the extended separation set.
         let s_y = match z.binary_search(&y[0]) {
             Ok(_) => return Err(Error::SetsNotDisjoint("Y", "Z")),
             Err(i) => i,
         };
         // Insert Y into the extended separation set in sorted order.
-        s.shift_insert(s_y, y[0]);
+        stats.shift_insert(s_y, y[0]);
 
         // Fit the intensity matrices.
         let q_xz = self.estimator.fit(x, z)?;
-        let q_xs = self.estimator.fit(x, &s)?;
+        let q_xs = self.estimator.fit(x, &stats)?;
         // Get the sufficient statistics for the sets.
-        let n_xz = q_xz
+        let stats_xz = q_xz
             .fitted_statistics()
-            .map(|s| s.fitted_conditional_counts())
             .ok_or_else(|| Error::MissingSufficientStatistics())?;
-        let n_xs = q_xs
+        let n_xz = stats_xz.fitted_conditional_counts();
+        let stats_xs = q_xs
             .fitted_statistics()
-            .map(|s| s.fitted_conditional_counts())
             .ok_or_else(|| Error::MissingSufficientStatistics())?;
+        let n_xs = stats_xs.fitted_conditional_counts();
 
         // Get the shape of the extended separation set.
         let c_s = q_xs.conditioning_shape();
@@ -125,14 +134,14 @@ where
             // Compute the chi-squared statistic.
             let chi_sq = chi_sq.sum_axis(Axis(1));
             // For each chi-squared statistic ...
-            for (c, d) in chi_sq.into_iter().zip(chi_sq_den.rows()) {
+            for (c, data) in chi_sq.into_iter().zip(chi_sq_den.rows()) {
                 // Count the non-zero degrees of freedom.
-                let dof = d.mapv(|d| (d > 0.) as usize).sum();
+                let dof = data.mapv(|data| (data > 0.) as usize).sum();
                 // Check if the degrees of freedom is at least 2.
                 let dof = if dof >= 2 { dof } else { 2 };
                 // Initialize the chi-squared distribution.
                 let n = ChiSquared::new((dof - 1) as f64)
-                    .map_err(|e| Error::Probability(&e.to_string()))?;
+                    .map_err(|evidence| Error::Probability(&evidence.to_string()))?;
                 // Compute the p-value.
                 let p_value = n.cdf(c);
                 // Check if the p-value is in the alpha range.
@@ -174,13 +183,22 @@ impl<'a, E> FTest<'a, E> {
     }
 }
 
-impl<E> Labelled for FTest<'_, E>
+impl<E> HasLabels for FTest<'_, E>
 where
-    E: Labelled,
+    E: HasLabels,
 {
     #[inline]
     fn labels(&self) -> &Labels {
         self.estimator.labels()
+    }
+}
+
+impl<E> HasEstimator for FTest<'_, E> {
+    type Estimator = E;
+
+    #[inline]
+    fn estimator(&self) -> &Self::Estimator {
+        self.estimator
     }
 }
 
@@ -202,27 +220,27 @@ where
         let alpha = (self.alpha / 2.)..=(1. - self.alpha / 2.);
 
         // Compute the extended separation set.
-        let mut s = z.clone();
+        let mut stats = z.clone();
         // Get the ordered position of Y in the extended separation set.
         let s_y = match z.binary_search(&y[0]) {
             Ok(_) => return Err(Error::SetsNotDisjoint("Y", "Z")),
             Err(i) => i,
         };
         // Insert Y into the extended separation set in sorted order.
-        s.shift_insert(s_y, y[0]);
+        stats.shift_insert(s_y, y[0]);
 
         // Fit the intensity matrices.
         let q_xz = self.estimator.fit(x, z)?;
-        let q_xs = self.estimator.fit(x, &s)?;
+        let q_xs = self.estimator.fit(x, &stats)?;
         // Get the sufficient statistics for the sets.
-        let n_xz = q_xz
+        let stats_xz = q_xz
             .fitted_statistics()
-            .map(|s| s.fitted_conditional_counts())
             .ok_or_else(|| Error::MissingSufficientStatistics())?;
-        let n_xs = q_xs
+        let n_xz = stats_xz.fitted_conditional_counts();
+        let stats_xs = q_xs
             .fitted_statistics()
-            .map(|s| s.fitted_conditional_counts())
             .ok_or_else(|| Error::MissingSufficientStatistics())?;
+        let n_xs = stats_xs.fitted_conditional_counts();
 
         // Get the shape of the extended separation set.
         let c_s = q_xs.conditioning_shape();
@@ -248,7 +266,7 @@ where
                     if let Ok(true) = acc {
                         // Initialize the Fisher-Snedecor distribution.
                         let f = FisherSnedecor::new(r_xz, r_xs)
-                            .map_err(|e| Error::Probability(&e.to_string()))?;
+                            .map_err(|evidence| Error::Probability(&evidence.to_string()))?;
                         // Compute the p-value.
                         let p_value = f.cdf(q_xz / q_xs);
                         // Check if the p-value is in the alpha range.

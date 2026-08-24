@@ -30,7 +30,7 @@ impl TopologicalOrder for DiGraph {
         let mut to_be_visited: VecDeque<usize> = in_degree
             .iter()
             .enumerate()
-            .filter_map(|(i, &d)| (d == 0).then_some(i))
+            .filter_map(|(i, &data)| (data == 0).then_some(i))
             .collect();
 
         // Initialize the order vector.

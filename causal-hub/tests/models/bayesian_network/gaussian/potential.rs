@@ -23,21 +23,21 @@ mod tests {
         // Set the information vector.
         let h = array![0.2, -0.1, 0.3];
         // Set the log-normalization constant.
-        let g = 0.0;
+        let graph = 0.0;
         // Set the parameters.
-        let parameters = GaussPhiK::new(k.clone(), h.clone(), g)?;
+        let parameters = GaussPhiK::new(k.clone(), h.clone(), graph)?;
         // Initialize the potential.
-        let phi = GaussPhi::new(l.clone(), parameters)?;
+        let potential = GaussPhi::new(l.clone(), parameters)?;
 
         // Condition the potential on variable "B" (index 1) being 0.5.
-        let e = GaussEv::new(
+        let evidence = GaussEv::new(
             l,
             [GaussEvT::CertainPositive {
                 event: 1,
                 value: 0.5,
             }],
         )?;
-        let pred_phi = phi.condition(&e)?;
+        let pred_phi = potential.condition(&evidence)?;
 
         // Set the true potential.
         let true_l = labels!("A", "C");
@@ -66,13 +66,13 @@ mod tests {
         // Set the information vector.
         let h = array![0.2, -0.1, 0.3];
         // Set the log-normalization constant.
-        let g = 0.0;
+        let graph = 0.0;
         // Set the parameters.
-        let parameters = GaussPhiK::new(k.clone(), h.clone(), g)?;
+        let parameters = GaussPhiK::new(k.clone(), h.clone(), graph)?;
         // Initialize the potential.
-        let phi = GaussPhi::new(labels.clone(), parameters)?;
+        let potential = GaussPhi::new(labels.clone(), parameters)?;
         // Marginalize out variable "B" (index 1).
-        let pred_phi = phi.marginalize(&set![1])?;
+        let pred_phi = potential.marginalize(&set![1])?;
 
         // Set the true potential.
         let true_labels = labels!("A", "C");
@@ -99,13 +99,13 @@ mod tests {
         // Set the parameters.
         let a = array![[3., -1.]];
         let b = array![2.];
-        let s = array![[4.]];
-        let p = GaussCPDP::new(a, b, s)?;
+        let stats = array![[4.]];
+        let probability = GaussCPDP::new(a, b, stats)?;
         // Initialize the CPD.
-        let cpd = GaussCPD::new(x, z, p)?;
+        let distribution = GaussCPD::new(x, z, probability)?;
 
         // Convert to potential.
-        let true_phi = GaussPhi::from_cpd(cpd)?;
+        let true_phi = GaussPhi::from_cpd(distribution)?;
 
         // Normalize the potential.
         let pred_phi = true_phi.normalize()?;
@@ -230,13 +230,13 @@ mod tests {
         // Set the parameters.
         let a = array![[3., -1.]];
         let b = array![2.];
-        let s = array![[4.]];
-        let p = GaussCPDP::new(a, b, s)?;
+        let stats = array![[4.]];
+        let probability = GaussCPDP::new(a, b, stats)?;
         // Initialize the CPD.
-        let cpd = GaussCPD::new(x, z, p)?;
+        let distribution = GaussCPD::new(x, z, probability)?;
 
         // Convert to potential.
-        let pred_phi = GaussPhi::from_cpd(cpd)?;
+        let pred_phi = GaussPhi::from_cpd(distribution)?;
 
         // Set the true potential.
         let true_l = labels!("A", "B", "C");
@@ -264,19 +264,37 @@ mod tests {
         // Set the parameters.
         let a = array![[3., -1.]];
         let b = array![2.];
-        let s = array![[4.]];
-        let p = GaussCPDP::new(a, b, s)?;
+        let stats = array![[4.]];
+        let probability = GaussCPDP::new(a, b, stats)?;
         // Initialize the CPD.
-        let true_cpd = GaussCPD::new(x, z, p)?;
+        let true_cpd = GaussCPD::new(x, z, probability)?;
 
         // Convert to potential.
-        let phi = GaussPhi::from_cpd(true_cpd.clone())?;
+        let potential = GaussPhi::from_cpd(true_cpd.clone())?;
 
         // Convert back to CPD.
-        let pred_cpd = phi.into_cpd(&set![0], &set![2, 1])?;
+        let pred_cpd = potential.into_cpd(&set![0], &set![2, 1])?;
 
         // Compare the CPDs.
         assert_relative_eq!(true_cpd, pred_cpd);
+
+        Ok(())
+    }
+
+    #[test]
+    fn support() -> Result<()> {
+        let l = labels!("A", "B", "C");
+        let k = array![[1.0, -0.5, 0.0], [-0.5, 2.0, -0.3], [0.0, -0.3, 1.5]];
+        let h = array![0.2, -0.1, 0.3];
+        let graph = 0.0;
+        let parameters = GaussPhiK::new(k, h, graph)?;
+        let potential = GaussPhi::new(l.clone(), parameters)?;
+
+        let support = Phi::support(&potential);
+        for (_, &(lo, hi)) in &*support {
+            assert!(lo.is_infinite() && lo.is_sign_negative());
+            assert!(hi.is_infinite() && hi.is_sign_positive());
+        }
 
         Ok(())
     }

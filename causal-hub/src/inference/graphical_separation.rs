@@ -94,7 +94,7 @@ pub(crate) mod digraph {
 
     /// Checks the validity of the sets and returns them as `Set<usize>`.
     pub(crate) fn _assert(
-        g: &DiGraph,
+        graph: &DiGraph,
         x: &Set<usize>,
         y: &Set<usize>,
         z: Option<&Set<usize>>,
@@ -110,14 +110,14 @@ pub(crate) mod digraph {
 
         // Convert X to set, while checking for out of bounds.
         x.iter().try_for_each(|&x| {
-            if !g.has_vertex(x) {
+            if !graph.has_vertex(x) {
                 return Err(Error::IndexOutOfBounds(x));
             }
             Ok(())
         })?;
         // Convert Y to set, while checking for out of bounds.
         y.iter().try_for_each(|&y| {
-            if !g.has_vertex(y) {
+            if !graph.has_vertex(y) {
                 return Err(Error::IndexOutOfBounds(y));
             }
             Ok(())
@@ -125,7 +125,7 @@ pub(crate) mod digraph {
         // Convert Z to set, while checking for out of bounds.
         if let Some(z) = z {
             z.iter().try_for_each(|&z| {
-                if !g.has_vertex(z) {
+                if !graph.has_vertex(z) {
                     return Err(Error::IndexOutOfBounds(z));
                 }
                 Ok(())
@@ -173,21 +173,21 @@ pub(crate) mod digraph {
     }
 
     fn _reachable(
-        g: &DiGraph,
+        graph: &DiGraph,
         x: &Set<usize>,
         an_x: &Set<usize>,
         z: &Set<usize>,
     ) -> Result<Set<usize>> {
         // Check the graph is a DAG.
-        if g.topological_order().is_none() {
+        if graph.topological_order().is_none() {
             return Err(Error::NotADag());
         }
 
         // Check if the ball passes or not.
-        let _pass = |e: bool, v: usize, f: bool, n: usize| {
+        let _pass = |evidence: bool, v: usize, f: bool, n: usize| {
             let is_element_of_a = an_x.contains(&n);
             let almost_definite_status = true; // NOTE: Always true for DAGs, not so for RCGs.
-            let collider_if_in_z = !z.contains(&v) || (e && !f);
+            let collider_if_in_z = !z.contains(&v) || (evidence && !f);
             // If the edge is forward, the vertex must be an ancestor or in Z.
             is_element_of_a && collider_if_in_z && almost_definite_status
         };
@@ -197,11 +197,11 @@ pub(crate) mod digraph {
         // For each vertex in X, add backward/forward edges to the queue.
         for &w in x.iter() {
             // If the vertex has predecessors, add it to the queue as a backward edge.
-            if !g.parents(&set![w])?.is_empty() {
+            if !graph.parents(&set![w])?.is_empty() {
                 queue.push_back((false, w));
             }
             // If the vertex has successors, add it to the queue as a forward edge.
-            if !g.children(&set![w])?.is_empty() {
+            if !graph.children(&set![w])?.is_empty() {
                 queue.push_back((true, w));
             }
         }
@@ -210,15 +210,15 @@ pub(crate) mod digraph {
         let mut visited = queue.clone();
 
         // For each element in the queue ...
-        while let Some((e, v)) = queue.pop_front() {
+        while let Some((evidence, v)) = queue.pop_front() {
             // Get the predecessors and successors of the vertex.
-            let pa_v = g.parents(&set![v])?.into_iter().map(|n| (false, n));
-            let ch_v = g.children(&set![v])?.into_iter().map(|n| (true, n));
+            let pa_v = graph.parents(&set![v])?.into_iter().map(|n| (false, n));
+            let ch_v = graph.children(&set![v])?.into_iter().map(|n| (true, n));
 
             // Create pairs of (forward, vertex) for predecessors and successors.
             // Filter and add unvisited pairs that pass the condition.
             for (f, n) in pa_v.chain(ch_v) {
-                if !visited.contains(&(f, n)) && _pass(e, v, f, n) {
+                if !visited.contains(&(f, n)) && _pass(evidence, v, f, n) {
                     // Add it to the queue and mark it as processed.
                     queue.push_back((f, n));
                     visited.push_back((f, n));

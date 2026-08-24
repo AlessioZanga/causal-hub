@@ -1,10 +1,14 @@
+//! Weighted categorical trajectory dataset.
+
+use std::borrow::Cow;
+
 use ndarray::prelude::*;
 use rayon::prelude::*;
 
 use crate::{
     datasets::{CatTrj, CatTrjEv, CatType, Dataset},
-    models::Labelled,
-    types::{Error, Labels, Result, Set, States},
+    models::{CatSupport, HasLabels},
+    types::{Error, Labels, Result, Set},
 };
 
 /// A multivariate weighted trajectory.
@@ -77,15 +81,15 @@ impl CatWtdTrj {
         self.weight
     }
 
-    /// Returns the states of the trajectory.
+    /// Returns the support of the trajectory.
     ///
     /// # Returns
     ///
-    /// A reference to the states of the trajectory.
+    /// A reference to the support of the trajectory.
     ///
     #[inline]
-    pub const fn states(&self) -> &States {
-        self.trajectory.states()
+    pub const fn support(&self) -> &CatSupport {
+        self.trajectory.support()
     }
 
     /// Returns the shape of the trajectory.
@@ -111,7 +115,7 @@ impl CatWtdTrj {
     }
 }
 
-impl Labelled for CatWtdTrj {
+impl HasLabels for CatWtdTrj {
     #[inline]
     fn labels(&self) -> &Labels {
         self.trajectory.labels()
@@ -120,12 +124,18 @@ impl Labelled for CatWtdTrj {
 
 impl Dataset for CatWtdTrj {
     type Values = Array2<CatType>;
+    type Support = CatSupport;
     type Evidence = CatTrjEv;
     type EvidenceIter<'a> = <CatTrj as Dataset>::EvidenceIter<'a>;
 
     #[inline]
     fn values(&self) -> &Self::Values {
         self.trajectory.values()
+    }
+
+    #[inline]
+    fn support(&self) -> Cow<'_, Self::Support> {
+        Cow::Borrowed(self.trajectory.support())
     }
 
     fn evidence_iter(&self) -> Self::EvidenceIter<'_> {
@@ -151,7 +161,7 @@ impl Dataset for CatWtdTrj {
 #[derive(Clone, Debug)]
 pub struct CatWtdTrjs {
     labels: Labels,
-    states: States,
+    support: CatSupport,
     shape: Array1<usize>,
     values: Vec<CatWtdTrj>,
 }
@@ -192,7 +202,7 @@ impl CatWtdTrjs {
     /// Panics if:
     ///
     /// * The trajectories have different labels.
-    /// * The trajectories have different states.
+    /// * The trajectories have different support.
     /// * The trajectories have different shape.
     /// * The trajectories are empty.
     ///
@@ -214,12 +224,12 @@ impl CatWtdTrjs {
         {
             return Err(Error::IncompatibleShape("labels", "all trajectories"));
         }
-        // Check if every trajectory has the same states.
+        // Check if every trajectory has the same support.
         if !values
             .windows(2)
-            .all(|trjs| trjs[0].states().eq(trjs[1].states()))
+            .all(|trjs| trjs[0].support().eq(trjs[1].support()))
         {
-            return Err(Error::IncompatibleShape("states", "all trajectories"));
+            return Err(Error::IncompatibleShape("support", "all trajectories"));
         }
         // Check if every trajectory has the same shape.
         if !values
@@ -229,31 +239,31 @@ impl CatWtdTrjs {
             return Err(Error::IncompatibleShape("shape", "all trajectories"));
         }
 
-        // Get the labels, states and shape from the first trajectory.
+        // Get the labels, support and shape from the first trajectory.
         let trj = values
             .first()
             .ok_or_else(|| Error::EmptySet("trajectories"))?;
         let labels = trj.labels().clone();
-        let states = trj.states().clone();
+        let support = trj.support().clone();
         let shape = trj.shape().clone();
 
         Ok(Self {
             labels,
-            states,
+            support,
             shape,
             values,
         })
     }
 
-    /// Returns the states of the trajectories.
+    /// Returns the support of the trajectories.
     ///
     /// # Returns
     ///
-    /// A reference to the states of the trajectories.
+    /// A reference to the support of the trajectories.
     ///
     #[inline]
-    pub fn states(&self) -> &States {
-        &self.states
+    pub fn support(&self) -> &CatSupport {
+        &self.support
     }
 
     /// Returns the shape of the trajectories.
@@ -271,13 +281,13 @@ impl CatWtdTrjs {
 impl FromIterator<CatWtdTrj> for CatWtdTrjs {
     #[inline]
     fn from_iter<I: IntoIterator<Item = CatWtdTrj>>(iter: I) -> Self {
-        Self::new(iter).unwrap_or_else(|e| {
+        Self::new(iter).unwrap_or_else(|evidence| {
             // Log the error since we can't propagate it through the trait.
-            log::error!("Failed to create CatWtdTrjs from iterator: {}", e);
+            log::error!("Failed to create CatWtdTrjs from iterator: {}", evidence);
             // Return a minimal valid empty instance as fallback.
             Self {
                 labels: Default::default(),
-                states: Default::default(),
+                support: Default::default(),
                 values: vec![],
                 shape: Array1::zeros(2),
             }
@@ -289,13 +299,16 @@ impl FromParallelIterator<CatWtdTrj> for CatWtdTrjs {
     #[inline]
     fn from_par_iter<I: IntoParallelIterator<Item = CatWtdTrj>>(iter: I) -> Self {
         let collected = iter.into_par_iter().collect::<Vec<_>>();
-        Self::new(collected).unwrap_or_else(|e| {
+        Self::new(collected).unwrap_or_else(|evidence| {
             // Log the error since we can't propagate it through the trait.
-            log::error!("Failed to create CatWtdTrjs from parallel iterator: {}", e);
+            log::error!(
+                "Failed to create CatWtdTrjs from parallel iterator: {}",
+                evidence
+            );
             // Return a minimal valid empty instance as fallback.
             Self {
                 labels: Default::default(),
-                states: Default::default(),
+                support: Default::default(),
                 values: vec![],
                 shape: Array1::zeros(2),
             }
@@ -323,7 +336,7 @@ impl<'a> IntoParallelRefIterator<'a> for CatWtdTrjs {
     }
 }
 
-impl Labelled for CatWtdTrjs {
+impl HasLabels for CatWtdTrjs {
     #[inline]
     fn labels(&self) -> &Labels {
         &self.labels
@@ -332,12 +345,18 @@ impl Labelled for CatWtdTrjs {
 
 impl Dataset for CatWtdTrjs {
     type Values = Vec<CatWtdTrj>;
+    type Support = CatSupport;
     type Evidence = CatTrjEv;
     type EvidenceIter<'a> = CatWtdTrjsEvidenceIter<'a>;
 
     #[inline]
     fn values(&self) -> &Self::Values {
         &self.values
+    }
+
+    #[inline]
+    fn support(&self) -> Cow<'_, Self::Support> {
+        Cow::Borrowed(&self.support)
     }
 
     fn evidence_iter(&self) -> Self::EvidenceIter<'_> {

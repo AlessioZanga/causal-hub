@@ -5,7 +5,7 @@ use std::{
 
 use backend::{
     datasets::{CatWtdTrj, CatWtdTrjs, Dataset},
-    models::Labelled,
+    models::HasLabels,
 };
 use numpy::{PyArray1, prelude::*};
 use pyo3::{prelude::*, types::PyTuple};
@@ -14,6 +14,7 @@ use pyo3_stub_gen::derive::*;
 use crate::{datasets::PyCatTrj, impl_from_into_lock};
 
 /// A categorical trajectory with a weight.
+///
 #[gen_stub_pyclass]
 #[pyclass(name = "CatWtdTrj", module = "causal_hub.datasets", from_py_object)]
 #[derive(Clone, Debug)]
@@ -60,16 +61,16 @@ impl PyCatWtdTrj {
         self.lock().weight()
     }
 
-    /// Returns the states of the categorical trajectory.
+    /// Returns the support of the categorical trajectory.
     ///
     /// Returns
     /// -------
     /// dict[str, tuple[str, ...]]
-    ///     A reference to the states of the categorical trajectory.
+    ///     A reference to the support of the categorical trajectory.
     ///
-    pub fn states<'a>(&'a self, py: Python<'a>) -> PyResult<BTreeMap<String, Bound<'a, PyTuple>>> {
+    pub fn support<'a>(&'a self, py: Python<'a>) -> PyResult<BTreeMap<String, Bound<'a, PyTuple>>> {
         self.lock()
-            .states()
+            .support()
             .iter()
             .map(|(label, states)| {
                 // Get reference to the label and states.
@@ -96,6 +97,7 @@ impl PyCatWtdTrj {
 }
 
 /// A collection of categorical trajectories with weights.
+///
 #[gen_stub_pyclass]
 #[pyclass(name = "CatWtdTrjs", module = "causal_hub.datasets", from_py_object)]
 #[derive(Clone, Debug)]
@@ -120,16 +122,16 @@ impl PyCatWtdTrjs {
         Ok(self.lock().labels().iter().cloned().collect())
     }
 
-    /// Returns the states of the categorical trajectory.
+    /// Returns the support of the categorical trajectory.
     ///
     /// Returns
     /// -------
     /// dict[str, tuple[str, ...]]
-    ///     A reference to the states of the categorical trajectory.
+    ///     A reference to the support of the categorical trajectory.
     ///
-    pub fn states<'a>(&'a self, py: Python<'a>) -> PyResult<BTreeMap<String, Bound<'a, PyTuple>>> {
+    pub fn support<'a>(&'a self, py: Python<'a>) -> PyResult<BTreeMap<String, Bound<'a, PyTuple>>> {
         self.lock()
-            .states()
+            .support()
             .iter()
             .map(|(label, states)| {
                 // Get reference to the label and states.

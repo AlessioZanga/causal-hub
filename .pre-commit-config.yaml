@@ -3,7 +3,7 @@ exclude: '^\.vcpkg/'
 
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
+    rev: 3e8a8703264a2f4a69428a0aa4dcb512790b2c8c  # v6.0.0
     hooks:
       - id: trailing-whitespace
         args: [--markdown-linebreak-ext=md]
@@ -33,14 +33,14 @@ repos:
 
   # Black: auto-format code
   - repo: https://github.com/psf/black
-    rev: 25.9.0
+    rev: 87928e6d6761a4a6d22250e1fee5601b3998086e  # 26.5.1
     hooks:
       - id: black
         name: black (Python formatter)
 
   # isort: sort imports consistently
   - repo: https://github.com/PyCQA/isort
-    rev: 7.0.0
+    rev: a333737ed43df02b18e6c95477ea1b285b3de15a  # 8.0.1
     hooks:
       - id: isort
         name: isort (Python import sorter)
@@ -48,23 +48,27 @@ repos:
 
   # Ruff: linting and auto-fixing issues
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.14.1
+    rev: 39d9ac5938dadb73df0564a45f163e25ff9fa6e2  # v0.16.1
     hooks:
       - id: ruff
         name: ruff (Python linter)
 
   - repo: https://github.com/rhysd/actionlint
-    rev: v1.7.7
+    rev: 914e7df21a07ef503a81201c76d2b11c789d3fca  # v1.7.12
     hooks:
       - id: actionlint
+        # Allow temporarily disabled jobs/steps via `if: false`.
+        args:
+          - -ignore
+          - 'constant expression "false" in condition'
 
   - repo: https://github.com/igorshubovych/markdownlint-cli
-    rev: v0.44.0
+    rev: 5b5dddc4fb0f83c3ea1fc5616fa63e115dce83e0  # v0.49.1
     hooks:
       - id: markdownlint
         args: ["--config", ".markdownlint.yaml", "--fix"]
 
   - repo: https://github.com/shellcheck-py/shellcheck-py
-    rev: v0.10.0.1
+    rev: 745eface02aef23e168a8afb6b5737818efbea95  # v0.11.0.1
     hooks:
       - id: shellcheck

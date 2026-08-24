@@ -5,8 +5,8 @@ mod tests {
         assets::load_asia,
         datasets::{CatEv, CatEvT},
         inference::{ApproximateInference, BNInference, ParBNInference},
-        models::{CatCPD, Labelled},
-        set, states,
+        models::{CatCPD, HasLabels},
+        set, support,
         types::{Error, Result},
     };
     use ndarray::prelude::*;
@@ -94,9 +94,9 @@ mod tests {
                 // Set the expected results.
                 let true_query = CatCPD::new(
                     // X
-                    states![("asia", ["no", "yes"])],
+                    support![("asia", ["no", "yes"])],
                     // Z
-                    states![],
+                    support![],
                     // Theta
                     array![[0.99, 0.01]],
                 )?;
@@ -121,9 +121,9 @@ mod tests {
                 // Set the expected results.
                 let true_query = CatCPD::new(
                     // X
-                    states![("asia", ["no", "yes"])],
+                    support![("asia", ["no", "yes"])],
                     // Z
-                    states![],
+                    support![],
                     // Theta
                     array![[0.99, 0.01]],
                 )?;
@@ -142,7 +142,7 @@ mod tests {
                 let model = load_asia()?;
                 // Initialize the evidence.
                 let evidence = CatEv::new(
-                    model.states().clone(),
+                    model.support().clone(),
                     [
                         CatEvT::CertainPositive {
                             event: model
@@ -168,9 +168,9 @@ mod tests {
                 // Set the expected results.
                 let true_query = CatCPD::new(
                     // X
-                    states![("asia", ["no", "yes"])],
+                    support![("asia", ["no", "yes"])],
                     // Z
-                    states![],
+                    support![],
                     // Theta
                     array![[0.9786268013452195, 0.0213731986547805]],
                 )?;
@@ -240,9 +240,9 @@ mod tests {
                 // Set the expected results.
                 let true_query = CatCPD::new(
                     // X
-                    states![("asia", ["no", "yes"])],
+                    support![("asia", ["no", "yes"])],
                     // Z
-                    states![],
+                    support![],
                     // Theta
                     array![[0.99, 0.01]],
                 )?;
@@ -267,9 +267,9 @@ mod tests {
                 // Set the expected results.
                 let true_query = CatCPD::new(
                     // X
-                    states![("asia", ["no", "yes"])],
+                    support![("asia", ["no", "yes"])],
                     // Z
-                    states![],
+                    support![],
                     // Theta
                     array![[0.99, 0.01]],
                 )?;
@@ -288,7 +288,7 @@ mod tests {
                 let model = load_asia()?;
                 // Initialize the evidence.
                 let evidence = CatEv::new(
-                    model.states().clone(),
+                    model.support().clone(),
                     [
                         CatEvT::CertainPositive {
                             event: model.label_to_index("lung")?, // lung
@@ -308,9 +308,9 @@ mod tests {
                 // Set the expected results.
                 let true_query = CatCPD::new(
                     // X
-                    states![("asia", ["no", "yes"])],
+                    support![("asia", ["no", "yes"])],
                     // Z
-                    states![],
+                    support![],
                     // Theta
                     array![[0.9757204131016298, 0.024279586898370155]],
                 )?;

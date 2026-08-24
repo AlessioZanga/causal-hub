@@ -4,8 +4,8 @@ use pest::{Parser, iterators::Pair};
 use pest_derive::Parser;
 
 use crate::{
-    models::{BN, CPD, CatBN, CatCPD, DiGraph, Graph, Labelled},
-    types::{Error, Map, Result, States},
+    models::{BN, CPD, CatBN, CatCPD, CatSupport, DiGraph, Graph, HasLabels},
+    types::{Error, Map, Result},
 };
 
 #[derive(Debug)]
@@ -25,7 +25,7 @@ struct Property {
 #[derive(Debug)]
 struct Variable {
     pub label: String,
-    pub states: Vec<String>,
+    pub support: Vec<String>,
     pub _properties: Vec<Property>,
 }
 
@@ -45,8 +45,9 @@ pub struct BifParser;
 impl BifParser {
     /// Read a BIF string and returns a `Network` object.
     pub fn parse_str(bif: &str) -> Result<CatBN> {
-        let mut pairs = Self::parse(Rule::file, bif)
-            .map_err(|e| Error::Parsing(&format!("Failed to parse BIF file: {}", e)))?;
+        let mut pairs = Self::parse(Rule::file, bif).map_err(|evidence| {
+            Error::Parsing(&format!("Failed to parse BIF file: {}", evidence))
+        })?;
 
         let network_pair = pairs
             .next()
@@ -57,59 +58,59 @@ impl BifParser {
         let properties: Map<_, _> = network
             .properties
             .into_iter()
-            .map(|p| (p.key, p.value))
+            .map(|probability| (probability.key, probability.value))
             .collect();
 
         // Get network name and description.
         let name = Some(network.name);
         let description = properties.get("description").cloned();
 
-        // Construct states.
-        let states: States = network
+        // Construct support.
+        let support: CatSupport = network
             .variables
             .into_iter()
-            .map(|v| (v.label, v.states.into_iter().collect()))
+            .map(|v| (v.label, v.support.into_iter().collect()))
             .collect();
 
         // Construct CPDs.
         let cpds: Result<Vec<_>> = network
             .probabilities
             .into_iter()
-            .map(|p| {
+            .map(|probability| {
                 // Get the variable of the CPD.
-                let variable = States::from_iter([(
-                    p.label.clone(),
-                    states
-                        .get(&p.label)
-                        .ok_or_else(|| Error::Parsing(&format!("Failed to get states for variable '{}'.", p.label)))?
+                let variable = CatSupport::from_iter([(
+                    probability.label.clone(),
+                    support
+                        .get(&probability.label)
+                        .ok_or_else(|| Error::Parsing(&format!("Failed to get support for variable '{}'.", probability.label)))?
                         .clone(),
                 )]);
                 // Get the conditioning variables of the CPD.
-                let conditioning_variables: States = p
+                let conditioning_variables: CatSupport = probability
                     .parents
                     .iter()
                     .map(|x| {
-                        let states = states.get(x).ok_or_else(|| Error::Parsing(&format!("Failed to get states for variable '{}'.", x)))?;
-                        Ok((x.to_string(), states.iter().cloned().collect()))
+                        let support = support.get(x).ok_or_else(|| Error::Parsing(&format!("Failed to get support for variable '{}'.", x)))?;
+                        Ok((x.to_string(), support.iter().cloned().collect()))
                     })
                     .collect::<Result<_>>()?;
 
                 // Map the probability values.
-                let parameters = match (p.table, p.entries) {
+                let parameters = match (probability.table, probability.entries) {
                     (Some(table), None) => Array1::from_vec(table).insert_axis(Axis(0)),
                     (None, Some(entries)) => {
-                        // Align the probability values with the states.
+                        // Align the probability values with the support.
                         let entries: Map<_, _> = entries.into_iter().collect();
-                        // Align the entries with the states.
+                        // Align the entries with the support.
                         let entries: Vec<_> = conditioning_variables
                             .iter()
-                            .map(|(_, states)| states)
+                            .map(|(_, support)| support)
                             .cloned()
                             .multi_cartesian_product()
-                            .map(|states| {
-                                entries.get(&states).ok_or_else(|| Error::Parsing(&format!(
+                            .map(|support| {
+                                entries.get(&support).ok_or_else(|| Error::Parsing(&format!(
                                     "Missing probability entry for configuration {:?}",
-                                    states
+                                    support
                                 )))
                             })
                             .collect::<Result<Vec<_>>>()?;
@@ -136,24 +137,28 @@ impl BifParser {
         let cpds = cpds?;
 
         // Construct the graph.
-        let mut graph = DiGraph::empty(states.keys())?;
-        cpds.iter().try_for_each(|p| {
+        let mut graph = DiGraph::empty(support.keys())?;
+        cpds.iter().try_for_each(|probability| {
             // Check the CPD has a single variable in the BIF file.
-            if p.labels().len() != 1 {
+            if probability.labels().len() != 1 {
                 return Err(Error::Parsing(&format!(
                     "CPD for '{}' must have exactly one target variable.",
-                    p.labels().iter().next().unwrap_or(&String::from("?"))
+                    probability
+                        .labels()
+                        .iter()
+                        .next()
+                        .unwrap_or(&String::from("?"))
                 )));
             }
             // Get child index.
-            let x = &p.labels()[0];
+            let x = &probability.labels()[0];
             let x_idx = graph
                 .labels()
                 .get_index_of(x)
                 .ok_or_else(|| Error::Parsing(&format!("Failed to get index of label '{x}'.")))?;
 
             // Get parent indices.
-            p.conditioning_labels().iter().try_for_each(|z| {
+            probability.conditioning_labels().iter().try_for_each(|z| {
                 // Get parent index.
                 let z_idx = graph.labels().get_index_of(z).ok_or_else(|| {
                     Error::Parsing(&format!("Failed to get index of label '{z}'."))
@@ -190,7 +195,7 @@ fn build_ast(pair: Pair<Rule>) -> Result<Network> {
         .as_str()
         .to_string();
     let properties: Vec<_> = inner
-        .filter(|p| p.as_rule() == Rule::property)
+        .filter(|probability| probability.as_rule() == Rule::property)
         .map(parse_property)
         .collect::<Result<_>>()?;
 
@@ -243,7 +248,7 @@ fn parse_variable(pair: Pair<Rule>) -> Result<Variable> {
     let values_pair = inner
         .next()
         .ok_or_else(|| Error::Parsing("Expected values block"))?;
-    let states = values_pair
+    let support = values_pair
         .into_inner()
         .map(|v| v.as_str().to_string())
         .collect();
@@ -251,13 +256,13 @@ fn parse_variable(pair: Pair<Rule>) -> Result<Variable> {
     let _semicolon = inner.next(); // ';'
 
     let properties = inner
-        .filter(|p| p.as_rule() == Rule::property)
+        .filter(|probability| probability.as_rule() == Rule::property)
         .map(parse_property)
         .collect::<Result<_>>()?;
 
     Ok(Variable {
         label,
-        states,
+        support,
         _properties: properties,
     })
 }
@@ -283,7 +288,7 @@ fn parse_probability(pair: Pair<Rule>) -> Result<Probability> {
             .next()
             .ok_or_else(|| Error::Parsing("Expected parent list"))?
             .into_inner()
-            .map(|p| p.as_str().to_string())
+            .map(|probability| probability.as_str().to_string())
             .collect();
         next = inner
             .next()
@@ -339,9 +344,9 @@ fn parse_entry(pair: Pair<Rule>) -> Result<(Vec<String>, Vec<f64>)> {
 fn parse_number_list(pair: Pair<Rule>) -> Result<Vec<f64>> {
     pair.into_inner()
         .map(|n| {
-            n.as_str()
-                .parse::<f64>()
-                .map_err(|e| Error::Parsing(&format!("Failed to parse number: {}", e)))
+            n.as_str().parse::<f64>().map_err(|evidence| {
+                Error::Parsing(&format!("Failed to parse number: {}", evidence))
+            })
         })
         .collect()
 }

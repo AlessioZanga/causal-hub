@@ -5,7 +5,7 @@ use std::{
 
 use backend::{
     io::JsonIO,
-    models::{CIM, CatCIM, Labelled},
+    models::{CIM, CatCIM, HasLabels},
 };
 use numpy::{PyArray3, prelude::*};
 use pyo3::{
@@ -17,6 +17,7 @@ use pyo3_stub_gen::derive::*;
 use crate::{error::to_pyerr, impl_from_into_lock};
 
 /// A struct representing a categorical conditional intensity matrix (CIM).
+///
 #[gen_stub_pyclass]
 #[pyclass(name = "CatCIM", module = "causal_hub.models", eq, from_py_object)]
 #[derive(Clone, Debug)]
@@ -47,16 +48,16 @@ impl PyCatCIM {
         Ok(self.lock().labels().iter().cloned().collect())
     }
 
-    /// Returns the states of the conditioned variable.
+    /// Returns the support of the conditioned variable.
     ///
     /// Returns
     /// -------
     /// dict[str, tuple[str]]
-    ///     A reference to the states.
+    ///     A reference to the support.
     ///
-    pub fn states<'a>(&'a self, py: Python<'a>) -> PyResult<BTreeMap<String, Bound<'a, PyTuple>>> {
+    pub fn support<'a>(&'a self, py: Python<'a>) -> PyResult<BTreeMap<String, Bound<'a, PyTuple>>> {
         self.lock()
-            .states()
+            .support()
             .iter()
             .map(|(label, states)| {
                 // Get reference to the label and states.
@@ -92,19 +93,19 @@ impl PyCatCIM {
         Ok(self.lock().conditioning_labels().iter().cloned().collect())
     }
 
-    /// Returns the states of the conditioning variables.
+    /// Returns the support of the conditioning variables.
     ///
     /// Returns
     /// -------
     /// dict[str, tuple[str]]
-    ///     The states of the conditioning variables.
+    ///     The support of the conditioning variables.
     ///
-    pub fn conditioning_states<'a>(
+    pub fn conditioning_support<'a>(
         &'a self,
         py: Python<'a>,
     ) -> PyResult<BTreeMap<String, Bound<'a, PyTuple>>> {
         self.lock()
-            .conditioning_states()
+            .conditioning_support()
             .iter()
             .map(|(label, states)| {
                 // Get reference to the label and states.

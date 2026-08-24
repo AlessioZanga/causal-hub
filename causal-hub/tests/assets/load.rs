@@ -3,8 +3,8 @@ mod tests {
     use causal_hub::{
         assets::*,
         labels,
-        models::{BN, CPD, Graph, Labelled},
-        states,
+        models::{BN, CPD, Graph, HasLabels},
+        support,
         types::{Error, Result},
     };
     use dry::macro_for;
@@ -82,18 +82,36 @@ mod tests {
                 assert_eq!(model.cpds()[6].conditioning_labels(), &labels!["asia"]);
                 assert_eq!(model.cpds()[7].conditioning_labels(), &labels!["either"]);
 
-                // Check CPDs states.
-                assert_eq!(model.cpds()[0].states(), &states![("asia", ["no", "yes"])]);
-                assert_eq!(model.cpds()[1].states(), &states![("bronc", ["no", "yes"])]);
-                assert_eq!(model.cpds()[2].states(), &states![("dysp", ["no", "yes"])]);
+                // Check CPDs support.
                 assert_eq!(
-                    model.cpds()[3].states(),
-                    &states![("either", ["no", "yes"])]
+                    model.cpds()[0].support(),
+                    &support![("asia", ["no", "yes"])]
                 );
-                assert_eq!(model.cpds()[4].states(), &states![("lung", ["no", "yes"])]);
-                assert_eq!(model.cpds()[5].states(), &states![("smoke", ["no", "yes"])]);
-                assert_eq!(model.cpds()[6].states(), &states![("tub", ["no", "yes"])]);
-                assert_eq!(model.cpds()[7].states(), &states![("xray", ["no", "yes"])]);
+                assert_eq!(
+                    model.cpds()[1].support(),
+                    &support![("bronc", ["no", "yes"])]
+                );
+                assert_eq!(
+                    model.cpds()[2].support(),
+                    &support![("dysp", ["no", "yes"])]
+                );
+                assert_eq!(
+                    model.cpds()[3].support(),
+                    &support![("either", ["no", "yes"])]
+                );
+                assert_eq!(
+                    model.cpds()[4].support(),
+                    &support![("lung", ["no", "yes"])]
+                );
+                assert_eq!(
+                    model.cpds()[5].support(),
+                    &support![("smoke", ["no", "yes"])]
+                );
+                assert_eq!(model.cpds()[6].support(), &support![("tub", ["no", "yes"])]);
+                assert_eq!(
+                    model.cpds()[7].support(),
+                    &support![("xray", ["no", "yes"])]
+                );
 
                 // Check CPDs parameters.
                 assert_eq!(
@@ -164,18 +182,18 @@ mod tests {
                 let model = load_child()?;
 
                 // Get CPD.
-                let cpd = model
+                let distribution = model
                     .cpds()
                     .get("HypDistrib")
                     .ok_or_else(|| Error::MissingData("HypDistrib"))?;
 
                 // Check shape.
-                assert_eq!(cpd.shape(), array![2]);
-                assert_eq!(cpd.conditioning_shape(), array![4, 3]);
+                assert_eq!(distribution.shape(), array![2]);
+                assert_eq!(distribution.conditioning_shape(), array![4, 3]);
 
                 // Check probability values with "." in it.
                 assert_eq!(
-                    cpd.to_string(),
+                    distribution.to_string(),
                     concat!(
                         "-----------------------------------------------------------------\n",
                         "|               |               | HypDistrib    |               |\n",

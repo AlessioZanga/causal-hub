@@ -4,8 +4,8 @@ mod tests {
     use causal_hub::{
         datasets::{CatIncTable, CatTable, Dataset, IncDataset, MissingMechanism},
         labels, map,
-        models::Labelled,
-        set, states,
+        models::HasLabels,
+        set, support,
         types::Result,
     };
     use ndarray::prelude::*;
@@ -14,8 +14,8 @@ mod tests {
 
     #[test]
     fn new() -> Result<()> {
-        // Set the states.
-        let states = states!(
+        // Set the support.
+        let support = support!(
             ("A", ["a1", "a2", "a3"]),
             ("B", ["b1", "b2"]),
             ("C", ["c1", "c2", "c3", "c4"])
@@ -32,12 +32,12 @@ mod tests {
             [M, 1, 3]
         ];
         // Create the categorical incomplete table.
-        let dataset = CatIncTable::new(states.clone(), values.clone())?;
+        let dataset = CatIncTable::new(support.clone(), values.clone())?;
 
         // Assert the labels.
         assert_eq!(dataset.labels(), &labels!["A", "B", "C"]);
-        // Assert the states.
-        assert_eq!(dataset.states(), &states);
+        // Assert the support.
+        assert_eq!(dataset.support(), &support);
         // Assert the shape.
         assert_eq!(dataset.shape(), &array![3, 2, 4],);
         // Assert the values.
@@ -133,8 +133,8 @@ mod tests {
 
     #[test]
     fn new_unordered_labels() -> Result<()> {
-        // Set the states.
-        let states = states!(
+        // Set the support.
+        let support = support!(
             ("C", ["c1", "c2", "c3", "c4"]),
             ("A", ["a1", "a2", "a3"]),
             ("B", ["b1", "b2"])
@@ -151,18 +151,18 @@ mod tests {
             [3, M, 1]
         ];
         // Create the categorical incomplete table.
-        let dataset = CatIncTable::new(states.clone(), values.clone())?;
+        let dataset = CatIncTable::new(support.clone(), values.clone())?;
 
         // Assert the labels.
         assert_eq!(&labels!["A", "B", "C"], dataset.labels());
-        // Assert the states.
+        // Assert the support.
         assert_eq!(
-            &states![
+            &support![
                 ("A", ["a1", "a2", "a3"]),
                 ("B", ["b1", "b2"]),
                 ("C", ["c1", "c2", "c3", "c4"])
             ],
-            dataset.states()
+            dataset.support()
         );
         // Assert the shape.
         assert_eq!(&array![3, 2, 4], dataset.shape());
@@ -271,8 +271,8 @@ mod tests {
 
     #[test]
     fn new_unordered_states() -> Result<()> {
-        // Set the states.
-        let states = states!(
+        // Set the support.
+        let support = support!(
             ("C", ["c1", "c2", "c3", "c4"]),
             ("A", ["a1", "a3", "a2"]),
             ("B", ["b1", "b2"])
@@ -289,18 +289,18 @@ mod tests {
             [3, M, 1]
         ];
         // Create the categorical incomplete table.
-        let dataset = CatIncTable::new(states.clone(), values.clone())?;
+        let dataset = CatIncTable::new(support.clone(), values.clone())?;
 
         // Assert the labels.
         assert_eq!(&labels!["A", "B", "C"], dataset.labels());
-        // Assert the states.
+        // Assert the support.
         assert_eq!(
-            &states![
+            &support![
                 ("A", ["a1", "a2", "a3"]),
                 ("B", ["b1", "b2"]),
                 ("C", ["c1", "c2", "c3", "c4"])
             ],
-            dataset.states()
+            dataset.support()
         );
         // Assert the shape.
         assert_eq!(&array![3, 2, 4], dataset.shape());
@@ -409,8 +409,8 @@ mod tests {
 
     #[test]
     fn lw_deletion() -> Result<()> {
-        // Set the states.
-        let states = states!(
+        // Set the support.
+        let support = support!(
             ("A", ["a1", "a2", "a3"]),
             ("B", ["b1", "b2"]),
             ("C", ["c1", "c2", "c3", "c4"])
@@ -427,7 +427,7 @@ mod tests {
             [M, 1, 3]
         ];
         // Create the categorical incomplete table.
-        let dataset = CatIncTable::new(states.clone(), values.clone())?;
+        let dataset = CatIncTable::new(support.clone(), values.clone())?;
         // Perform list-wise deletion.
         let pred_dataset = dataset.lw_deletion()?;
 
@@ -438,7 +438,7 @@ mod tests {
             [2, 1, 0]
         ];
         // Create the true categorical table.
-        let true_dataset = CatTable::new(states.clone(), true_values)?;
+        let true_dataset = CatTable::new(support.clone(), true_values)?;
 
         // Assert the predicted dataset is equal to the true dataset.
         assert_eq!(true_dataset, pred_dataset);
@@ -448,8 +448,8 @@ mod tests {
 
     #[test]
     fn pw_deletion() -> Result<()> {
-        // Set the states.
-        let states = states!(
+        // Set the support.
+        let support = support!(
             ("A", ["a1", "a2", "a3"]),
             ("B", ["b1", "b2"]),
             ("C", ["c1", "c2", "c3", "c4"])
@@ -466,12 +466,12 @@ mod tests {
             [M, 1, 3]
         ];
         // Create the categorical incomplete table.
-        let dataset = CatIncTable::new(states.clone(), values.clone())?;
+        let dataset = CatIncTable::new(support.clone(), values.clone())?;
         // Perform pair-wise deletion.
         let pred_dataset = dataset.pw_deletion(&set![0, 1])?;
 
-        // Set the true states.
-        let true_states = states!(
+        // Set the true support.
+        let true_states = support!(
             ("A", ["a1", "a2", "a3"]), //
             ("B", ["b1", "b2"])
         );
@@ -493,8 +493,8 @@ mod tests {
 
     #[test]
     fn ipw_deletion() -> Result<()> {
-        // Set the states.
-        let states = states!(
+        // Set the support.
+        let support = support!(
             ("A", ["a1", "a2", "a3"]),
             ("B", ["b1", "b2", "b3"]),
             ("C", ["c1", "c2", "c3"])
@@ -513,7 +513,7 @@ mod tests {
             [0, 2, 0]
         ];
         // Create the categorical incomplete table.
-        let dataset = CatIncTable::new(states.clone(), values.clone())?;
+        let dataset = CatIncTable::new(support.clone(), values.clone())?;
 
         // Set the Pi_R.
         let pr = MissingMechanism::new(
@@ -661,8 +661,8 @@ mod tests {
 
     #[test]
     fn aipw_deletion() -> Result<()> {
-        // Set the states.
-        let states = states!(
+        // Set the support.
+        let support = support!(
             ("A", ["a1", "a2", "a3"]),
             ("B", ["b1", "b2", "b3"]),
             ("C", ["c1", "c2", "c3"])
@@ -681,7 +681,7 @@ mod tests {
             [0, 2, 0]
         ];
         // Create the categorical incomplete table.
-        let dataset = CatIncTable::new(states.clone(), values.clone())?;
+        let dataset = CatIncTable::new(support.clone(), values.clone())?;
 
         // Set the Pi_R.
         let pr = MissingMechanism::new(

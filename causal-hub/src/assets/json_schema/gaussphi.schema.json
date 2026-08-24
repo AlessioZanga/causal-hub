@@ -1,0 +1,50 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "gaussphi.schema.json",
+    "type": "object",
+    "properties": {
+        "labels": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
+        },
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "precision_matrix": {
+                    "type": "array",
+                    "items": {
+                        "type": "array",
+                        "items": {
+                            "type": "number"
+                        }
+                    }
+                },
+                "information_vector": {
+                    "type": "array",
+                    "items": {
+                        "type": "number"
+                    }
+                },
+                "log_normalization_constant": {
+                    "type": "number"
+                }
+            },
+            "required": [
+                "precision_matrix",
+                "information_vector",
+                "log_normalization_constant"
+            ]
+        },
+        "type": {
+            "type": "string",
+            "const": "gaussphi"
+        }
+    },
+    "required": [
+        "labels",
+        "parameters",
+        "type"
+    ]
+}

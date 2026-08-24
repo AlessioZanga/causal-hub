@@ -1,25 +1,26 @@
 use approx::assert_relative_eq;
 use causal_hub::{
     datasets::{CatEv, CatEvT},
-    types::{Result, States},
+    models::CatSupport,
+    types::Result,
 };
 use ndarray::prelude::*;
 
 #[test]
 fn test_new_sorted() -> Result<()> {
-    let mut states = States::default();
-    states.insert(
+    let mut support = CatSupport::default();
+    support.insert(
         "X".to_string(),
         ["0", "1"].into_iter().map(String::from).collect(),
     );
-    states.insert(
+    support.insert(
         "Y".to_string(),
         ["a", "b"].into_iter().map(String::from).collect(),
     );
 
     let values = vec![CatEvT::CertainPositive { event: 0, state: 1 }];
 
-    let ev = CatEv::new(states, values)?;
+    let ev = CatEv::new(support, values)?;
 
     assert_eq!(ev.evidences().len(), 2);
     match &ev.evidences()[0] {
@@ -36,22 +37,22 @@ fn test_new_sorted() -> Result<()> {
 
 #[test]
 fn test_new_unsorted_keys_and_values() -> Result<()> {
-    // Construct states manually to be unsorted
-    let mut states = States::default();
+    // Construct support manually to be unsorted
+    let mut support = CatSupport::default();
     // Insert "B" before "A" -> Keys unsorted
-    // States for B are ["2", "1"] -> Values unsorted
-    states.insert(
+    // Support for B are ["2", "1"] -> Values unsorted
+    support.insert(
         "B".to_string(),
         ["2", "1"].into_iter().map(String::from).collect(),
     );
-    states.insert(
+    support.insert(
         "A".to_string(),
         ["y", "x"].into_iter().map(String::from).collect(),
     );
 
     // Original indices:
-    // 0: B (states: 0:"2", 1:"1")
-    // 1: A (states: 0:"y", 1:"x")
+    // 0: B (support: 0:"2", 1:"1")
+    // 1: A (support: 0:"y", 1:"x")
 
     // Evidence:
     // 1. CertainPositive for B="1". B is event 0. "1" is state 1.
@@ -64,11 +65,11 @@ fn test_new_unsorted_keys_and_values() -> Result<()> {
         },
     ];
 
-    let ev = CatEv::new(states, values)?;
+    let ev = CatEv::new(support, values)?;
 
     // Sorted indices:
-    // 0: A (states: 0:"x", 1:"y")
-    // 1: B (states: 0:"1", 1:"2")
+    // 0: A (support: 0:"x", 1:"y")
+    // 1: B (support: 0:"1", 1:"2")
 
     // Checks:
     // Evidence for B (now event 1):
@@ -106,21 +107,21 @@ fn test_new_unsorted_keys_and_values() -> Result<()> {
 
 #[test]
 fn test_new_unsorted_uncertain() -> Result<()> {
-    let mut states = States::default();
+    let mut support = CatSupport::default();
     // B: ["2", "1"]
-    states.insert(
+    support.insert(
         "B".to_string(),
         ["2", "1"].into_iter().map(String::from).collect(),
     );
     // A: ["y", "x"]
-    states.insert(
+    support.insert(
         "A".to_string(),
         ["y", "x"].into_iter().map(String::from).collect(),
     );
 
     // Original: 0->B, 1->A
-    // B states: 0->"2", 1->"1"
-    // A states: 0->"y", 1->"x"
+    // B support: 0->"2", 1->"1"
+    // A support: 0->"y", 1->"x"
 
     // UncertainPositive for B: P("2")=0.2, P("1")=0.8
     // Vector [0.2, 0.8] matches internal order ["2", "1"].
@@ -139,7 +140,7 @@ fn test_new_unsorted_uncertain() -> Result<()> {
         },
     ];
 
-    let ev = CatEv::new(states, values)?;
+    let ev = CatEv::new(support, values)?;
 
     // Sorted:
     // 0->A: ["x", "y"]
@@ -181,8 +182,8 @@ fn test_new_unsorted_uncertain() -> Result<()> {
 
 #[test]
 fn test_invalid_size_uncertain_positive() -> Result<()> {
-    let mut states = States::default();
-    states.insert(
+    let mut support = CatSupport::default();
+    support.insert(
         "X".to_string(),
         ["0", "1"].into_iter().map(String::from).collect(),
     );
@@ -192,15 +193,15 @@ fn test_invalid_size_uncertain_positive() -> Result<()> {
         p_states: array![0.5], // Wrong size
     }];
 
-    assert!(CatEv::new(states, values).is_err());
+    assert!(CatEv::new(support, values).is_err());
 
     Ok(())
 }
 
 #[test]
 fn test_negative_probability() -> Result<()> {
-    let mut states = States::default();
-    states.insert(
+    let mut support = CatSupport::default();
+    support.insert(
         "X".to_string(),
         ["0", "1"].into_iter().map(String::from).collect(),
     );
@@ -210,15 +211,15 @@ fn test_negative_probability() -> Result<()> {
         p_states: array![-0.1, 1.1],
     }];
 
-    assert!(CatEv::new(states, values).is_err());
+    assert!(CatEv::new(support, values).is_err());
 
     Ok(())
 }
 
 #[test]
 fn test_sum_probability() -> Result<()> {
-    let mut states = States::default();
-    states.insert(
+    let mut support = CatSupport::default();
+    support.insert(
         "X".to_string(),
         ["0", "1"].into_iter().map(String::from).collect(),
     );
@@ -228,7 +229,7 @@ fn test_sum_probability() -> Result<()> {
         p_states: array![0.5, 0.6],
     }];
 
-    assert!(CatEv::new(states, values).is_err());
+    assert!(CatEv::new(support, values).is_err());
 
     Ok(())
 }

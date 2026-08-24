@@ -6,7 +6,7 @@ use rand_distr::{Uniform, num_traits::ToPrimitive};
 
 use crate::{
     datasets::{Dataset, GaussIncTable, GaussTable, GaussType, IncDataset, MissingMechanism},
-    models::Labelled,
+    models::HasLabels,
     random::Random,
     types::{Error, Result},
 };

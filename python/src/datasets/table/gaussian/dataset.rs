@@ -2,7 +2,7 @@ use std::sync::{Arc, RwLock};
 
 use backend::{
     datasets::{Dataset, GaussTable, GaussType},
-    models::Labelled,
+    models::HasLabels,
     types::Labels,
 };
 use numpy::{PyArray1, PyArray2, PyArrayMethods, ToPyArray, ndarray::prelude::*};
@@ -15,6 +15,7 @@ use pyo3_stub_gen::derive::*;
 use crate::{error::to_pyerr, impl_from_into_lock};
 
 /// A Gaussian tabular dataset.
+///
 #[gen_stub_pyclass]
 #[pyclass(name = "GaussTable", module = "causal_hub.datasets", from_py_object)]
 #[derive(Clone, Debug)]

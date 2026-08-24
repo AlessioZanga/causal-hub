@@ -25,11 +25,13 @@ use pyo3::prelude::*;
 use pyo3_stub_gen::StubInfo;
 
 /// A Python module implemented in Rust.
+///
 #[pymodule]
 mod causal_hub {
     use super::*;
 
     /// Submodule `assets`.
+    ///
     #[pymodule]
     mod assets {
         use super::*;
@@ -79,6 +81,7 @@ mod causal_hub {
     }
 
     /// Submodule `datasets`.
+    ///
     #[pymodule]
     mod datasets {
         use super::*;
@@ -95,9 +98,11 @@ mod causal_hub {
             m.add_class::<crate::datasets::PyDataset>()?;
             m.add_class::<crate::datasets::PyCatTable>()?;
             m.add_class::<crate::datasets::PyCatIncTable>()?;
+            m.add_class::<crate::datasets::PyCatWtdTable>()?;
             m.add_class::<crate::datasets::PyCatEv>()?;
             m.add_class::<crate::datasets::PyGaussTable>()?;
             m.add_class::<crate::datasets::PyGaussIncTable>()?;
+            m.add_class::<crate::datasets::PyGaussWtdTable>()?;
             m.add_class::<crate::datasets::PyGaussEv>()?;
             m.add_class::<crate::datasets::PyMissingMechanism>()?;
             m.add_class::<crate::datasets::PyMissingTable>()?;
@@ -109,12 +114,16 @@ mod causal_hub {
             m.add_class::<crate::datasets::PyCatTrjsEv>()?;
             m.add_class::<crate::datasets::PyCatWtdTrj>()?;
             m.add_class::<crate::datasets::PyCatWtdTrjs>()?;
+            m.add_class::<crate::datasets::PyMixedEv>()?;
+            m.add_class::<crate::datasets::PyMixedTable>()?;
+            m.add_class::<crate::datasets::PyMixedIncTable>()?;
 
             Ok(())
         }
     }
 
     /// Submodule `estimators`.
+    ///
     #[pymodule]
     mod estimators {
         use super::*;
@@ -130,14 +139,21 @@ mod causal_hub {
 
             m.add_function(wrap_pyfunction!(crate::estimators::em, m)?)?;
             m.add_function(wrap_pyfunction!(crate::estimators::sem, m)?)?;
+            m.add_function(wrap_pyfunction!(crate::estimators::hc, m)?)?;
+            m.add_function(wrap_pyfunction!(crate::estimators::cthc, m)?)?;
+            m.add_function(wrap_pyfunction!(crate::estimators::ctpc, m)?)?;
             m.add_class::<crate::estimators::PyPK>()?;
-            m.add_class::<crate::estimators::PyEstimatorMethod>()?;
+            m.add_class::<crate::estimators::PyParametersEstimator>()?;
+            m.add_class::<crate::estimators::PyScorer>()?;
+            m.add_class::<crate::estimators::PyFitMethod>()?;
+            m.add_class::<crate::estimators::PyStructureEstimator>()?;
 
             Ok(())
         }
     }
 
     /// Submodule `models`.
+    ///
     #[pymodule]
     mod models {
         use super::*;
@@ -157,7 +173,13 @@ mod causal_hub {
             m.add_class::<crate::models::PyCatCPD>()?;
             m.add_class::<crate::models::PyGaussCPD>()?;
             m.add_class::<crate::models::PyCatCIM>()?;
+            m.add_class::<crate::models::PyCatPhi>()?;
+            m.add_class::<crate::models::PyGaussPhi>()?;
+            m.add_class::<crate::models::PyMixedPhi>()?;
+            m.add_class::<crate::models::PyMixedCPD>()?;
+            m.add_class::<crate::models::PyMixedBN>()?;
             m.add_class::<crate::models::PyDiGraph>()?;
+            m.add_class::<crate::models::PyUnGraph>()?;
 
             Ok(())
         }
@@ -176,6 +198,7 @@ mod causal_hub {
 }
 
 /// Define a function to gather stub information.
+///
 pub fn stub_info() -> pyo3_stub_gen::Result<StubInfo> {
     StubInfo::from_pyproject_toml(PathBuf::from("pyproject.toml"))
 }

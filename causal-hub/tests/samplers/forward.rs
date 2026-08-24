@@ -5,8 +5,8 @@ mod tests {
         assets::*,
         datasets::Dataset,
         estimators::{BNEstimator, MLE, ParCTBNEstimator},
-        models::{BN, CTBN, CatBN, CatCTBN, GaussBN, Labelled},
-        samplers::{BNSampler, CTBNSampler, ForwardSampler, ParCTBNSampler},
+        models::{BN, CTBN, CatBN, CatCTBN, GaussBN, HasLabels},
+        samplers::{BNSampler, CTBNSampler, ForwardSampler, ParBNSampler, ParCTBNSampler},
         types::{Error, Result},
     };
     use rand::SeedableRng;
@@ -17,6 +17,25 @@ mod tests {
 
         mod categorical {
             use super::*;
+
+            #[test]
+            fn forward_sampling_parallel() -> Result<()> {
+                // Initialize RNG.
+                let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
+                // Load BN.
+                let model = load_cancer()?;
+                // Initialize sampler.
+                let forward = ForwardSampler::new(&mut rng, &model)?;
+                // Sample from BN in parallel.
+                let dataset = forward.par_sample_n(100)?;
+
+                // Check labels.
+                assert!(dataset.labels().eq(model.labels()));
+                // Check sample size.
+                assert_eq!(dataset.sample_size(), 100.);
+
+                Ok(())
+            }
 
             #[test]
             fn forward_sampling() -> Result<()> {
@@ -155,6 +174,23 @@ mod tests {
                         .ok_or_else(|| Error::InvalidParameter("times", "missing"))?
                         < 100.
                 );
+
+                Ok(())
+            }
+
+            #[test]
+            fn forward_sampling_parallel_by_time() -> Result<()> {
+                // Initialize RNG.
+                let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
+                // Initialize the model.
+                let model = load_eating()?;
+                // Initialize sampler.
+                let forward = ForwardSampler::new(&mut rng, &model)?;
+                // Sample from CTBN in parallel by time.
+                let trajectories = forward.par_sample_n_by_time(10.0, 10)?;
+
+                // Check labels.
+                assert!(trajectories.labels().eq(model.labels()));
 
                 Ok(())
             }

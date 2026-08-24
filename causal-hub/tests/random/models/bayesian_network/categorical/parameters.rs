@@ -3,7 +3,7 @@ mod tests {
     use causal_hub::{
         models::{CPD, CatCPD},
         random::{Random, RngCatCPD},
-        states,
+        support,
         types::Result,
     };
     use rand::SeedableRng;
@@ -12,11 +12,11 @@ mod tests {
     #[test]
     fn new() -> Result<()> {
         let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
-        let states = states![("A", ["0", "1"])];
-        let conditioning_states = states![];
+        let support = support![("A", ["0", "1"])];
+        let conditioning_support = support![];
         let alpha = 1.0;
 
-        let res = RngCatCPD::new(&mut rng, &states, &conditioning_states, alpha);
+        let res = RngCatCPD::new(&mut rng, &support, &conditioning_support, alpha);
         assert!(res.is_ok());
 
         Ok(())
@@ -25,11 +25,11 @@ mod tests {
     #[test]
     fn new_invalid_alpha() -> Result<()> {
         let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
-        let states = states![("A", ["0", "1"])];
-        let conditioning_states = states![];
+        let support = support![("A", ["0", "1"])];
+        let conditioning_support = support![];
         let alpha = 0.0;
 
-        let res = RngCatCPD::new(&mut rng, &states, &conditioning_states, alpha);
+        let res = RngCatCPD::new(&mut rng, &support, &conditioning_support, alpha);
         match res {
             Err(err) => assert_eq!(
                 err.kind.to_string(),
@@ -44,18 +44,18 @@ mod tests {
     #[test]
     fn random() -> Result<()> {
         let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
-        let states = states![("A", ["0", "1"])];
-        let conditioning_states = states![("B", ["no", "yes"])];
+        let support = support![("A", ["0", "1"])];
+        let conditioning_support = support![("B", ["no", "yes"])];
         let alpha = 1.0;
 
-        let mut rng_cpd = RngCatCPD::new(&mut rng, &states, &conditioning_states, alpha)?;
-        let cpd: CatCPD = rng_cpd.random()?;
+        let mut rng_cpd = RngCatCPD::new(&mut rng, &support, &conditioning_support, alpha)?;
+        let distribution: CatCPD = rng_cpd.random()?;
 
-        assert_eq!(cpd.states(), &states);
-        assert_eq!(cpd.conditioning_states(), &conditioning_states);
+        assert_eq!(distribution.support(), &support);
+        assert_eq!(distribution.conditioning_support(), &conditioning_support);
 
         // Parameters should sum to 1.
-        for row in cpd.parameters().rows() {
+        for row in distribution.parameters().rows() {
             let sum: f64 = row.iter().sum();
             assert!((sum - 1.0).abs() < 1e-10);
         }

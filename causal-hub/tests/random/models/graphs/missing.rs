@@ -51,11 +51,11 @@ mod tests {
     fn random_mcar() -> Result<()> {
         let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
         let labels = labels!["X", "Y", "Z"];
-        let mut g = DiGraph::empty(labels)?;
-        g.add_edge(0, 1)?;
-        g.add_edge(2, 1)?;
+        let mut graph = DiGraph::empty(labels)?;
+        graph.add_edge(0, 1)?;
+        graph.add_edge(2, 1)?;
 
-        let mut sampler = RngMissingMechanism::new(&mut rng, &g, MissingType::MCAR, 0.5)?;
+        let mut sampler = RngMissingMechanism::new(&mut rng, &graph, MissingType::MCAR, 0.5)?;
         let pr = sampler.random()?;
 
         // With 3 variables and p=0.5, round(3*0.5) = round(1.5) = 2 variables should be missing.
@@ -71,12 +71,12 @@ mod tests {
     fn random_mar() -> Result<()> {
         let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
         let labels = labels!["X", "Y", "Z"];
-        let mut g = DiGraph::empty(labels)?;
-        g.add_edge(0, 1)?; // X -> Y
-        g.add_edge(2, 1)?; // Z -> Y
+        let mut graph = DiGraph::empty(labels)?;
+        graph.add_edge(0, 1)?; // X -> Y
+        graph.add_edge(2, 1)?; // Z -> Y
         // V-structure: X -> Y <- Z
 
-        let mut sampler = RngMissingMechanism::new(&mut rng, &g, MissingType::MAR, 0.5)?;
+        let mut sampler = RngMissingMechanism::new(&mut rng, &graph, MissingType::MAR, 0.5)?;
         let pr = sampler.random()?;
 
         assert_eq!(pr.len(), 2);
@@ -98,11 +98,11 @@ mod tests {
     fn random_mnar() -> Result<()> {
         let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
         let labels = labels!["X", "Y", "Z"];
-        let mut g = DiGraph::empty(labels)?;
-        g.add_edge(0, 1)?;
-        g.add_edge(2, 1)?;
+        let mut graph = DiGraph::empty(labels)?;
+        graph.add_edge(0, 1)?;
+        graph.add_edge(2, 1)?;
 
-        let mut sampler = RngMissingMechanism::new(&mut rng, &g, MissingType::MNAR, 0.5)?;
+        let mut sampler = RngMissingMechanism::new(&mut rng, &graph, MissingType::MNAR, 0.5)?;
         let pr = sampler.random()?;
 
         assert_eq!(pr.len(), 2);

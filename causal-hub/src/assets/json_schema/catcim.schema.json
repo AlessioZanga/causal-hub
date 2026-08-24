@@ -3,7 +3,7 @@
     "$id": "catcim.schema.json",
     "type": "object",
     "properties": {
-        "states": {
+        "support": {
             "type": "object",
             "additionalProperties": {
                 "type": "array",
@@ -12,7 +12,7 @@
                 }
             }
         },
-        "conditioning_states": {
+        "conditioning_support": {
             "type": "object",
             "additionalProperties": {
                 "type": "array",
@@ -75,8 +75,8 @@
         }
     },
     "required": [
-        "states",
-        "conditioning_states",
+        "support",
+        "conditioning_support",
         "parameters",
         "type"
     ]

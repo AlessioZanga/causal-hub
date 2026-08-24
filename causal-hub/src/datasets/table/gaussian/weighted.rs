@@ -1,8 +1,11 @@
+use std::borrow::Cow;
+
 use ndarray::prelude::*;
+use serde::{Deserialize, Serialize};
 
 use crate::{
     datasets::{Dataset, GaussEv, GaussSample, GaussTable},
-    models::Labelled,
+    models::{GaussSupport, HasLabels},
     types::{Error, Labels, Result, Set},
 };
 
@@ -10,13 +13,13 @@ use crate::{
 pub type GaussWtdSample = (GaussSample, f64);
 
 /// A multivariate Gaussian weighted dataset.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct GaussWtdTable {
     dataset: GaussTable,
     weights: Array1<f64>,
 }
 
-impl Labelled for GaussWtdTable {
+impl HasLabels for GaussWtdTable {
     #[inline]
     fn labels(&self) -> &Labels {
         self.dataset.labels()
@@ -65,12 +68,23 @@ impl GaussWtdTable {
 
 impl Dataset for GaussWtdTable {
     type Values = GaussTable;
+    type Support = GaussSupport;
     type Evidence = GaussEv;
     type EvidenceIter<'a> = <GaussTable as Dataset>::EvidenceIter<'a>;
 
     #[inline]
     fn values(&self) -> &Self::Values {
         &self.dataset
+    }
+
+    fn support(&self) -> Cow<'_, Self::Support> {
+        Cow::Owned(
+            self.dataset
+                .labels()
+                .iter()
+                .map(|l| (l.clone(), (f64::NEG_INFINITY, f64::INFINITY)))
+                .collect(),
+        )
     }
 
     fn evidence_iter(&self) -> Self::EvidenceIter<'_> {

@@ -14,6 +14,7 @@ pub trait Random {
 }
 
 /// A trait for parallel random generators.
+#[allow(clippy::module_name_repetitions)]
 pub trait ParRandom {
     /// The output type of the parallel random generator.
     type Output;

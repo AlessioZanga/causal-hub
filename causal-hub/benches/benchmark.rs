@@ -5,7 +5,7 @@ use causal_hub::{
     datasets::{CatEv, CatEvT, CatTable},
     estimators::{BE, BNEstimator, CSSEstimator, MLE, SSE},
     inference::{ApproximateInference, BNCausalInference, BNInference, CausalInference},
-    models::{BN, CatBN, Labelled},
+    models::{BN, CatBN, HasLabels},
     samplers::{BNSampler, ForwardSampler, ImportanceSampler},
     set,
     types::{Result, Set},
@@ -93,7 +93,7 @@ fn bench_catbn(c: &mut Criterion, model: CatBN) -> Result<()> {
     // Create trivial evidence: "0" = 0.
     let e = CatEvT::CertainPositive { event: 0, state: 0 };
     // Construct events vector.
-    let e = CatEv::new(model.states().clone(), vec![e])?;
+    let e = CatEv::new(model.support().clone(), vec![e])?;
 
     // Setup Importance Sampler
     let mut rng = Xoshiro256PlusPlus::seed_from_u64(200);

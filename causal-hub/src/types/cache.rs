@@ -1,8 +1,8 @@
 use std::sync::{Arc, RwLock};
 
 use crate::{
-    estimators::CPDEstimator,
-    models::Labelled,
+    estimators::{CPDEstimator, ParCPDEstimator},
+    models::HasLabels,
     types::{Error, Labels, Map, Result, Set},
 };
 
@@ -36,9 +36,9 @@ where
     }
 }
 
-impl<C, K, V> Labelled for Cache<'_, C, K, V>
+impl<C, K, V> HasLabels for Cache<'_, C, K, V>
 where
-    C: Labelled,
+    C: HasLabels,
 {
     #[inline]
     fn labels(&self) -> &Labels {
@@ -69,6 +69,39 @@ where
         }
         // If it is not, call the function.
         let value = self.call.fit(x, z)?;
+        // Insert the value into the cache.
+        self.cache
+            .write()
+            .map_err(|e| Error::Poison(&e.to_string()))?
+            .insert(key, value.clone());
+        // Return the value.
+        Ok(value)
+    }
+}
+
+impl<E, P> ParCPDEstimator<P> for Cache<'_, E, (Vec<usize>, Vec<usize>), P>
+where
+    E: ParCPDEstimator<P>,
+    P: Clone,
+{
+    fn par_fit(&self, x: &Set<usize>, z: &Set<usize>) -> Result<P> {
+        // Get the key.
+        let key: (Vec<_>, Vec<_>) = (
+            x.into_iter().cloned().collect(),
+            z.into_iter().cloned().collect(),
+        );
+        // Check if the key is in the cache.
+        if let Some(value) = self
+            .cache
+            .read()
+            .map_err(|e| Error::Poison(&e.to_string()))?
+            .get(&key)
+        {
+            // If it is, return the value.
+            return Ok(value.clone());
+        }
+        // If it is not, call the function.
+        let value = self.call.par_fit(x, z)?;
         // Insert the value into the cache.
         self.cache
             .write()
