@@ -29,6 +29,8 @@ dev = [
     "maturin>=1.13.1,<2.0.0",
     "patchelf>=0.17.2.4,<1.0.0 ; sys_platform != 'win32'",
     "pytest>=9.0.3,<10.0.0",
+    "pydata-sphinx-theme>=0.16.0,<1.0.0",
+    "sphinx>=9.1.0,<10.0.0",
 ]
 
 [project.urls]
