@@ -4,10 +4,10 @@ use std::{
 };
 
 use backend::{
-    datasets::CatTrjs,
+    datasets::{CatTrjs, MissingMethod},
     estimators::{BE, MLE},
     io::JsonIO,
-    models::{CTBN, CatCTBN, DiGraph, Labelled},
+    models::{CTBN, CatCTBN, DiGraph, HasLabels},
     samplers::{CTBNSampler, ForwardSampler, ParCTBNSampler},
 };
 use pyo3::{
@@ -22,12 +22,16 @@ use rand_xoshiro::Xoshiro256PlusPlus;
 use crate::{
     datasets::{PyCatTrjs, PyMissingMechanism, PyMissingMethod},
     error::to_pyerr,
-    estimators::{PyCTBNEstimator, PyEstimatorMethod},
+    estimators::{
+        PyCTBNEstimator, PyFitMethod, PyParametersEstimator, PyScorer, PyStructureEstimator, cthc,
+        ctpc,
+    },
     impl_from_into_lock, kwarg,
     models::{PyCatBN, PyCatCIM, PyDiGraph},
 };
 
 /// A continuous-time Bayesian network (CTBN).
+///
 #[gen_stub_pyclass]
 #[pyclass(name = "CatCTBN", module = "causal_hub.models", eq, from_py_object)]
 #[derive(Clone, Debug)]
@@ -143,13 +147,13 @@ impl PyCatCTBN {
             .lock()
             .cims()
             .iter()
-            .map(|(label, cim)| {
+            .map(|(label, intensity)| {
                 // Convert the label to a string slice.
                 let label = label.clone();
                 // Convert the CIM to a PyCatCIM.
-                let cim = cim.clone().into();
+                let intensity = intensity.clone().into();
                 // Return the label and CIM as a tuple.
-                (label, cim)
+                (label, intensity)
             })
             .collect())
     }
@@ -165,7 +169,87 @@ impl PyCatCTBN {
         Ok(self.lock().parameters_size())
     }
 
-    /// Fit the model to a dataset and a given graph.
+    /// Fit the model to trajectories, either fitting the parameters given the
+    /// structure (`FitMethod.Parameters`) or learning the structure from data
+    /// and fitting the parameters over it (`FitMethod.Structure`).
+    ///
+    /// Parameters
+    /// ----------
+    /// trajectories: CatTrjs
+    ///     The trajectories to fit the model to.
+    /// graph: DiGraph | None
+    ///     The graph to fit the parameters to. It is required by
+    ///     `FitMethod.Parameters`, and it is ignored by `FitMethod.Structure`.
+    /// fit_method: FitMethod | None
+    ///     The fitting method to use, one of `FitMethod.{Parameters,
+    ///     Structure}` (default is `FitMethod.Parameters`).
+    /// **kwargs: dict | None
+    ///     Optional keyword arguments, forwarded to the underlying method:
+    ///
+    /// - `structure_estimator`: The structure learning algorithm used by
+    ///   `FitMethod.Structure`, one of `StructureEstimator.{CTHC, CTPC}`
+    ///   (default is `StructureEstimator.CTHC`).
+    /// - `parameters_estimator`: The parameter estimator used to fit the local
+    ///   models, either `ParametersEstimator.MLE` or `ParametersEstimator.BE`
+    ///   (default is `ParametersEstimator.MLE`). Any further keyword
+    ///   argument supported by the selected method is forwarded.
+    ///
+    /// Returns
+    /// -------
+    /// CatCTBN
+    ///     A new fitted model.
+    ///
+    #[classmethod]
+    #[pyo3(signature = (
+        trajectories,
+        graph = None,
+        fit_method = PyFitMethod::Parameters,
+        **kwargs
+    ))]
+    pub fn fit(
+        _cls: &Bound<'_, PyType>,
+        py: Python<'_>,
+        trajectories: &Bound<'_, PyCatTrjs>,
+        graph: Option<&Bound<'_, PyDiGraph>>,
+        fit_method: PyFitMethod,
+        kwargs: Option<&Bound<'_, PyDict>>,
+    ) -> PyResult<Self> {
+        // Match the fit method.
+        match fit_method {
+            PyFitMethod::Parameters => {
+                // Get the graph, which is required to fit the parameters.
+                let Some(graph) = graph else {
+                    return Err(PyErr::new::<PyValueError, _>(
+                        "A graph is required to fit the model parameters.",
+                    ));
+                };
+                // Get the estimator method from the keyword arguments, or default to the MLE
+                // estimator.
+                let parameters_estimator = kwarg!(
+                    kwargs,
+                    "parameters_estimator",
+                    PyParametersEstimator,
+                    PyParametersEstimator::MLE
+                )?;
+                // Fit the model parameters over the given graph.
+                Self::fit_parameters(_cls, py, trajectories, graph, parameters_estimator, kwargs)
+            }
+            PyFitMethod::Structure => {
+                // Get the structure learning algorithm from the keyword arguments, or default to
+                // the CTHC algorithm.
+                let structure_estimator = kwarg!(
+                    kwargs,
+                    "structure_estimator",
+                    PyStructureEstimator,
+                    PyStructureEstimator::CTHC
+                )?;
+                // Learn the structure and fit the model over it, ignoring the given graph, if any.
+                Self::fit_structure(_cls, py, trajectories, structure_estimator, kwargs)
+            }
+        }
+    }
+
+    /// Fit the model parameters to a dataset and a given graph.
     ///
     /// Parameters
     /// ----------
@@ -173,18 +257,19 @@ impl PyCatCTBN {
     ///     The dataset to fit the model to.
     /// graph: DiGraph
     ///     The graph to fit the model to.
-    /// estimator: EstimatorMethod | None
-    ///     The estimator to use for fitting (default is `EstimatorMethod.MLE`).
-    /// missing_method: MissingMethod | None
-    ///     The method to use for handling missing data (default is `MissingMethod.PW`).
-    /// missing_mechanism: MissingMechanism | None
-    ///     The missing mechanism to use for handling missing data (default is `None`).
-    /// parallel: bool
-    ///     The flag to enable parallel fitting (default is `true`).
+    /// estimator: ParametersEstimator | None
+    ///     The estimator to use for fitting (default is `ParametersEstimator.BE`).
     /// **kwargs: dict | None
     ///     Optional keyword arguments:
     ///
     /// - `alpha`: The prior of the Bayesian estimator (int, float64).
+    /// - `missing_method`: The method (`MissingMethod`) used to handle missing
+    ///   data (default is `MissingMethod.PW`).
+    /// - `missing_mechanism`: The mechanism (`MissingMechanism`) associated to
+    ///   the dataset (default is `None`). It is required by
+    ///   `MissingMethod.IPW` and `MissingMethod.AIPW`, and it must be `None`
+    ///   otherwise.
+    /// - `parallel`: The flag to enable parallel fitting (default is `true`).
     ///
     /// Returns
     /// -------
@@ -195,51 +280,65 @@ impl PyCatCTBN {
     #[pyo3(signature = (
         dataset,
         graph,
-        estimator = None,
-        missing_method = None,
-        missing_mechanism = None,
-        parallel = true,
+        parameters_estimator = PyParametersEstimator::BE,
         **kwargs
     ))]
-    #[allow(clippy::too_many_arguments)]
-    pub fn fit(
+    pub fn fit_parameters(
         _cls: &Bound<'_, PyType>,
         py: Python<'_>,
         dataset: &Bound<'_, PyCatTrjs>,
         graph: &Bound<'_, PyDiGraph>,
-        estimator: Option<PyEstimatorMethod>,
-        missing_method: Option<PyMissingMethod>,
-        missing_mechanism: Option<PyMissingMechanism>,
-        parallel: bool,
+        parameters_estimator: PyParametersEstimator,
         kwargs: Option<&Bound<'_, PyDict>>,
     ) -> PyResult<Self> {
         // Get the dataset and the graph.
         let dataset: CatTrjs = dataset.extract::<PyCatTrjs>()?.into();
         let graph: DiGraph = graph.extract::<PyDiGraph>()?.into();
-        // Get the estimator method.
-        let estimator = estimator.unwrap_or(PyEstimatorMethod::MLE);
+
+        // Get the alpha prior from the keyword arguments, if any.
+        let alpha = kwarg!(kwargs, "alpha", (usize, f64))?;
+
+        // Get the missing data handling method from the keyword arguments, or default to the PW
+        // missing data handling method.
+        let missing_method: MissingMethod = kwarg!(
+            kwargs,
+            "missing_method",
+            PyMissingMethod,
+            PyMissingMethod::PW
+        )?
+        .into();
+
+        // Get the missing data mechanism from the keyword arguments, if any.
+        let missing_mechanism: Option<PyMissingMechanism> =
+            kwarg!(kwargs, "missing_mechanism", PyMissingMechanism)?;
+
+        // Get the parallel flag from the keyword arguments, or default to parallel execution.
+        let parallel = kwarg!(kwargs, "parallel", bool, true)?;
+        // Reject any unknown keyword arguments.
+        crate::utils::ensure_kwargs_consumed(kwargs)?;
+
         // Initialize the estimator.
-        let estimator: Box<dyn PyCTBNEstimator<CatCTBN>> = match estimator {
+        let estimator: Box<dyn PyCTBNEstimator<CatCTBN>> = match parameters_estimator {
             // Initialize the maximum likelihood estimator.
-            PyEstimatorMethod::MLE => Box::new(
+            PyParametersEstimator::MLE => Box::new(
                 MLE::new(&dataset)
                     .with_missing_method(
-                        Some(missing_method.unwrap_or(PyMissingMethod::PW).into()),
+                        Some(missing_method),
                         missing_mechanism.as_ref().map(|m| (*m.lock()).clone()),
                     )
                     .map_err(to_pyerr)?,
             ),
             // Initialize the Bayesian estimator.
-            PyEstimatorMethod::BE => {
+            PyParametersEstimator::BE => {
                 // Initialize the Bayesian estimator.
                 let estimator = BE::new(&dataset)
                     .with_missing_method(
-                        Some(missing_method.unwrap_or(PyMissingMethod::PW).into()),
+                        Some(missing_method),
                         missing_mechanism.as_ref().map(|m| (*m.lock()).clone()),
                     )
                     .map_err(to_pyerr)?;
                 // Set the prior `alpha`, if any.
-                match kwarg!(kwargs, "alpha", (usize, f64)) {
+                match alpha {
                     None => Box::new(estimator),
                     Some(alpha) => Box::new(estimator.with_prior(alpha)),
                 }
@@ -258,6 +357,88 @@ impl PyCatCTBN {
         Ok(model.into())
     }
 
+    /// Fit the model structure to trajectories using a structure learning
+    /// algorithm, either Continuous Time Hill Climbing (`CTHC`) or Continuous
+    /// Time Peter-Clark (`CTPC`).
+    ///
+    /// Parameters
+    /// ----------
+    /// trajectories: CatTrjs
+    ///     The trajectories to learn the structure from.
+    /// structure_estimator: StructureEstimator | None
+    ///     The structure learning algorithm to use, one of
+    ///     `StructureEstimator.{CTHC, CTPC}` (default is
+    ///     `StructureEstimator.CTHC`).
+    /// **kwargs: dict | None
+    ///     Optional keyword arguments, forwarded to the selected algorithm:
+    ///
+    /// - `c_test`: The significance level of the chi-squared test for the
+    ///   initial distributions, used by `CTPC` (default is `0.01`). It must be
+    ///   in `[0, 1]`.
+    /// - `parameters_estimator`: The parameter estimator used to fit the local
+    ///   models, either `ParametersEstimator.MLE` or `ParametersEstimator.BE`
+    ///   (default is `ParametersEstimator.BE`).
+    /// - `f_test`: The significance level of the F-test for the transition
+    ///   rates, used by `CTPC` (default is `0.01`). It must be in `[0, 1]`.
+    /// - `initial_graph`: The initial graph (`DiGraph`) to start the search
+    ///   from (default is an empty graph for `CTHC`, a complete graph for
+    ///   `CTPC`). Its labels must match the trajectories.
+    /// - `max_parents`: The maximum number of parents for each vertex, used
+    ///   by `CTHC` (default is no limit).
+    /// - `missing_method`: The method (`MissingMethod`) used to handle missing
+    ///   data, one of `MissingMethod.{LW, PW, IPW, AIPW}` (default is `None`).
+    /// - `missing_mechanism`: The missing data mechanism (`MissingMechanism`)
+    ///   associated to the trajectories (default is `None`). It is required by
+    ///   `MissingMethod.IPW` and `MissingMethod.AIPW`, and it must be `None`
+    ///   otherwise.
+    /// - `parallel`: Whether to run the algorithm in parallel (default is `True`).
+    /// - `prior_knowledge`: The prior knowledge (`PK`) constraining the search,
+    ///   e.g., forbidden and required edges or temporal tiers
+    ///   (default is `None`).
+    /// - `scorer`: The scoring criterion to maximize, used by `CTHC`,
+    ///   one of `Scorer.{LL, AIC, AICC, BIC, BICC, HQC}` (default is
+    ///   `Scorer.BIC`).
+    ///
+    /// Returns
+    /// -------
+    /// CatCTBN
+    ///     A new fitted model over the learned structure.
+    ///
+    #[classmethod]
+    #[pyo3(signature = (
+        trajectories,
+        structure_estimator = PyStructureEstimator::CTHC,
+        **kwargs
+    ))]
+    pub fn fit_structure(
+        _cls: &Bound<'_, PyType>,
+        py: Python<'_>,
+        trajectories: &Bound<'_, PyCatTrjs>,
+        structure_estimator: PyStructureEstimator,
+        kwargs: Option<&Bound<'_, PyDict>>,
+    ) -> PyResult<Self> {
+        // Match the structure learning algorithm.
+        match structure_estimator {
+            PyStructureEstimator::CTHC => {
+                // Get the scoring criterion from the keyword arguments, or default to the BIC.
+                let scorer = kwarg!(kwargs, "scorer", PyScorer, PyScorer::BIC)?;
+                // Learn the structure and fit the model using CTHC.
+                cthc(py, trajectories, scorer, kwargs)
+            }
+            PyStructureEstimator::CTPC => {
+                // Get the significance level of the chi-squared test from the keyword arguments,
+                // or default to `0.01`.
+                let c_test = kwarg!(kwargs, "c_test", f64, 0.01)?;
+
+                // Get the significance level of the F-test from the keyword arguments, or
+                // default to `0.01`.
+                let f_test = kwarg!(kwargs, "f_test", f64, 0.01)?;
+                // Learn the structure and fit the model using CTPC.
+                ctpc(py, trajectories, f_test, c_test, kwargs)
+            }
+        }
+    }
+
     /// Sample from the model.
     ///
     /// Parameters
@@ -270,10 +451,11 @@ impl PyCatCTBN {
     /// max_time: float | None
     ///     The maximum time of each trajectory (default is `None`).
     ///     Must be set if `max_len` is `None`.
-    /// seed: int
-    ///     The seed of the random number generator (default is `31`).
-    /// parallel: bool
-    ///     The flag to enable parallel sampling (default is `true`).
+    /// **kwargs: dict | None
+    ///     Optional keyword arguments:
+    ///
+    /// - `parallel`: The flag to enable parallel sampling (default is `true`).
+    /// - `seed`: The seed of the random number generator (default is `31`).
     ///
     /// Returns
     /// -------
@@ -284,8 +466,7 @@ impl PyCatCTBN {
         n,
         max_len = None,
         max_time = None,
-        seed = 31,
-        parallel = true,
+        **kwargs
     ))]
     pub fn sample(
         &self,
@@ -293,8 +474,7 @@ impl PyCatCTBN {
         n: usize,
         max_len: Option<usize>,
         max_time: Option<f64>,
-        seed: u64,
-        parallel: bool,
+        kwargs: Option<&Bound<'_, PyDict>>,
     ) -> PyResult<PyCatTrjs> {
         // Check at least one of max_len or max_time is set.
         if max_len.is_none() && max_time.is_none() {
@@ -302,6 +482,14 @@ impl PyCatCTBN {
                 "At least one of 'max_len' or 'max_time' must be set.",
             ));
         }
+        // Get the parallel flag from the keyword arguments, or default to parallel execution.
+        let parallel = kwarg!(kwargs, "parallel", bool, true)?;
+
+        // Get the seed from the keyword arguments, or default to `31`.
+        let seed = kwarg!(kwargs, "seed", u64, 31)?;
+        // Reject any unknown keyword arguments.
+        crate::utils::ensure_kwargs_consumed(kwargs)?;
+
         // Initialize the random number generator.
         let mut rng = Xoshiro256PlusPlus::seed_from_u64(seed);
         // Get a lock on the inner field.

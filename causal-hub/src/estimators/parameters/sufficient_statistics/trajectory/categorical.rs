@@ -70,11 +70,11 @@ impl CSSEstimator<CatCIMS> for SSE<'_, CatWtdTrj> {
         // Get the weight of the trajectory.
         let w = self.dataset.weight();
         // Compute the unweighted sufficient statistics.
-        let s = SSE::new(self.dataset.trajectory()).fit(x, z)?;
+        let stats = SSE::new(self.dataset.trajectory()).fit(x, z)?;
         // Destructure the sufficient statistics.
-        let n_xz = s.fitted_conditional_counts();
-        let t_xz = s.fitted_conditional_times();
-        let n = s.fitted_size();
+        let n_xz = stats.fitted_conditional_counts();
+        let t_xz = stats.fitted_conditional_times();
+        let n = stats.fitted_size();
         // Apply the weight to the sufficient statistics.
         CatCIMS::new(n_xz * w, t_xz * w, n * w)
     }
@@ -93,7 +93,7 @@ macro_for!($type in [CatTrjs, CatWtdTrjs] {
             let s_z = z.iter().map(|&i| shape[i]).product();
 
             // Initialize the sufficient statistics.
-            let s = CatCIMS::new(
+            let stats = CatCIMS::new(
                 // Initialize the joint counts.
                 Array3::zeros((s_z, s_x, s_x)),
                 // Initialize the time spent in that state.
@@ -106,7 +106,7 @@ macro_for!($type in [CatTrjs, CatWtdTrjs] {
             self.dataset
                 .into_iter()
                 // Sum the sufficient statistics of each trajectory.
-                .try_fold(s, |s_a, trj_b| Ok(s_a + SSE::new(trj_b).fit(x, z)?))
+                .try_fold(stats, |s_a, trj_b| Ok(s_a + SSE::new(trj_b).fit(x, z)?))
         }
     }
 
@@ -120,7 +120,7 @@ macro_for!($type in [CatTrjs, CatWtdTrjs] {
             let s_z = z.iter().map(|&i| shape[i]).product();
 
             // Initialize the sufficient statistics.
-            let s = CatCIMS::new(
+            let stats = CatCIMS::new(
                 // Initialize the joint counts.
                 Array3::zeros((s_z, s_x, s_x)),
                 // Initialize the time spent in that state.
@@ -134,11 +134,11 @@ macro_for!($type in [CatTrjs, CatWtdTrjs] {
                 .par_iter()
                 // Sum the sufficient statistics of each trajectory.
                 .try_fold(
-                    || s.clone(),
+                    || stats.clone(),
                     |s_a, trj_b| Ok(s_a + SSE::new(trj_b).fit(x, z)?),
                 )
                 .try_reduce(
-                    || s.clone(),
+                    || stats.clone(),
                     |s_a, s_b| Ok(s_a + s_b)
                 )
         }

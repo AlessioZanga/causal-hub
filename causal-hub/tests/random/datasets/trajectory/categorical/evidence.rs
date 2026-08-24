@@ -3,7 +3,7 @@ mod tests {
     use causal_hub::{
         datasets::{CatTrj, CatTrjEvT as E, CatTrjs, Dataset},
         random::{Random, RngCatTrjEv},
-        states,
+        support,
         types::Result,
     };
     use ndarray::prelude::*;
@@ -12,7 +12,7 @@ mod tests {
 
     // Helper function to create a sample trajectory.
     fn create_sample_trajectory() -> Result<CatTrj> {
-        let states = states![("A", ["0", "1", "2"]), ("B", ["0", "1"]), ("C", ["0", "1"])];
+        let support = support![("A", ["0", "1", "2"]), ("B", ["0", "1"]), ("C", ["0", "1"])];
         let events = array![
             [0, 0, 0],
             [1, 0, 0],
@@ -22,18 +22,18 @@ mod tests {
             [2, 0, 1]
         ];
         let times = array![0.0, 0.1, 0.2, 0.3, 0.4, 0.5];
-        CatTrj::new(states, events, times)
+        CatTrj::new(support, events, times)
     }
 
     // Helper function to create sample trajectories.
     fn create_sample_trajectories() -> Result<CatTrjs> {
         let trj_0 = create_sample_trajectory()?;
         let trj_1 = {
-            let states = states![("A", ["0", "1", "2"]), ("B", ["0", "1"]), ("C", ["0", "1"])];
+            let support = support![("A", ["0", "1", "2"]), ("B", ["0", "1"]), ("C", ["0", "1"])];
             // Only one state change per transition.
             let events = array![[0, 0, 0], [0, 1, 0], [1, 1, 0], [2, 1, 0]];
             let times = array![0.0, 0.2, 0.4, 0.6];
-            CatTrj::new(states, events, times)?
+            CatTrj::new(support, events, times)?
         };
         CatTrjs::new([trj_0, trj_1])
     }
@@ -60,13 +60,13 @@ mod tests {
             let res = RngCatTrjEv::new(&mut rng, &trj, -0.1);
             assert!(matches!(
                 res,
-                Err(Error { kind: ErrorKind::InvalidParameter(ref p, ref m), .. }) if p == "p" && m == "must be in [0, 1]"
+                Err(Error { kind: ErrorKind::InvalidParameter(ref probability, ref model), .. }) if probability == "p" && model == "must be in [0, 1]"
             ));
 
             let res = RngCatTrjEv::new(&mut rng, &trj, 1.1);
             assert!(matches!(
                 res,
-                Err(Error { kind: ErrorKind::InvalidParameter(ref p, ref m), .. }) if p == "p" && m == "must be in [0, 1]"
+                Err(Error { kind: ErrorKind::InvalidParameter(ref probability, ref model), .. }) if probability == "p" && model == "must be in [0, 1]"
             ));
 
             Ok(())
@@ -167,7 +167,7 @@ mod tests {
     }
 
     mod multiple {
-        use causal_hub::models::Labelled;
+        use causal_hub::models::HasLabels;
 
         use super::*;
 

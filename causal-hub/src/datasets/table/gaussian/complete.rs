@@ -1,15 +1,17 @@
 use std::{
+    borrow::Cow,
     io::{Read, Write},
     sync::Arc,
 };
 
 use csv::{ReaderBuilder, WriterBuilder};
 use ndarray::prelude::*;
+use serde::{Deserialize, Serialize};
 
 use crate::{
     datasets::{Dataset, GaussEv, GaussEvT},
     io::CsvIO,
-    models::Labelled,
+    models::{GaussSupport, HasLabels},
     types::{Error, Labels, Result, Set},
 };
 
@@ -19,7 +21,7 @@ pub type GaussType = f64;
 pub type GaussSample = Array1<GaussType>;
 
 /// A struct representing a gaussian dataset.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct GaussTable {
     labels: Labels,
     values: Array2<GaussType>,
@@ -46,7 +48,7 @@ impl<'a> Iterator for GaussTableEvidenceIter<'a> {
     }
 }
 
-impl Labelled for GaussTable {
+impl HasLabels for GaussTable {
     #[inline]
     fn labels(&self) -> &Labels {
         &self.labels
@@ -106,12 +108,22 @@ impl GaussTable {
 
 impl Dataset for GaussTable {
     type Values = Array2<GaussType>;
+    type Support = GaussSupport;
     type Evidence = GaussEv;
     type EvidenceIter<'a> = GaussTableEvidenceIter<'a>;
 
     #[inline]
     fn values(&self) -> &Self::Values {
         &self.values
+    }
+
+    fn support(&self) -> Cow<'_, Self::Support> {
+        Cow::Owned(
+            self.labels
+                .iter()
+                .map(|l| (l.clone(), (f64::NEG_INFINITY, f64::INFINITY)))
+                .collect(),
+        )
     }
 
     fn evidence_iter(&self) -> Self::EvidenceIter<'_> {
@@ -180,7 +192,7 @@ impl CsvIO for GaussTable {
             .enumerate()
             .map(|(i, row)| {
                 // Get the record row.
-                let row = row.map_err(|e| Error::Csv(Arc::new(e)))?;
+                let row = row.map_err(|evidence| Error::Csv(Arc::new(evidence)))?;
                 // Get the record values and convert to indices.
                 row.into_iter()
                     .enumerate()

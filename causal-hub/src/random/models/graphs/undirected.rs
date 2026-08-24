@@ -11,7 +11,7 @@ use crate::{
 pub struct RngUnGraph<'a, R> {
     rng: &'a mut R,
     labels: &'a Labels,
-    p: f64,
+    probability: f64,
 }
 
 impl<'a, R> RngUnGraph<'a, R> {
@@ -27,13 +27,17 @@ impl<'a, R> RngUnGraph<'a, R> {
     ///
     /// A new `RngUnGraph` instance.
     ///
-    pub fn new(rng: &'a mut R, labels: &'a Labels, p: f64) -> Result<Self> {
+    pub fn new(rng: &'a mut R, labels: &'a Labels, probability: f64) -> Result<Self> {
         // Check if the probability is in [0, 1].
-        if !(0.0..=1.0).contains(&p) {
+        if !(0.0..=1.0).contains(&probability) {
             return Err(Error::InvalidParameter("p", "must be in [0, 1]"));
         }
 
-        Ok(Self { rng, labels, p })
+        Ok(Self {
+            rng,
+            labels,
+            probability,
+        })
     }
 }
 
@@ -42,7 +46,7 @@ impl<R: Rng> Random for RngUnGraph<'_, R> {
 
     fn random(&mut self) -> Self::Output {
         // Construct the empty graph.
-        let mut g = UnGraph::empty(self.labels)?;
+        let mut graph = UnGraph::empty(self.labels)?;
 
         // Get the number of vertices.
         let n = self.labels.len();
@@ -51,15 +55,15 @@ impl<R: Rng> Random for RngUnGraph<'_, R> {
         (0..n)
             .combinations(2)
             // ... sample edges ...
-            .filter(|_| self.rng.random_bool(self.p))
+            .filter(|_| self.rng.random_bool(self.probability))
             .try_for_each(|idx| -> Result<()> {
                 // ... add an edge.
                 let (i, j) = (idx[0], idx[1]);
-                g.add_edge(i, j)?;
+                graph.add_edge(i, j)?;
 
                 Ok(())
             })?;
 
-        Ok(g)
+        Ok(graph)
     }
 }

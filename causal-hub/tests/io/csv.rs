@@ -6,7 +6,7 @@ mod tests {
         datasets::{CatIncTable, CatTable, Dataset, GaussTable, IncDataset},
         io::CsvIO,
         labels,
-        models::Labelled,
+        models::HasLabels,
         types::{Error, Result},
     };
     use ndarray::prelude::*;
@@ -37,7 +37,7 @@ mod tests {
                     assert_eq!(dataset.labels(), &labels!["A", "B", "C"]);
                     assert!(
                         dataset
-                            .states()
+                            .support()
                             .values()
                             .all(|x| x.iter().eq(["no", "yes"]))
                     );
@@ -131,7 +131,7 @@ mod tests {
                     assert_eq!(dataset.labels(), &labels!["A", "B", "C"]);
                     assert!(
                         dataset
-                            .states()
+                            .support()
                             .values()
                             .all(|x| x.iter().eq(["no", "yes"]))
                     );

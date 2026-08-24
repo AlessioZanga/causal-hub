@@ -1,4 +1,7 @@
-use std::ops::{Add, AddAssign};
+use std::{
+    borrow::Cow,
+    ops::{Add, AddAssign},
+};
 
 use approx::{AbsDiffEq, RelativeEq, relative_eq};
 use itertools::Itertools;
@@ -12,8 +15,8 @@ use serde::{
 use crate::{
     datasets::CatSample,
     impl_json_io,
-    models::{CIM, Labelled},
-    types::{EPSILON, Error, Labels, Result, Set, States},
+    models::{CIM, CatSupport, HasLabels},
+    types::{EPSILON, Error, Labels, Result, Set},
     utils::MI,
 };
 
@@ -264,7 +267,7 @@ impl<'de> Deserialize<'de> for CatCIMS {
                     fitted_conditional_times,
                     fitted_size,
                 )
-                .map_err(|e| E::custom(e.to_string()))
+                .map_err(|evidence| E::custom(evidence.to_string()))
             }
         }
 
@@ -283,12 +286,12 @@ impl<'de> Deserialize<'de> for CatCIMS {
 pub struct CatCIM {
     // Labels of the conditioned variable.
     labels: Labels,
-    states: States,
+    support: CatSupport,
     shape: Array1<usize>,
     multi_index: MI,
     // Labels of the conditioning variables.
     conditioning_labels: Labels,
-    conditioning_states: States,
+    conditioning_support: CatSupport,
     conditioning_shape: Array1<usize>,
     conditioning_multi_index: MI,
     // Parameters.
@@ -304,15 +307,15 @@ impl CatCIM {
     ///
     /// # Arguments
     ///
-    /// * `states` - The variables states.
-    /// * `conditioning_states` - The conditioning variables labels and states.
-    /// * `parameters` - The intensity matrices of the states.
+    /// * `support` - The variables support.
+    /// * `conditioning_support` - The conditioning variables labels and support.
+    /// * `parameters` - The intensity matrices of the support.
     ///
     /// # Errors
     ///
     /// * If the labels and conditioning labels are not disjoint.
-    /// * If the product of the shape of the states does not match the length of the second and third axis.
-    /// * If the product of the shape of the conditioning states does not match the length of the first axis.
+    /// * If the product of the shape of the support does not match the length of the second and third axis.
+    /// * If the product of the shape of the conditioning support does not match the length of the first axis.
     /// * If the parameters are not valid intensity matrices, unless empty.
     ///
     /// # Returns
@@ -320,14 +323,14 @@ impl CatCIM {
     /// A new `CatCIM` instance.
     ///
     pub fn new(
-        states: States,
-        conditioning_states: States,
+        support: CatSupport,
+        conditioning_support: CatSupport,
         parameters: Array3<f64>,
     ) -> Result<Self> {
         // Get the labels of the variables.
-        let labels: Set<_> = states.keys().cloned().collect();
+        let labels: Set<_> = support.keys().cloned().collect();
         // Get the labels of the variables.
-        let conditioning_labels: Set<_> = conditioning_states.keys().cloned().collect();
+        let conditioning_labels: Set<_> = conditioning_support.keys().cloned().collect();
 
         // Check labels and conditioning labels are disjoint.
         if !labels.is_disjoint(&conditioning_labels) {
@@ -337,15 +340,15 @@ impl CatCIM {
             ));
         }
 
-        // Get the states shape.
-        let shape = Array::from_iter(states.values().map(Set::len));
+        // Get the support shape.
+        let shape = Array::from_iter(support.values().map(Set::len));
 
         // Check that the product of the shape matches the number of columns.
         if !parameters.is_empty() && parameters.shape()[1] != shape.product() {
             return Err(Error::IncompatibleShape(
                 "parameters",
                 &format!(
-                    "Product of the number of states must match the number of columns: expected {} but found {}.",
+                    "Product of the number of support must match the number of columns: expected {} but found {}.",
                     shape.product(),
                     parameters.shape()[1],
                 ),
@@ -357,22 +360,22 @@ impl CatCIM {
             return Err(Error::IncompatibleShape(
                 "parameters",
                 &format!(
-                    "Product of the number of states must match the third axis: expected {} but found {}.",
+                    "Product of the number of support must match the third axis: expected {} but found {}.",
                     shape.product(),
                     parameters.shape()[2],
                 ),
             ));
         }
 
-        // Get the shape of the set of states.
-        let conditioning_shape = Array::from_iter(conditioning_states.values().map(Set::len));
+        // Get the shape of the set of support.
+        let conditioning_shape = Array::from_iter(conditioning_support.values().map(Set::len));
 
         // Check that the product of the conditioning shape matches the number of rows.
         if !parameters.is_empty() && parameters.shape()[0] != conditioning_shape.product() {
             return Err(Error::IncompatibleShape(
                 "parameters",
                 &format!(
-                    "Product of the number of conditioning states must match the number of rows: expected {} but found {}.",
+                    "Product of the number of conditioning support must match the number of rows: expected {} but found {}.",
                     conditioning_shape.product(),
                     parameters.shape()[0],
                 ),
@@ -423,20 +426,21 @@ impl CatCIM {
         // Make parameters mutable.
         let mut parameters = parameters;
 
-        // Make states mutable.
+        // Make support mutable.
         let mut labels = labels;
-        let mut states = states;
+        let mut support = support;
         let mut shape = shape;
 
-        // Check if states are sorted.
-        if !states.keys().is_sorted() || !states.values().all(|x| x.iter().is_sorted()) {
-            // Compute the current states order.
-            let mut sorted_states_idx: Vec<_> = states.values().multi_cartesian_product().collect();
+        // Check if support are sorted.
+        if !support.keys().is_sorted() || !support.values().all(|x| x.iter().is_sorted()) {
+            // Compute the current support order.
+            let mut sorted_states_idx: Vec<_> =
+                support.values().multi_cartesian_product().collect();
             // Sort the labels.
             let mut sorted_labels_idx: Vec<_> = (0..labels.len()).collect();
             // Sort the labels.
             sorted_labels_idx.sort_by_key(|&i| &labels[i]);
-            // Sort the states by the labels.
+            // Sort the support by the labels.
             sorted_states_idx.iter_mut().for_each(|sorted_states_idx| {
                 *sorted_states_idx = sorted_labels_idx
                     .iter()
@@ -448,10 +452,10 @@ impl CatCIM {
             // Sort the row indices.
             sorted_row_idx.sort_by_key(|&i| &sorted_states_idx[i]);
             // Sort the labels.
-            states.sort_keys();
-            states.values_mut().for_each(Set::sort);
-            labels = states.keys().cloned().collect();
-            shape = states.values().map(Set::len).collect();
+            support.sort_keys();
+            support.values_mut().for_each(Set::sort);
+            labels = support.keys().cloned().collect();
+            shape = support.values().map(Set::len).collect();
             // Allocate new parameters, for axis 1.
             let mut new_parameters = parameters.clone();
             // Sort the values by multi indices.
@@ -476,22 +480,22 @@ impl CatCIM {
             parameters = new_parameters;
         }
 
-        // Make states immutable.
+        // Make support immutable.
         let labels = labels;
-        let states = states;
+        let support = support;
         let shape = shape;
 
-        // Make conditioning states mutable.
+        // Make conditioning support mutable.
         let mut conditioning_labels = conditioning_labels;
-        let mut conditioning_states = conditioning_states;
+        let mut conditioning_support = conditioning_support;
         let mut conditioning_shape = conditioning_shape;
 
-        // Check if conditioning states are sorted.
-        if !conditioning_states.keys().is_sorted()
-            || !conditioning_states.values().all(|x| x.iter().is_sorted())
+        // Check if conditioning support are sorted.
+        if !conditioning_support.keys().is_sorted()
+            || !conditioning_support.values().all(|x| x.iter().is_sorted())
         {
-            // Compute the current states order.
-            let mut sorted_states_idx: Vec<_> = conditioning_states
+            // Compute the current support order.
+            let mut sorted_states_idx: Vec<_> = conditioning_support
                 .values()
                 .multi_cartesian_product()
                 .collect();
@@ -499,7 +503,7 @@ impl CatCIM {
             let mut sorted_labels_idx: Vec<_> = (0..conditioning_labels.len()).collect();
             // Sort the conditioning labels.
             sorted_labels_idx.sort_by_key(|&i| &conditioning_labels[i]);
-            // Sort the conditioning states by the labels.
+            // Sort the conditioning support by the labels.
             sorted_states_idx.iter_mut().for_each(|sorted_states_idx| {
                 *sorted_states_idx = sorted_labels_idx
                     .iter()
@@ -511,10 +515,10 @@ impl CatCIM {
             // Sort the row indices.
             sorted_row_idx.sort_by_key(|&i| &sorted_states_idx[i]);
             // Sort the labels.
-            conditioning_states.sort_keys();
-            conditioning_states.values_mut().for_each(Set::sort);
-            conditioning_labels = conditioning_states.keys().cloned().collect();
-            conditioning_shape = conditioning_states.values().map(Set::len).collect();
+            conditioning_support.sort_keys();
+            conditioning_support.values_mut().for_each(Set::sort);
+            conditioning_labels = conditioning_support.keys().cloned().collect();
+            conditioning_shape = conditioning_support.values().map(Set::len).collect();
             // Allocate new parameters.
             let mut new_parameters = parameters.clone();
             // Sort the values by multi indices.
@@ -528,9 +532,9 @@ impl CatCIM {
             parameters = new_parameters;
         }
 
-        // Make conditioning states immutable.
+        // Make conditioning support immutable.
         let conditioning_labels = conditioning_labels;
-        let conditioning_states = conditioning_states;
+        let conditioning_support = conditioning_support;
         let conditioning_shape = conditioning_shape;
 
         // Make parameters immutable.
@@ -542,17 +546,17 @@ impl CatCIM {
         let conditioning_multi_index = MI::new(conditioning_shape.clone());
 
         // Get the shape of the parameters.
-        let s = parameters.shape();
+        let stats = parameters.shape();
         // Compute the parameters size.
-        let parameters_size = s[0] * s[1] * s[2].saturating_sub(1);
+        let parameters_size = stats[0] * stats[1] * stats[2].saturating_sub(1);
 
         Ok(Self {
             labels,
-            states,
+            support,
             shape,
             multi_index,
             conditioning_labels,
-            conditioning_states,
+            conditioning_support,
             conditioning_shape,
             conditioning_multi_index,
             parameters,
@@ -562,15 +566,15 @@ impl CatCIM {
         })
     }
 
-    /// Returns the states of the conditioned variable.
+    /// Returns the support of the conditioned variable.
     ///
     /// # Returns
     ///
-    /// The states of the conditioned variable.
+    /// The support of the conditioned variable.
     ///
     #[inline]
-    pub const fn states(&self) -> &States {
-        &self.states
+    pub const fn support(&self) -> &CatSupport {
+        &self.support
     }
 
     /// Returns the shape of the conditioned variable.
@@ -595,15 +599,15 @@ impl CatCIM {
         &self.multi_index
     }
 
-    /// Returns the states of the conditioning variables.
+    /// Returns the support of the conditioning variables.
     ///
     /// # Returns
     ///
-    /// The states of the conditioning variables.
+    /// The support of the conditioning variables.
     ///
     #[inline]
-    pub const fn conditioning_states(&self) -> &States {
-        &self.conditioning_states
+    pub const fn conditioning_support(&self) -> &CatSupport {
+        &self.conditioning_support
     }
 
     /// Returns the shape of the conditioning variables.
@@ -632,9 +636,9 @@ impl CatCIM {
     ///
     /// # Arguments
     ///
-    /// * `states` - The variables states.
-    /// * `conditioning_states` - The conditioning variables labels and states.
-    /// * `parameters` - The intensity matrices of the states.
+    /// * `support` - The variables support.
+    /// * `conditioning_support` - The conditioning variables labels and support.
+    /// * `parameters` - The intensity matrices of the support.
     /// * `fitted_statistics` - The fitted statistics used to fit the distribution, if any.
     /// * `fitted_log_likelihood` - The log-likelihood given the distribution, if any.
     ///
@@ -647,8 +651,8 @@ impl CatCIM {
     /// A new `CatCIM` instance.
     ///
     pub fn with_optionals(
-        states: States,
-        conditioning_states: States,
+        support: CatSupport,
+        conditioning_support: CatSupport,
         parameters: Array3<f64>,
         fitted_statistics: Option<CatCIMS>,
         fitted_log_likelihood: Option<f64>,
@@ -683,13 +687,13 @@ impl CatCIM {
         }
 
         // Construct the CIM.
-        let mut cim = Self::new(states, conditioning_states, parameters)?;
+        let mut intensity = Self::new(support, conditioning_support, parameters)?;
 
         // Set the fitted statistics and log-likelihood.
-        cim.fitted_statistics = fitted_statistics;
-        cim.fitted_log_likelihood = fitted_log_likelihood;
+        intensity.fitted_statistics = fitted_statistics;
+        intensity.fitted_log_likelihood = fitted_log_likelihood;
 
-        Ok(cim)
+        Ok(intensity)
     }
 }
 
@@ -697,10 +701,10 @@ impl PartialEq for CatCIM {
     fn eq(&self, other: &Self) -> bool {
         // Check for equality, excluding the sample values.
         self.labels.eq(&other.labels)
-            && self.states.eq(&other.states)
+            && self.support.eq(&other.support)
             && self.shape.eq(&other.shape)
             && self.conditioning_labels.eq(&other.conditioning_labels)
-            && self.conditioning_states.eq(&other.conditioning_states)
+            && self.conditioning_support.eq(&other.conditioning_support)
             && self.conditioning_shape.eq(&other.conditioning_shape)
             && self.multi_index.eq(&other.multi_index)
             && self.parameters.eq(&other.parameters)
@@ -717,10 +721,10 @@ impl AbsDiffEq for CatCIM {
     fn abs_diff_eq(&self, other: &Self, epsilon: Self::Epsilon) -> bool {
         // Check for equality, excluding the sample values.
         self.labels.eq(&other.labels)
-            && self.states.eq(&other.states)
+            && self.support.eq(&other.support)
             && self.shape.eq(&other.shape)
             && self.conditioning_labels.eq(&other.conditioning_labels)
-            && self.conditioning_states.eq(&other.conditioning_states)
+            && self.conditioning_support.eq(&other.conditioning_support)
             && self.conditioning_shape.eq(&other.conditioning_shape)
             && self.multi_index.eq(&other.multi_index)
             && self.parameters.abs_diff_eq(&other.parameters, epsilon)
@@ -740,10 +744,10 @@ impl RelativeEq for CatCIM {
     ) -> bool {
         // Check for equality, excluding the sample values.
         self.labels.eq(&other.labels)
-            && self.states.eq(&other.states)
+            && self.support.eq(&other.support)
             && self.shape.eq(&other.shape)
             && self.conditioning_labels.eq(&other.conditioning_labels)
-            && self.conditioning_states.eq(&other.conditioning_states)
+            && self.conditioning_support.eq(&other.conditioning_support)
             && self.conditioning_shape.eq(&other.conditioning_shape)
             && self.multi_index.eq(&other.multi_index)
             && self
@@ -752,7 +756,7 @@ impl RelativeEq for CatCIM {
     }
 }
 
-impl Labelled for CatCIM {
+impl HasLabels for CatCIM {
     #[inline]
     fn labels(&self) -> &Labels {
         &self.labels
@@ -760,9 +764,20 @@ impl Labelled for CatCIM {
 }
 
 impl CIM for CatCIM {
-    type Support = CatSample;
+    type Sample = CatSample;
+    type Support = CatSupport;
     type Parameters = Array3<f64>;
     type Statistics = CatCIMS;
+
+    #[inline]
+    fn support(&self) -> Cow<'_, Self::Support> {
+        Cow::Borrowed(&self.support)
+    }
+
+    #[inline]
+    fn conditioning_support(&self) -> Cow<'_, Self::Support> {
+        Cow::Borrowed(&self.conditioning_support)
+    }
 
     #[inline]
     fn conditioning_labels(&self) -> &Labels {
@@ -780,8 +795,8 @@ impl CIM for CatCIM {
     }
 
     #[inline]
-    fn fitted_statistics(&self) -> Option<&Self::Statistics> {
-        self.fitted_statistics.as_ref()
+    fn fitted_statistics(&self) -> Option<Cow<'_, Self::Statistics>> {
+        self.fitted_statistics.as_ref().map(Cow::Borrowed)
     }
 
     #[inline]
@@ -803,10 +818,10 @@ impl Serialize for CatCIM {
         // Allocate the map.
         let mut map = serializer.serialize_map(Some(size))?;
 
-        // Serialize states.
-        map.serialize_entry("states", &self.states)?;
-        // Serialize conditioning states.
-        map.serialize_entry("conditioning_states", &self.conditioning_states)?;
+        // Serialize support.
+        map.serialize_entry("support", &self.support)?;
+        // Serialize conditioning support.
+        map.serialize_entry("conditioning_support", &self.conditioning_support)?;
 
         // Convert parameters to a flat format.
         let parameters: Vec<Vec<Vec<f64>>> = self
@@ -843,8 +858,8 @@ impl<'de> Deserialize<'de> for CatCIM {
         #[derive(Deserialize)]
         #[serde(field_identifier, rename_all = "snake_case")]
         enum Field {
-            States,
-            ConditioningStates,
+            Support,
+            ConditioningSupport,
             Parameters,
             FittedStatistics,
             FittedLogLikelihood,
@@ -867,8 +882,8 @@ impl<'de> Deserialize<'de> for CatCIM {
                 use serde::de::Error as E;
 
                 // Allocate fields
-                let mut states = None;
-                let mut conditioning_states = None;
+                let mut support = None;
+                let mut conditioning_support = None;
                 let mut parameters = None;
                 let mut fitted_statistics = None;
                 let mut fitted_log_likelihood = None;
@@ -877,17 +892,17 @@ impl<'de> Deserialize<'de> for CatCIM {
                 // Parse the map.
                 while let Some(key) = map.next_key()? {
                     match key {
-                        Field::States => {
-                            if states.is_some() {
-                                return Err(E::duplicate_field("states"));
+                        Field::Support => {
+                            if support.is_some() {
+                                return Err(E::duplicate_field("support"));
                             }
-                            states = Some(map.next_value()?);
+                            support = Some(map.next_value()?);
                         }
-                        Field::ConditioningStates => {
-                            if conditioning_states.is_some() {
-                                return Err(E::duplicate_field("conditioning_states"));
+                        Field::ConditioningSupport => {
+                            if conditioning_support.is_some() {
+                                return Err(E::duplicate_field("conditioning_support"));
                             }
-                            conditioning_states = Some(map.next_value()?);
+                            conditioning_support = Some(map.next_value()?);
                         }
                         Field::Parameters => {
                             if parameters.is_some() {
@@ -917,9 +932,9 @@ impl<'de> Deserialize<'de> for CatCIM {
                 }
 
                 // Check required fields.
-                let states = states.ok_or_else(|| E::missing_field("states"))?;
-                let conditioning_states =
-                    conditioning_states.ok_or_else(|| E::missing_field("conditioning_states"))?;
+                let support = support.ok_or_else(|| E::missing_field("support"))?;
+                let conditioning_support =
+                    conditioning_support.ok_or_else(|| E::missing_field("conditioning_support"))?;
                 let parameters = parameters.ok_or_else(|| E::missing_field("parameters"))?;
 
                 // Check type is correct.
@@ -943,19 +958,19 @@ impl<'de> Deserialize<'de> for CatCIM {
                     .map_err(|_| E::custom("Invalid parameters shape"))?;
 
                 CatCIM::with_optionals(
-                    states,
-                    conditioning_states,
+                    support,
+                    conditioning_support,
                     parameters,
                     fitted_statistics,
                     fitted_log_likelihood,
                 )
-                .map_err(|e| E::custom(e.to_string()))
+                .map_err(|evidence| E::custom(evidence.to_string()))
             }
         }
 
         const FIELDS: &[&str] = &[
-            "states",
-            "conditioning_states",
+            "support",
+            "conditioning_support",
             "parameters",
             "fitted_statistics",
             "fitted_log_likelihood",

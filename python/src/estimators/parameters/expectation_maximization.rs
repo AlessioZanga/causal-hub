@@ -21,24 +21,31 @@ use rayon::prelude::*;
 use crate::{
     datasets::{PyCatTrjsEv, PyCatWtdTrjs},
     error::to_pyerr,
+    kwarg,
     models::{PyCatCTBN, PyDiGraph},
 };
 
 /// A function to perform parameter learning using the Expectation Maximization (EM) algorithm.
+///
+/// **kwargs: dict | None
+///     Optional keyword arguments:
+///
+/// - `seed`: The seed of the random number generator (default is `42`).
+///
 #[gen_stub_pyfunction(module = "causal_hub.estimators")]
 #[pyfunction]
 #[pyo3(signature = (
     evidence,
     graph,
     max_iter = 10,
-    seed = 42
+    **kwargs
 ))]
 pub fn em<'a>(
     py: Python<'a>,
     evidence: &Bound<'_, PyCatTrjsEv>,
     graph: &Bound<'_, PyDiGraph>,
     max_iter: usize,
-    seed: u64,
+    kwargs: Option<&Bound<'_, PyDict>>,
 ) -> PyResult<Bound<'a, PyDict>> {
     // Get the evidence.
     let evidence: PyCatTrjsEv = evidence.extract()?;
@@ -50,27 +57,26 @@ pub fn em<'a>(
     // Get the reference to the graph.
     let graph: &DiGraph = &graph.lock();
 
+    // Get the seed from the keyword arguments, or default to `42`.
+    let seed = kwarg!(kwargs, "seed", u64, 42)?;
+
+    // Reject any unknown keyword arguments.
+    crate::utils::ensure_kwargs_consumed(kwargs)?;
+
     // Release the GIL to allow parallel execution.
     let output = py
         .detach(|| -> Result<_> {
             // Initialize the random number generator.
-            let mut rng = Xoshiro256PlusPlus::seed_from_u64(seed);
+            let rng = Xoshiro256PlusPlus::seed_from_u64(seed);
 
             // Log the raw estimator initialization.
             debug!("Initializing the raw estimator for the initial guess ...");
             // Initialize a raw estimator for an initial guess.
-            let raw = RAWE::<'_, _, CatTrjsEv, CatTrjs>::par_new(&mut rng, evidence);
+            let raw = RAWE::<CatTrjs>::par_new(evidence);
             // Log the initial model fitting.
             debug!("Fitting the initial model using the raw estimator ...");
             // Set the initial model.
-            let model = raw
-                .map_err(|e| {
-                    BackendError::Stats(&format!("Failed to initialize raw estimator: {}", e))
-                })?
-                .par_fit(graph.clone())
-                .map_err(|e| {
-                    BackendError::Stats(&format!("Failed to fit the initial model: {}", e))
-                })?;
+            let model = raw?.par_fit(graph.clone())?;
 
             // Wrap the random number generator in a RefCell to allow mutable borrowing.
             let rng = RefCell::new(rng);
@@ -136,15 +142,10 @@ pub fn em<'a>(
                 .with_e_step(&e_step)
                 .with_m_step(&m_step)
                 .with_stop(&stop)
-                .build()
-                .map_err(|e| {
-                    BackendError::Stats(&format!("Failed to build the EM algorithm: {}", e))
-                })?;
+                .build()?;
 
             // Fit the model.
-            em.fit().map_err(|e| {
-                BackendError::Stats(&format!("Failed to fit the model using EM: {}", e))
-            })
+            em.fit()
         })
         .map_err(to_pyerr)?;
 

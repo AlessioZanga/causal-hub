@@ -4,13 +4,13 @@ use ndarray::prelude::*;
 use crate::{
     datasets::{CatIncTable, CatTable, CatWtdTable},
     estimators::{CPDEstimator, CSSEstimator, MLE, ParCPDEstimator, ParCSSEstimator, SSE},
-    models::{CatCPD, CatCPDS},
-    types::{Error, Result, Set, States},
+    models::{CatCPD, CatCPDS, CatSupport},
+    types::{Error, Result, Set},
 };
 
 impl MLE<'_, CatTable> {
     fn fit(
-        states: &States,
+        support: &CatSupport,
         x: &Set<usize>,
         z: &Set<usize>,
         sample_statistics: CatCPDS,
@@ -33,26 +33,26 @@ impl MLE<'_, CatTable> {
         // Compute the sample log-likelihood, avoiding ln(0).
         let sample_log_likelihood = (n_xz * (&parameters + eps).ln()).sum();
 
-        // Subset the conditioning labels, states and shape.
-        let conditioning_states = z
+        // Subset the conditioning labels, support and shape.
+        let conditioning_support = z
             .iter()
             .map(|&i| {
-                states
+                support
                     .get_index(i)
                     .map(|(k, v)| (k.clone(), v.clone()))
                     .ok_or_else(|| Error::IndexOutOfBounds(i))
             })
-            .collect::<Result<States>>()?;
+            .collect::<Result<CatSupport>>()?;
         // Get the labels of the conditioned variables.
-        let states = x
+        let support = x
             .iter()
             .map(|&i| {
-                states
+                support
                     .get_index(i)
                     .map(|(k, v)| (k.clone(), v.clone()))
                     .ok_or_else(|| Error::IndexOutOfBounds(i))
             })
-            .collect::<Result<States>>()?;
+            .collect::<Result<CatSupport>>()?;
 
         // Wrap the sample statistics in an option.
         let sample_statistics = Some(sample_statistics);
@@ -61,8 +61,8 @@ impl MLE<'_, CatTable> {
 
         // Construct the CPD.
         CatCPD::with_optionals(
-            states,
-            conditioning_states,
+            support,
+            conditioning_support,
             parameters,
             sample_statistics,
             sample_log_likelihood,
@@ -75,8 +75,8 @@ macro_for!($type in [CatTable, CatIncTable, CatWtdTable] {
 
     impl CPDEstimator<CatCPD> for MLE<'_, $type> {
         fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> Result<CatCPD> {
-            // Get states.
-            let states = self.dataset.states();
+            // Get support.
+            let support = self.dataset.support();
             // Set sufficient statistics estimator.
             let sample_statistics = SSE::new(self.dataset);
             // Set missing handling method, if any.
@@ -87,14 +87,14 @@ macro_for!($type in [CatTable, CatIncTable, CatWtdTable] {
             // Compute sufficient statistics.
             let sample_statistics = sample_statistics.fit(x, z)?;
             // Fit the CPD given the sufficient statistics.
-            MLE::<'_, CatTable>::fit(states, x, z, sample_statistics)
+            MLE::<'_, CatTable>::fit(support, x, z, sample_statistics)
         }
     }
 
     impl ParCPDEstimator<CatCPD> for MLE<'_, $type> {
         fn par_fit(&self, x: &Set<usize>, z: &Set<usize>) -> Result<CatCPD> {
-            // Get states.
-            let states = self.dataset.states();
+            // Get support.
+            let support = self.dataset.support();
             // Set sufficient statistics estimator.
             let sample_statistics = SSE::new(self.dataset);
             // Set missing handling method, if any.
@@ -105,7 +105,7 @@ macro_for!($type in [CatTable, CatIncTable, CatWtdTable] {
             // Compute sufficient statistics in parallel.
             let sample_statistics = sample_statistics.par_fit(x, z)?;
             // Fit the CPD given the sufficient statistics.
-            MLE::<'_, CatTable>::fit(states, x, z, sample_statistics)
+            MLE::<'_, CatTable>::fit(support, x, z, sample_statistics)
         }
     }
 

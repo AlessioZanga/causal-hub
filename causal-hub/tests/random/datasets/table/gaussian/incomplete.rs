@@ -3,7 +3,7 @@ mod tests {
     use causal_hub::{
         datasets::{GaussTable, MissingMechanism},
         labels, map,
-        models::Labelled,
+        models::HasLabels,
         random::{Random, RngGaussIncTable},
         set,
         types::{Error, ErrorKind, Result},

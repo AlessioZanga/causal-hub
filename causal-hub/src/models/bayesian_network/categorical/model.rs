@@ -1,4 +1,4 @@
-use std::fmt::Write;
+use std::{borrow::Cow, fmt::Write};
 
 use approx::{AbsDiffEq, RelativeEq};
 use itertools::Itertools;
@@ -14,9 +14,9 @@ use crate::{
     impl_json_io,
     inference::TopologicalOrder,
     io::{BifIO, BifParser},
-    models::{BN, CPD, CatCPD, DiGraph, Graph, Labelled},
+    models::{BN, CPD, CatCPD, CatSupport, DiGraph, Graph, HasLabels},
     set,
-    types::{Error, Labels, Map, Result, Set, States},
+    types::{Error, Labels, Map, Result, Set},
 };
 
 /// A categorical Bayesian network.
@@ -28,8 +28,8 @@ pub struct CatBN {
     description: Option<String>,
     /// The labels of the variables.
     labels: Labels,
-    /// The states of the variables.
-    states: States,
+    /// The support of the variables.
+    support: CatSupport,
     /// The shape of the variables.
     shape: Array1<usize>,
     /// The graph of the model.
@@ -41,15 +41,15 @@ pub struct CatBN {
 }
 
 impl CatBN {
-    /// Returns the states of the variables.
+    /// Returns the support of the variables.
     ///
     /// # Returns
     ///
-    /// A reference to the states of the variables.
+    /// A reference to the support of the variables.
     ///
     #[inline]
-    pub const fn states(&self) -> &States {
-        &self.states
+    pub const fn support(&self) -> &CatSupport {
+        &self.support
     }
 
     /// Returns the shape of the variables.
@@ -67,7 +67,7 @@ impl CatBN {
 impl PartialEq for CatBN {
     fn eq(&self, other: &Self) -> bool {
         self.labels.eq(&other.labels)
-            && self.states.eq(&other.states)
+            && self.support.eq(&other.support)
             && self.shape.eq(&other.shape)
             && self.graph.eq(&other.graph)
             && self.topological_order.eq(&other.topological_order)
@@ -84,17 +84,15 @@ impl AbsDiffEq for CatBN {
 
     fn abs_diff_eq(&self, other: &Self, epsilon: Self::Epsilon) -> bool {
         self.labels.eq(&other.labels)
-            && self.states.eq(&other.states)
+            && self.support.eq(&other.support)
             && self.shape.eq(&other.shape)
             && self.graph.eq(&other.graph)
             && self.topological_order.eq(&other.topological_order)
-            && self
-                .cpds
-                .iter()
-                .zip(&other.cpds)
-                .all(|((label, cpd), (other_label, other_cpd))| {
-                    label.eq(other_label) && cpd.abs_diff_eq(other_cpd, epsilon)
-                })
+            && self.cpds.iter().zip(&other.cpds).all(
+                |((label, distribution), (other_label, other_cpd))| {
+                    label.eq(other_label) && distribution.abs_diff_eq(other_cpd, epsilon)
+                },
+            )
     }
 }
 
@@ -110,21 +108,20 @@ impl RelativeEq for CatBN {
         max_relative: Self::Epsilon,
     ) -> bool {
         self.labels.eq(&other.labels)
-            && self.states.eq(&other.states)
+            && self.support.eq(&other.support)
             && self.shape.eq(&other.shape)
             && self.graph.eq(&other.graph)
             && self.topological_order.eq(&other.topological_order)
-            && self
-                .cpds
-                .iter()
-                .zip(&other.cpds)
-                .all(|((label, cpd), (other_label, other_cpd))| {
-                    label.eq(other_label) && cpd.relative_eq(other_cpd, epsilon, max_relative)
-                })
+            && self.cpds.iter().zip(&other.cpds).all(
+                |((label, distribution), (other_label, other_cpd))| {
+                    label.eq(other_label)
+                        && distribution.relative_eq(other_cpd, epsilon, max_relative)
+                },
+            )
     }
 }
 
-impl Labelled for CatBN {
+impl HasLabels for CatBN {
     #[inline]
     fn labels(&self) -> &Labels {
         &self.labels
@@ -133,11 +130,17 @@ impl Labelled for CatBN {
 
 impl BN for CatBN {
     type CPD = CatCPD;
+    type Support = CatSupport;
     type Evidence = CatEv;
     type Sample = CatSample;
     type Samples = CatTable;
     type IncSamples = CatIncTable;
     type WtdSamples = CatWtdTable;
+
+    #[inline]
+    fn support(&self) -> Cow<'_, Self::Support> {
+        Cow::Borrowed(&self.support)
+    }
 
     fn new<I>(graph: DiGraph, cpds: I) -> Result<Self>
     where
@@ -164,37 +167,38 @@ impl BN for CatBN {
             return Err(Error::LabelMismatch("graph labels", "distributions labels"));
         }
 
-        // Allocate the states of the variables.
-        let mut states: States = Default::default();
-        // Insert the states of the variables into the map to check if they are the same.
-        cpds.values().try_for_each(|cpd| {
-            cpd.states()
+        // Allocate the support of the variables.
+        let mut support: CatSupport = Default::default();
+        // Insert the support of the variables into the map to check if they are the same.
+        cpds.values().try_for_each(|distribution| {
+            distribution
+                .support()
                 .iter()
-                .chain(cpd.conditioning_states())
-                .try_for_each(|(l, s)| {
-                    // Check if the states are already in the map.
-                    if let Some(existing_states) = states.get(l) {
-                        // Check if the states are the same.
-                        if existing_states != s {
+                .chain(distribution.conditioning_support())
+                .try_for_each(|(l, stats)| {
+                    // Check if the support are already in the map.
+                    if let Some(existing_states) = support.get(l) {
+                        // Check if the support are the same.
+                        if existing_states != stats {
                             return Err(Error::InvalidParameter(
                                 "cpds",
-                                &format!("States of `{l}` must be the same across CPDs."),
+                                &format!("CatSupport of `{l}` must be the same across CPDs."),
                             ));
                         }
                     } else {
-                        // Insert the states into the map.
-                        states.insert(l.to_owned(), s.clone());
+                        // Insert the support into the map.
+                        support.insert(l.to_owned(), stats.clone());
                     }
                     Ok(())
                 })
         })?;
-        // Sort the states of the variables.
-        states.sort_keys();
+        // Sort the support of the variables.
+        support.sort_keys();
 
         // Get the labels of the variables.
-        let labels: Labels = states.keys().cloned().collect();
+        let labels: Labels = support.keys().cloned().collect();
         // Get the shape of the variables.
-        let shape: Array1<usize> = states.values().map(|s| s.len()).collect();
+        let shape: Array1<usize> = support.values().map(|stats| stats.len()).collect();
 
         // Check if all vertices have the same labels as their parents.
         graph.vertices().into_iter().try_for_each(|i| {
@@ -220,7 +224,7 @@ impl BN for CatBN {
             name: None,
             description: None,
             labels,
-            states,
+            support,
             shape,
             graph,
             cpds,
@@ -312,13 +316,13 @@ impl BN for CatBN {
         }
 
         // Construct the BN.
-        let mut bn = Self::new(graph, cpds)?;
+        let mut bayesian_network = Self::new(graph, cpds)?;
 
         // Set the optional fields.
-        bn.name = name;
-        bn.description = description;
+        bayesian_network.name = name;
+        bayesian_network.description = description;
 
-        Ok(bn)
+        Ok(bayesian_network)
     }
 }
 
@@ -475,66 +479,72 @@ impl BifIO for CatBN {
             "network {} {{",
             self.name.as_deref().unwrap_or("Network")
         )
-        .map_err(|e| Error::Parsing(&e.to_string()))?;
+        .map_err(|evidence| Error::Parsing(&evidence.to_string()))?;
         // Write network description, if any.
         if let Some(description) = &self.description {
             writeln!(f, "  property description \"{}\";", description)
-                .map_err(|e| Error::Parsing(&e.to_string()))?;
+                .map_err(|evidence| Error::Parsing(&evidence.to_string()))?;
         }
-        writeln!(f, "}}").map_err(|e| Error::Parsing(&e.to_string()))?;
+        writeln!(f, "}}").map_err(|evidence| Error::Parsing(&evidence.to_string()))?;
 
         // Write variables.
         for label in self.labels() {
-            writeln!(f, "variable {} {{", label).map_err(|e| Error::Parsing(&e.to_string()))?;
-            let states = &self.states()[label];
-            let states_str = states.iter().map(|x| x.to_string()).join(", ");
+            writeln!(f, "variable {} {{", label)
+                .map_err(|evidence| Error::Parsing(&evidence.to_string()))?;
+            let support = &self.support()[label];
+            let states_str = support.iter().map(|x| x.to_string()).join(", ");
             writeln!(
                 f,
                 "  type discrete [ {} ] {{ {} }};",
-                states.len(),
+                support.len(),
                 states_str
             )
-            .map_err(|e| Error::Parsing(&e.to_string()))?;
-            writeln!(f, "}}").map_err(|e| Error::Parsing(&e.to_string()))?;
+            .map_err(|evidence| Error::Parsing(&evidence.to_string()))?;
+            writeln!(f, "}}").map_err(|evidence| Error::Parsing(&evidence.to_string()))?;
         }
 
         // Write probabilities.
-        for (label, cpd) in &self.cpds {
-            let parents = cpd.conditioning_labels();
+        for (label, distribution) in &self.cpds {
+            let parents = distribution.conditioning_labels();
             if parents.is_empty() {
                 writeln!(f, "probability ( {} ) {{", label)
-                    .map_err(|e| Error::Parsing(&e.to_string()))?;
+                    .map_err(|evidence| Error::Parsing(&evidence.to_string()))?;
             } else {
                 let parents_str = parents.iter().map(|x| x.to_string()).join(", ");
                 writeln!(f, "probability ( {} | {} ) {{", label, parents_str)
-                    .map_err(|e| Error::Parsing(&e.to_string()))?;
+                    .map_err(|evidence| Error::Parsing(&evidence.to_string()))?;
             }
 
             if parents.is_empty() {
                 // Write flat table.
-                let values = cpd.parameters().iter().map(|x| x.to_string()).join(", ");
-                writeln!(f, "  table {};", values).map_err(|e| Error::Parsing(&e.to_string()))?;
+                let values = distribution
+                    .parameters()
+                    .iter()
+                    .map(|x| x.to_string())
+                    .join(", ");
+                writeln!(f, "  table {};", values)
+                    .map_err(|evidence| Error::Parsing(&evidence.to_string()))?;
             } else {
                 // Write conditional table.
-                let conditioning_states = cpd.conditioning_states();
+                let conditioning_support = distribution.conditioning_support();
                 let combinations = parents
                     .iter()
-                    .map(|p| &conditioning_states[p])
+                    .map(|probability| &conditioning_support[probability])
                     .multi_cartesian_product();
 
-                for (i, states) in combinations.enumerate() {
-                    let states_str = states.iter().map(|x| x.to_string()).join(", ");
-                    let probs_str = cpd
+                for (i, support) in combinations.enumerate() {
+                    let states_str = support.iter().map(|x| x.to_string()).join(", ");
+                    let probs_str = distribution
                         .parameters()
                         .row(i)
                         .iter()
                         .map(|x| x.to_string())
                         .join(", ");
                     writeln!(f, "  ({}) {};", states_str, probs_str)
-                        .map_err(|e| Error::Parsing(&e.to_string()))?;
+                        .map_err(|evidence| Error::Parsing(&evidence.to_string()))?;
                 }
             }
-            writeln!(f, "}}").map_err(|e| Error::Parsing(&e.to_string()))?;
+            writeln!(f, "}}").map_err(|evidence| Error::Parsing(&evidence.to_string()))?;
         }
 
         Ok(f)

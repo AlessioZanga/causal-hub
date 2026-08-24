@@ -7,20 +7,16 @@ mod tests {
         types::Result,
     };
     use ndarray::prelude::*;
-    use rand::SeedableRng;
-    use rand_xoshiro::Xoshiro256PlusPlus;
 
     #[test]
     fn raw_fill_1() -> Result<()> {
         // Short the evidence name.
         use CatTrjEvT as E;
-        // Initialize the random number generator.
-        let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
         // Load the model.
         let model = load_eating()?;
         // Initialize the evidence.
         let evidence = CatTrjEv::new(
-            model.states().clone(),
+            model.support().clone(),
             [
                 E::CertainPositiveInterval {
                     event: 2, // "Hungry"
@@ -43,7 +39,7 @@ mod tests {
             ],
         )?;
         // Fill the evidence.
-        let filled_evidence = RAWE::<'_, _, CatTrjEv, CatTrj>::par_new(&mut rng, &evidence)?;
+        let filled_evidence = RAWE::<CatTrj>::par_new(&evidence)?;
         // Check the filled evidence times.
         assert_eq!(
             filled_evidence.dataset().times(),
@@ -68,13 +64,11 @@ mod tests {
     fn raw_fill_2() -> Result<()> {
         // Short the evidence name.
         use CatTrjEvT as E;
-        // Initialize the random number generator.
-        let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
         // Load the model.
         let model = load_eating()?;
         // Initialize the evidence.
         let evidence = CatTrjEv::new(
-            model.states().clone(),
+            model.support().clone(),
             [
                 E::CertainPositiveInterval {
                     event: 2, // "Hungry"
@@ -103,7 +97,7 @@ mod tests {
             ],
         )?;
         // Fill the evidence.
-        let filled_evidence = RAWE::<'_, _, CatTrjEv, CatTrj>::par_new(&mut rng, &evidence)?;
+        let filled_evidence = RAWE::<CatTrj>::par_new(&evidence)?;
         // Check the filled evidence times.
         assert_eq!(
             filled_evidence.dataset().times(),

@@ -6,10 +6,6 @@
   "license": "BSD-3-Clause",
   "dependencies": [
     {
-      "name": "openblas",
-      "host": true
-    },
-    {
       "name": "vcpkg-cmake",
       "host": true
     },

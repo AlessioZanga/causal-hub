@@ -4,14 +4,14 @@ use ndarray::prelude::*;
 use crate::{
     datasets::{CatTrj, CatTrjs, CatWtdTrj, CatWtdTrjs},
     estimators::{CPDEstimator, CSSEstimator, MLE, ParCPDEstimator, ParCSSEstimator, SSE},
-    models::{CatCIM, CatCIMS},
-    types::{Error, Result, Set, States},
+    models::{CatCIM, CatCIMS, CatSupport},
+    types::{Error, Result, Set},
 };
 
 impl MLE<'_, CatTrj> {
     // Fit a CIM given sufficient statistics.
     fn fit(
-        states: &States,
+        support: &CatSupport,
         x: &Set<usize>,
         z: &Set<usize>,
         fitted_statistics: CatCIMS,
@@ -52,12 +52,11 @@ impl MLE<'_, CatTrj> {
                 // Clone the parameters.
                 let mut q_z = Array::zeros(n_z.dim());
                 // Get the diagonals.
-                parameters
-                    .outer_iter()
-                    .zip(q_z.outer_iter_mut())
-                    .for_each(|(p, mut q)| {
-                        q.assign(&(-&p.diag()));
-                    });
+                parameters.outer_iter().zip(q_z.outer_iter_mut()).for_each(
+                    |(probability, mut q)| {
+                        q.assign(&(-&probability.diag()));
+                    },
+                );
                 // Compute the sample log-likelihood.
                 (&n_z * (&q_z + eps).ln()).sum() + (-&q_z * &t_z).sum()
             };
@@ -66,9 +65,9 @@ impl MLE<'_, CatTrj> {
                 // Clone the parameters.
                 let mut p_xz = parameters.clone();
                 // Set diagonal to zero.
-                p_xz.outer_iter_mut().for_each(|mut p| {
+                p_xz.outer_iter_mut().for_each(|mut probability| {
                     // Fill the diagonal with zeros.
-                    p.diag_mut().fill(0.);
+                    probability.diag_mut().fill(0.);
                 });
                 // Normalize the parameters, align the dimensions.
                 p_xz /= &p_xz.sum_axis(Axis(2)).insert_axis(Axis(2));
@@ -79,21 +78,21 @@ impl MLE<'_, CatTrj> {
             ll_q_xz + ll_p_xz
         };
 
-        // Subset the conditioning labels, states and shape.
-        let conditioning_states = z
+        // Subset the conditioning labels, support and shape.
+        let conditioning_support = z
             .iter()
             .map(|&i| {
-                let (k, v) = states
+                let (k, v) = support
                     .get_index(i)
                     .ok_or_else(|| Error::IndexOutOfBounds(i))?;
                 Ok((k.clone(), v.clone()))
             })
             .collect::<Result<_>>()?;
         // Get the labels of the conditioned variables.
-        let states = x
+        let support = x
             .iter()
             .map(|&i| {
-                let (k, v) = states
+                let (k, v) = support
                     .get_index(i)
                     .ok_or_else(|| Error::IndexOutOfBounds(i))?;
                 Ok((k.clone(), v.clone()))
@@ -107,8 +106,8 @@ impl MLE<'_, CatTrj> {
 
         // Construct the CIM.
         CatCIM::with_optionals(
-            states,
-            conditioning_states,
+            support,
+            conditioning_support,
             parameters,
             fitted_statistics,
             fitted_log_likelihood,
@@ -121,8 +120,8 @@ macro_for!($type in [CatTrj, CatWtdTrj, CatTrjs, CatWtdTrjs] {
 
     impl CPDEstimator<CatCIM> for MLE<'_, $type> {
         fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> Result<CatCIM> {
-            // Get states.
-            let states = self.dataset.states();
+            // Get support.
+            let support = self.dataset.support();
             // Set sufficient statistics estimator.
             let fitted_statistics = SSE::new(self.dataset);
             // Set missing handling method, if any.
@@ -133,7 +132,7 @@ macro_for!($type in [CatTrj, CatWtdTrj, CatTrjs, CatWtdTrjs] {
             // Compute sufficient statistics.
             let fitted_statistics = fitted_statistics.fit(x, z)?;
             // Fit the CIM given the sufficient statistics.
-            MLE::<'_, CatTrj>::fit(states, x, z, fitted_statistics)
+            MLE::<'_, CatTrj>::fit(support, x, z, fitted_statistics)
         }
     }
 
@@ -144,8 +143,8 @@ macro_for!($type in [CatTrjs, CatWtdTrjs] {
 
     impl ParCPDEstimator<CatCIM> for MLE<'_, $type> {
         fn par_fit(&self, x: &Set<usize>, z: &Set<usize>) -> Result<CatCIM> {
-            // Get states.
-            let states = self.dataset.states();
+            // Get support.
+            let support = self.dataset.support();
             // Set sufficient statistics estimator.
             let fitted_statistics = SSE::new(self.dataset);
             // Set missing handling method, if any.
@@ -156,7 +155,7 @@ macro_for!($type in [CatTrjs, CatWtdTrjs] {
             // Compute sufficient statistics in parallel.
             let fitted_statistics = fitted_statistics.par_fit(x, z)?;
             // Fit the CIM given the sufficient statistics.
-            MLE::<'_, CatTrj>::fit(states, x, z, fitted_statistics)
+            MLE::<'_, CatTrj>::fit(support, x, z, fitted_statistics)
         }
     }
 

@@ -1,22 +1,25 @@
+use std::borrow::Cow;
+
 use ndarray::prelude::*;
+use serde::{Deserialize, Serialize};
 
 use crate::{
     datasets::{CatEv, CatSample, CatTable, Dataset},
-    models::Labelled,
-    types::{Error, Labels, Result, Set, States},
+    models::{CatSupport, HasLabels},
+    types::{Error, Labels, Result, Set},
 };
 
 /// A type alias for a categorical weighted sample.
 pub type CatWtdSample = (CatSample, f64);
 
 /// A multivariate categorical weighted dataset.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct CatWtdTable {
     dataset: CatTable,
     weights: Array1<f64>,
 }
 
-impl Labelled for CatWtdTable {
+impl HasLabels for CatWtdTable {
     #[inline]
     fn labels(&self) -> &Labels {
         self.dataset.labels()
@@ -56,18 +59,18 @@ impl CatWtdTable {
         Ok(Self { dataset, weights })
     }
 
-    /// Returns the states of the variables in the categorical distribution.
+    /// Returns the support of the variables in the categorical distribution.
     ///
     /// # Returns
     ///
-    /// A reference to the vector of states.
+    /// A reference to the vector of support.
     ///
     #[inline]
-    pub const fn states(&self) -> &States {
-        self.dataset.states()
+    pub const fn support(&self) -> &CatSupport {
+        self.dataset.support()
     }
 
-    /// Returns the shape of the set of states in the categorical distribution.
+    /// Returns the shape of the set of support in the categorical distribution.
     ///
     /// # Returns
     ///
@@ -92,12 +95,18 @@ impl CatWtdTable {
 
 impl Dataset for CatWtdTable {
     type Values = CatTable;
+    type Support = CatSupport;
     type Evidence = CatEv;
     type EvidenceIter<'a> = <CatTable as Dataset>::EvidenceIter<'a>;
 
     #[inline]
     fn values(&self) -> &Self::Values {
         &self.dataset
+    }
+
+    #[inline]
+    fn support(&self) -> Cow<'_, Self::Support> {
+        Cow::Borrowed(self.dataset.support())
     }
 
     fn evidence_iter(&self) -> Self::EvidenceIter<'_> {

@@ -5,7 +5,7 @@ use ndarray_linalg::Determinant;
 use crate::{
     datasets::{GaussIncTable, GaussTable, GaussWtdTable},
     estimators::{BE, CPDEstimator, CSSEstimator, ParCPDEstimator, ParCSSEstimator, SSE},
-    models::{GaussCPD, GaussCPDP, GaussCPDS, Labelled},
+    models::{GaussCPD, GaussCPDP, GaussCPDS, HasLabels},
     types::{EPSILON, Error, LN_2_PI, Labels, Result, Set},
     utils::PseudoInverse,
 };
@@ -49,7 +49,7 @@ impl BE<'_, GaussTable, f64> {
         // S_xx.
         let mut s_xx_post = s_xx.clone();
         // Add nu * I to diagonal.
-        s_xx_post.diag_mut().iter_mut().for_each(|d| *d += nu);
+        s_xx_post.diag_mut().iter_mut().for_each(|data| *data += nu);
         // Add mean adjustment.
         s_xx_post = s_xx_post
             + f * &mu_x
@@ -59,7 +59,7 @@ impl BE<'_, GaussTable, f64> {
 
         // S_zz.
         let mut s_zz_post = s_zz.clone();
-        s_zz_post.diag_mut().iter_mut().for_each(|d| *d += nu);
+        s_zz_post.diag_mut().iter_mut().for_each(|data| *data += nu);
         s_zz_post = s_zz_post
             + f * &mu_z
                 .view()
@@ -74,13 +74,13 @@ impl BE<'_, GaussTable, f64> {
                 .dot(&mu_z.view().insert_axis(Axis(0)));
 
         // Compute the parameters in closed form.
-        let (a, b, s) = if z.is_empty() {
+        let (a, b, stats) = if z.is_empty() {
             // Compute the parameters as the empirical mean and covariance.
             let a = Array2::zeros((x.len(), 0));
             let b = mu_x_post.clone();
-            let s = s_xx_post / n_post;
+            let stats = s_xx_post / n_post;
             // Return the parameters.
-            (a, b, s)
+            (a, b, stats)
         } else {
             // Compute the pseudo-inverse of S_zz.
             let s_zz_pinv = s_zz_post.pinv()?;
@@ -89,30 +89,30 @@ impl BE<'_, GaussTable, f64> {
             // Compute the intercept vector.
             let b = mu_x_post - &a.dot(&mu_z_post);
             // Compute the covariance matrix.
-            let s = (s_xx_post - &a.dot(&s_xz_post.t())) / n_post;
+            let stats = (s_xx_post - &a.dot(&s_xz_post.t())) / n_post;
             // Return the parameters.
-            (a, b, s)
+            (a, b, stats)
         };
 
         // Symmetrize and stabilize covariance to avoid numerical issues.
-        let mut s = s;
-        s.diag_mut().mapv_inplace(|x| x.max(0.));
-        let t = s.diag().sum() / s.nrows() as f64;
-        *s.diag_mut() += f64::max(EPSILON, t * EPSILON);
-        s = (&s + &s.t()) / 2.;
+        let mut stats = stats;
+        stats.diag_mut().mapv_inplace(|x| x.max(0.));
+        let t = stats.diag().sum() / stats.nrows() as f64;
+        *stats.diag_mut() += f64::max(EPSILON, t * EPSILON);
+        stats = (&stats + &stats.t()) / 2.;
 
         // Compute the sample log-likelihood.
-        let p = x.len() as f64;
-        let (_, ln_det) = s
-            .sln_det()
-            .map_err(|e| Error::Linalg(&format!("Failed to compute determinant of S: {e}")))?;
+        let probability = x.len() as f64;
+        let (_, ln_det) = stats.sln_det().map_err(|evidence| {
+            Error::Linalg(&format!("Failed to compute determinant of S: {evidence}"))
+        })?;
         // This is the likelihood of the posterior "samples".
-        let sample_log_likelihood = -0.5 * n_post * (p * LN_2_PI + ln_det + p);
+        let sample_log_likelihood = -0.5 * n_post * (probability * LN_2_PI + ln_det + probability);
 
         // Construct the CPD parameters.
-        let parameters = GaussCPDP::new(a, b, s)?;
+        let parameters = GaussCPDP::new(a, b, stats)?;
 
-        // Subset the conditioning labels, states and shape.
+        // Subset the conditioning labels, support and shape.
         let conditioning_labels = z.iter().map(|&i| labels[i].clone()).collect();
         // Get the labels of the conditioned variables.
         let labels = x.iter().map(|&i| labels[i].clone()).collect();
@@ -129,6 +129,8 @@ impl BE<'_, GaussTable, f64> {
             parameters,
             sample_statistics,
             sample_log_likelihood,
+            None,
+            None,
         )
     }
 }

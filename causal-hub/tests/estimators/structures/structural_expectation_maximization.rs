@@ -7,11 +7,11 @@ mod tests {
         use causal_hub::{
             assets::load_eating,
             datasets::{CatTrjsEv, CatWtdTrj, CatWtdTrjs, Dataset},
-            estimators::{BE, CTPC, ChiSquaredTest, EMBuilder, FTest, ParCTBNEstimator},
-            models::{CTBN, CatCIM, CatCTBN, DiGraph, Graph, Labelled},
+            estimators::{BE, CTPC, ChiSquaredTest, EMBuilder, FTest},
+            models::{CTBN, CatCIM, CatCTBN, DiGraph, Graph, HasLabels},
             random::{Random, RngCatTrjEv},
             samplers::{CTBNSampler, ForwardSampler, ImportanceSampler, ParCTBNSampler},
-            states,
+            support,
             types::{Cache, Error, Result},
         };
         use ndarray::prelude::*;
@@ -33,9 +33,9 @@ mod tests {
             let trajectories = forward.par_sample_n_by_length(100, 10_000)?;
 
             // Set the probability of the evidence.
-            let p = 0.5;
+            let probability = 0.5;
             // Initialize the evidence generator.
-            let mut generator = RngCatTrjEv::new(&mut rng, &trajectories, p)?;
+            let mut generator = RngCatTrjEv::new(&mut rng, &trajectories, probability)?;
             // Sample the evidence from the fully-observed trajectories.
             let evidence = generator.random()?;
 
@@ -48,8 +48,8 @@ mod tests {
             let initial_cims = vec![
                 CatCIM::new(
                     // P(Hungry | Eating, FullStomach)
-                    states![("Hungry", ["no", "yes"])],
-                    states![("Eating", ["no", "yes"]), ("FullStomach", ["no", "yes"])],
+                    support![("Hungry", ["no", "yes"])],
+                    support![("Eating", ["no", "yes"]), ("FullStomach", ["no", "yes"])],
                     array![
                         [[-E, E], [E, -E]],
                         [[-E, E], [E, -E]],
@@ -59,8 +59,8 @@ mod tests {
                 )?,
                 CatCIM::new(
                     // P(Eating | FullStomach, Hungry)
-                    states![("Eating", ["no", "yes"])],
-                    states![("FullStomach", ["no", "yes"]), ("Hungry", ["no", "yes"])],
+                    support![("Eating", ["no", "yes"])],
+                    support![("FullStomach", ["no", "yes"]), ("Hungry", ["no", "yes"])],
                     array![
                         [[-E, E], [E, -E]],
                         [[-E, E], [E, -E]],
@@ -70,8 +70,8 @@ mod tests {
                 )?,
                 CatCIM::new(
                     // P(FullStomach | Eating, Hungry)
-                    states![("FullStomach", ["no", "yes"])],
-                    states![("Eating", ["no", "yes"]), ("Hungry", ["no", "yes"])],
+                    support![("FullStomach", ["no", "yes"])],
+                    support![("Eating", ["no", "yes"]), ("Hungry", ["no", "yes"])],
                     array![
                         [[-E, E], [E, -E]],
                         [[-E, E], [E, -E]],
@@ -98,18 +98,18 @@ mod tests {
                 let max_len = evidence
                     .evidences()
                     .iter()
-                    .map(|e| e.evidences().iter().map(|x| x.len()).sum())
+                    .map(|evidence| evidence.evidences().iter().map(|x| x.len()).sum())
                     .max()
                     .unwrap_or(10);
                 // For each (seed, evidence) ...
                 seeds
                     .into_par_iter()
                     .zip(evidence.par_iter())
-                    .map(|(s, e)| {
+                    .map(|(stats, evidence)| {
                         // Initialize a new random number generator.
-                        let mut rng = Xoshiro256PlusPlus::seed_from_u64(s);
+                        let mut rng = Xoshiro256PlusPlus::seed_from_u64(stats);
                         // Initialize a new sampler.
-                        let importance = ImportanceSampler::new(&mut rng, prev_model, e)?;
+                        let importance = ImportanceSampler::new(&mut rng, prev_model, evidence)?;
                         // Perform multiple imputation.
                         let trjs = importance.sample_n_by_length(2 * max_len, 10)?;
                         // Get the one with the highest weight.
@@ -141,12 +141,10 @@ mod tests {
                 let f_test = FTest::new(&cache, 1e-4)?;
                 // Initialize the chi-squared test.
                 let chi_sq_test = ChiSquaredTest::new(&cache, 1e-4)?;
-                // Initialize the CTPC algorithm.
-                let ctpc = CTPC::new(&initial_graph, &f_test, &chi_sq_test)?;
-                // Fit the new structure using CTPC.
-                let fitted_graph = ctpc.par_fit()?;
+                // Initialize the CTPC algorithm with the complete initial graph.
+                let ctpc = CTPC::new(&f_test, &chi_sq_test)?.with_initial_graph(&initial_graph)?;
                 // Fit the new model using the expectation.
-                estimator.par_fit(fitted_graph)
+                ctpc.par_fit()
             };
 
             // Define the stopping criteria.

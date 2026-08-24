@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
     use approx::assert_relative_eq;
-    use causal_hub::{datasets::MissingTable, labels, models::Labelled, set, types::Result};
+    use causal_hub::{datasets::MissingTable, labels, models::HasLabels, set, types::Result};
     use ndarray::prelude::*;
 
     #[test]

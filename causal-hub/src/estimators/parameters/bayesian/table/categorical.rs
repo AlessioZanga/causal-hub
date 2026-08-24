@@ -4,14 +4,14 @@ use ndarray::prelude::*;
 use crate::{
     datasets::{CatIncTable, CatTable, CatWtdTable},
     estimators::{BE, CPDEstimator, CSSEstimator, ParCPDEstimator, ParCSSEstimator, SSE},
-    models::{CatCPD, CatCPDS},
-    types::{Error, Result, Set, States},
+    models::{CatCPD, CatCPDS, CatSupport},
+    types::{Error, Result, Set},
 };
 
 impl BE<'_, CatTable, usize> {
     // Fit a CPD given sufficient statistics.
     fn fit(
-        states: &States,
+        support: &CatSupport,
         shape: &Array1<usize>,
         x: &Set<usize>,
         z: &Set<usize>,
@@ -42,21 +42,21 @@ impl BE<'_, CatTable, usize> {
         // Compute the sample log-likelihood.
         let sample_log_likelihood = Some((&n_xz * parameters.ln()).sum());
 
-        // Subset the conditioning labels, states and shape.
-        let conditioning_states = z
+        // Subset the conditioning labels, support and shape.
+        let conditioning_support = z
             .iter()
             .map(|&i| {
-                let (k, v) = states
+                let (k, v) = support
                     .get_index(i)
                     .ok_or_else(|| Error::IndexOutOfBounds(i))?;
                 Ok((k.clone(), v.clone()))
             })
             .collect::<Result<_>>()?;
         // Get the labels of the conditioned variables.
-        let states = x
+        let support = x
             .iter()
             .map(|&i| {
-                let (k, v) = states
+                let (k, v) = support
                     .get_index(i)
                     .ok_or_else(|| Error::IndexOutOfBounds(i))?;
                 Ok((k.clone(), v.clone()))
@@ -68,8 +68,8 @@ impl BE<'_, CatTable, usize> {
 
         // Construct the CPD.
         CatCPD::with_optionals(
-            states,
-            conditioning_states,
+            support,
+            conditioning_support,
             parameters,
             sample_statistics,
             sample_log_likelihood,
@@ -91,8 +91,8 @@ macro_for!($type in [CatTable, CatIncTable, CatWtdTable] {
     impl CPDEstimator<CatCPD> for BE<'_, $type, usize> {
         #[inline]
         fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> Result<CatCPD> {
-            // Get (states, shape, prior).
-            let (states, shape, prior) = (self.dataset.states(), self.dataset.shape(), self.prior);
+            // Get (support, shape, prior).
+            let (support, shape, prior) = (self.dataset.support(), self.dataset.shape(), self.prior);
             // Set sufficient statistics estimator.
             let sample_statistics = SSE::new(self.dataset);
             // Set missing handling method, if any.
@@ -103,7 +103,7 @@ macro_for!($type in [CatTable, CatIncTable, CatWtdTable] {
             // Compute sufficient statistics.
             let sample_statistics = sample_statistics.fit(x, z)?;
             // Fit the CPD given the sufficient statistics.
-            BE::<'_, CatTable, _>::fit(states, shape, x, z, sample_statistics, prior)
+            BE::<'_, CatTable, _>::fit(support, shape, x, z, sample_statistics, prior)
         }
     }
 
@@ -118,8 +118,8 @@ macro_for!($type in [CatTable, CatIncTable, CatWtdTable] {
     impl ParCPDEstimator<CatCPD> for BE<'_, $type, usize> {
         #[inline]
         fn par_fit(&self, x: &Set<usize>, z: &Set<usize>) -> Result<CatCPD> {
-            // Get (states, shape, prior).
-            let (states, shape, prior) = (self.dataset.states(), self.dataset.shape(), self.prior);
+            // Get (support, shape, prior).
+            let (support, shape, prior) = (self.dataset.support(), self.dataset.shape(), self.prior);
             // Set sufficient statistics estimator.
             let sample_statistics = SSE::new(self.dataset);
             // Set missing handling method, if any.
@@ -130,7 +130,7 @@ macro_for!($type in [CatTable, CatIncTable, CatWtdTable] {
             // Compute sufficient statistics in parallel.
             let sample_statistics = sample_statistics.par_fit(x, z)?;
             // Fit the CPD given the sufficient statistics.
-            BE::<'_, CatTable, _>::fit(states, shape, x, z, sample_statistics, prior)
+            BE::<'_, CatTable, _>::fit(support, shape, x, z, sample_statistics, prior)
         }
     }
 

@@ -5,7 +5,7 @@ use std::{
 
 use backend::{
     datasets::{MissingMechanism, MissingMethod, MissingType as MissingType_},
-    models::Labelled,
+    models::HasLabels,
     random::{Random, RngMissingMechanism},
 };
 use pyo3::{prelude::*, types::PyType};
@@ -16,9 +16,11 @@ use rand_xoshiro::Xoshiro256PlusPlus;
 use crate::{error::to_pyerr, impl_from_into_lock, models::PyDiGraph};
 
 /// Missing mechanism types.
+///
 #[gen_stub_pyclass_enum]
 #[pyclass(name = "MissingType", module = "causal_hub.datasets", from_py_object)]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[non_exhaustive]
 pub enum PyMissingType {
     /// Missing Completely At Random.
     MCAR,
@@ -49,9 +51,11 @@ impl From<PyMissingType> for MissingType_ {
 }
 
 /// Missing data handling method.
+///
 #[gen_stub_pyclass_enum]
 #[pyclass(name = "MissingMethod", module = "causal_hub.datasets", from_py_object)]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[non_exhaustive]
 pub enum PyMissingMethod {
     /// List-wise deletion.
     LW,
@@ -87,6 +91,7 @@ impl From<PyMissingMethod> for MissingMethod {
 }
 
 /// A struct representing the missing data indicators.
+///
 #[gen_stub_pyclass]
 #[pyclass(
     name = "MissingMechanism",

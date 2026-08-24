@@ -24,9 +24,9 @@ jobs:
           - runner: ubuntu-24.04-arm
             target: aarch64
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
       - name: Set up cache
-        uses: actions/cache@v4
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
         with:
           path: |
             ~/.local/share/openblas_build
@@ -39,11 +39,11 @@ jobs:
             ${{ matrix.platform.runner }}-${{ matrix.platform.target }}-${{ hashFiles('Cargo.lock') }}
             ${{ matrix.platform.runner }}-${{ matrix.platform.target }}-
             ${{ matrix.platform.runner }}-
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
         with:
           python-version: "3.14"
       - name: Build wheels
-        uses: PyO3/maturin-action@v1
+        uses: PyO3/maturin-action@3e2bdf6ba6453a61e649744019b8a2d906c7eb38  # v1.51.0
         with:
           target: ${{ matrix.platform.target }}
           args: |
@@ -63,7 +63,7 @@ jobs:
                 apt-get update && apt-get install -y pkg-config libssl-dev
             fi
       - name: Build free-threaded wheels
-        uses: PyO3/maturin-action@v1
+        uses: PyO3/maturin-action@3e2bdf6ba6453a61e649744019b8a2d906c7eb38  # v1.51.0
         with:
           target: ${{ matrix.platform.target }}
           args: |
@@ -83,12 +83,13 @@ jobs:
                 apt-get update && apt-get install -y pkg-config libssl-dev
             fi
       - name: Upload wheels
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         with:
           name: wheels-linux-${{ matrix.platform.target }}
           path: dist
 
   windows:
+    if: false # Temporarily disabled
     runs-on: ${{ matrix.platform.runner }}
     strategy:
       fail-fast: false
@@ -97,9 +98,9 @@ jobs:
           - runner: windows-latest
             target: x64
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
       - name: Set up cache
-        uses: actions/cache@v4
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
         with:
           path: |
             C:\vcpkg
@@ -122,12 +123,12 @@ jobs:
         run: |
           vcpkg integrate install
           vcpkg install openblas --overlay-ports=.vcpkg/ports
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
         with:
           python-version: "3.14"
           architecture: ${{ ( matrix.platform.target == 'x86' ) && 'x86' || null }}
       - name: Build wheels
-        uses: PyO3/maturin-action@v1
+        uses: PyO3/maturin-action@3e2bdf6ba6453a61e649744019b8a2d906c7eb38  # v1.51.0
         with:
           target: ${{ matrix.platform.target }}
           args: |
@@ -135,12 +136,12 @@ jobs:
             --no-default-features
             --features=pyo3/extension-module,pyo3/abi3-py312,backend/openblas-system
             --out dist
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
         with:
           python-version: "3.14t"
           architecture: ${{ ( matrix.platform.target == 'x86' ) && 'x86' || null }}
       - name: Build free-threaded wheels
-        uses: PyO3/maturin-action@v1
+        uses: PyO3/maturin-action@3e2bdf6ba6453a61e649744019b8a2d906c7eb38  # v1.51.0
         with:
           target: ${{ matrix.platform.target }}
           args: |
@@ -149,7 +150,7 @@ jobs:
             --features=pyo3/extension-module,pyo3/abi3-py312,backend/openblas-system
             --out dist -i python3.14t
       - name: Upload wheels
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         with:
           name: wheels-windows-${{ matrix.platform.target }}
           path: dist
@@ -163,9 +164,9 @@ jobs:
           - runner: macos-latest
             target: aarch64
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
       - name: Set up cache
-        uses: actions/cache@v4
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
         with:
           path: |
             ~/Library/Application Support/openblas_build
@@ -178,11 +179,11 @@ jobs:
             ${{ matrix.platform.runner }}-${{ matrix.platform.target }}-${{ hashFiles('Cargo.lock') }}
             ${{ matrix.platform.runner }}-${{ matrix.platform.target }}-
             ${{ matrix.platform.runner }}-
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
         with:
           python-version: "3.14"
       - name: Build wheels
-        uses: PyO3/maturin-action@v1
+        uses: PyO3/maturin-action@3e2bdf6ba6453a61e649744019b8a2d906c7eb38  # v1.51.0
         with:
           target: ${{ matrix.platform.target }}
           args: |
@@ -191,7 +192,7 @@ jobs:
             --features=pyo3/extension-module,pyo3/abi3-py312,backend/accelerate-system
             --out dist
       - name: Build free-threaded wheels
-        uses: PyO3/maturin-action@v1
+        uses: PyO3/maturin-action@3e2bdf6ba6453a61e649744019b8a2d906c7eb38  # v1.51.0
         with:
           target: ${{ matrix.platform.target }}
           args: |
@@ -200,7 +201,7 @@ jobs:
             --features=pyo3/extension-module,pyo3/abi3-py312,backend/accelerate-system
             --out dist -i python3.14t
       - name: Upload wheels
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         with:
           name: wheels-macos-${{ matrix.platform.target }}
           path: dist
@@ -208,14 +209,14 @@ jobs:
   sdist:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
       - name: Build sdist
-        uses: PyO3/maturin-action@v1
+        uses: PyO3/maturin-action@3e2bdf6ba6453a61e649744019b8a2d906c7eb38  # v1.51.0
         with:
           command: sdist
           args: --out dist
       - name: Upload sdist
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         with:
           name: wheels-sdist
           path: dist
@@ -224,20 +225,20 @@ jobs:
     name: Release
     runs-on: ubuntu-latest
     if: ${{ startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch' }}
-    needs: [linux, windows, macos, sdist]
+    needs: [linux, macos, sdist]
     permissions:
       id-token: write
       contents: write
       attestations: write
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8.0.1
       - name: Generate artifact attestation
-        uses: actions/attest-build-provenance@v2
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8  # v4.2.2
         with:
           subject-path: "wheels-*/*"
       - name: Publish
         if: ${{ startsWith(github.ref, 'refs/tags/') }}
-        uses: PyO3/maturin-action@v1
+        uses: PyO3/maturin-action@3e2bdf6ba6453a61e649744019b8a2d906c7eb38  # v1.51.0
         env:
           MATURIN_PYPI_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
         with:

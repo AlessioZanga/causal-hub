@@ -1,8 +1,11 @@
-use std::sync::{Arc, RwLock};
+use std::{
+    collections::BTreeMap,
+    sync::{Arc, RwLock},
+};
 
 use backend::{
     io::JsonIO,
-    models::{CPD, GaussCPD, Labelled},
+    models::{CPD, GaussCPD, HasLabels},
     random::{Random, RngGaussCPD},
     types::Labels,
 };
@@ -18,6 +21,7 @@ use rand_xoshiro::Xoshiro256PlusPlus;
 use crate::{error::to_pyerr, impl_from_into_lock};
 
 /// A struct representing a Gaussian conditional probability distribution.
+///
 #[gen_stub_pyclass]
 #[pyclass(name = "GaussCPD", module = "causal_hub.models", eq, from_py_object)]
 #[derive(Clone, Debug)]
@@ -57,6 +61,36 @@ impl PyGaussCPD {
     ///
     pub fn conditioning_labels(&self) -> PyResult<Vec<String>> {
         Ok(self.lock().conditioning_labels().iter().cloned().collect())
+    }
+
+    /// Returns the support of each variable.
+    ///
+    /// Returns
+    /// -------
+    /// dict[str, tuple[float, float]]
+    ///     A map from variable names to (min, max) ranges.
+    ///
+    pub fn support(&self) -> PyResult<BTreeMap<String, (f64, f64)>> {
+        let lock = self.lock();
+        Ok(CPD::support(&*lock)
+            .iter()
+            .map(|(k, v)| (k.clone(), *v))
+            .collect())
+    }
+
+    /// Returns the support of the conditioning variables.
+    ///
+    /// Returns
+    /// -------
+    /// dict[str, tuple[float, float]]
+    ///     A map from conditioning variable names to (min, max) ranges.
+    ///
+    pub fn conditioning_support(&self) -> PyResult<BTreeMap<String, (f64, f64)>> {
+        let lock = self.lock();
+        Ok(CPD::conditioning_support(&*lock)
+            .iter()
+            .map(|(k, v)| (k.clone(), *v))
+            .collect())
     }
 
     /// Returns the parameters.

@@ -5,7 +5,7 @@ use ndarray_linalg::Determinant;
 use crate::{
     datasets::{GaussIncTable, GaussTable, GaussWtdTable},
     estimators::{CPDEstimator, CSSEstimator, MLE, ParCPDEstimator, ParCSSEstimator, SSE},
-    models::{GaussCPD, GaussCPDP, GaussCPDS, Labelled},
+    models::{GaussCPD, GaussCPDP, GaussCPDS, HasLabels},
     types::{EPSILON, Error, LN_2_PI, Labels, Result, Set},
     utils::PseudoInverse,
 };
@@ -28,13 +28,13 @@ impl MLE<'_, GaussTable> {
         );
 
         // Compute the parameters in closed form.
-        let (a, b, s) = if z.is_empty() {
+        let (a, b, stats) = if z.is_empty() {
             // Compute the parameters as the empirical mean and covariance.
             let a = Array2::zeros((x.len(), 0));
             let b = mu_x.clone();
-            let s = s_xx / n;
+            let stats = s_xx / n;
             // Return the parameters.
-            (a, b, s)
+            (a, b, stats)
         } else {
             // Compute the pseudo-inverse of S_zz.
             let s_zz_pinv = s_zz.pinv()?;
@@ -43,29 +43,29 @@ impl MLE<'_, GaussTable> {
             // Compute the intercept vector.
             let b = mu_x - &a.dot(mu_z);
             // Compute the covariance matrix.
-            let s = (s_xx - &a.dot(&s_xz.t())) / n;
+            let stats = (s_xx - &a.dot(&s_xz.t())) / n;
             // Return the parameters.
-            (a, b, s)
+            (a, b, stats)
         };
 
         // Symmetrize and stabilize covariance to avoid numerical issues.
-        let mut s = s;
-        s.diag_mut().mapv_inplace(|x| x.max(0.));
-        let t = s.diag().sum() / s.nrows() as f64;
-        *s.diag_mut() += f64::max(EPSILON, t * EPSILON);
-        s = (&s + &s.t()) / 2.;
+        let mut stats = stats;
+        stats.diag_mut().mapv_inplace(|x| x.max(0.));
+        let t = stats.diag().sum() / stats.nrows() as f64;
+        *stats.diag_mut() += f64::max(EPSILON, t * EPSILON);
+        stats = (&stats + &stats.t()) / 2.;
 
         // Compute the sample log-likelihood.
-        let p = x.len() as f64;
-        let (_, ln_det) = s
-            .sln_det()
-            .map_err(|e| Error::Linalg(&format!("Failed to compute determinant of S: {e}")))?;
-        let sample_log_likelihood = -0.5 * n * (p * LN_2_PI + ln_det + p);
+        let probability = x.len() as f64;
+        let (_, ln_det) = stats.sln_det().map_err(|evidence| {
+            Error::Linalg(&format!("Failed to compute determinant of S: {evidence}"))
+        })?;
+        let sample_log_likelihood = -0.5 * n * (probability * LN_2_PI + ln_det + probability);
 
         // Construct the CPD parameters.
-        let parameters = GaussCPDP::new(a, b, s)?;
+        let parameters = GaussCPDP::new(a, b, stats)?;
 
-        // Subset the conditioning labels, states and shape.
+        // Subset the conditioning labels, support and shape.
         let conditioning_labels = z.iter().map(|&i| labels[i].clone()).collect();
         // Get the labels of the conditioned variables.
         let labels = x.iter().map(|&i| labels[i].clone()).collect();
@@ -82,6 +82,8 @@ impl MLE<'_, GaussTable> {
             parameters,
             sample_statistics,
             sample_log_likelihood,
+            None,
+            None,
         )
     }
 }

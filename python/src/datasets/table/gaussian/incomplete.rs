@@ -2,7 +2,7 @@ use std::sync::{Arc, RwLock};
 
 use backend::{
     datasets::{Dataset, GaussIncTable, GaussType, IncDataset},
-    models::Labelled,
+    models::HasLabels,
     random::{Random, RngGaussIncTable},
 };
 use numpy::{PyArray2, PyArrayMethods, PyReadonlyArray2, ToPyArray, ndarray::prelude::*};
@@ -21,6 +21,7 @@ use crate::{
 };
 
 /// A Gaussian incomplete tabular dataset.
+///
 #[gen_stub_pyclass]
 #[pyclass(name = "GaussIncTable", module = "causal_hub.datasets", from_py_object)]
 #[derive(Clone, Debug)]

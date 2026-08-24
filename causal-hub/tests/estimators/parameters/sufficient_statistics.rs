@@ -6,8 +6,8 @@ mod tests {
         },
         estimators::{CSSEstimator, SSE},
         labels,
-        models::{CatCPDS, GaussCPDS, Labelled},
-        set, states,
+        models::{CatCPDS, GaussCPDS, HasLabels},
+        set, support,
         types::{Error, Result},
     };
     use ndarray::prelude::*;
@@ -20,8 +20,8 @@ mod tests {
             // Define the missing value.
             const M: u8 = CatIncTable::MISSING;
 
-            // Define states.
-            let states = states![("X", ["0", "1"]), ("Y", ["0", "1"])];
+            // Define support.
+            let support = support![("X", ["0", "1"]), ("Y", ["0", "1"])];
 
             // Define values (incomplete).
             let values = array![
@@ -35,26 +35,26 @@ mod tests {
             .mapv(|x| x);
 
             // Create dataset.
-            let d = CatIncTable::new(states, values)?;
+            let data = CatIncTable::new(support, values)?;
 
             // Define missing mechanism. R_X (idx 0) depends on Y (idx 1). R_Y (idx 1) depends on nothing.
             let mut missing_mechanism =
-                MissingMechanism::new(d.labels().clone(), Default::default())?;
+                MissingMechanism::new(data.labels().clone(), Default::default())?;
             missing_mechanism.insert(0, set![1]);
             missing_mechanism.insert(1, set![]);
 
             // Create estimator with IPW.
-            let sse = SSE::new(&d)
+            let sse = SSE::new(&data)
                 .with_missing_method(Some(MissingMethod::IPW), Some(missing_mechanism))?;
 
             // Fit P(X | Y). X (0), Y (1).
             let x = set![0];
             let z = set![1];
 
-            let cpd: CatCPDS = sse.fit(&x, &z)?;
+            let distribution: CatCPDS = sse.fit(&x, &z)?;
 
             // Check sample size matches dataset samples
-            assert_eq!(cpd.fitted_size(), 4.0);
+            assert_eq!(distribution.fitted_size(), 4.0);
 
             // Check conditional counts.
             // IPW Weights:
@@ -66,7 +66,7 @@ mod tests {
             // N_XZ = [[1.6, 0.8], [0.0, 1.6]]
             // Indexing: Row=Z (Y=0, Y=1), Col=X (X=0, X=1)
             let expected = array![[1.6, 0.8], [0.0, 1.6]];
-            assert_eq!(cpd.fitted_conditional_counts(), &expected);
+            assert_eq!(distribution.fitted_conditional_counts(), &expected);
 
             Ok(())
         }
@@ -76,8 +76,8 @@ mod tests {
             // Define the missing value.
             const M: u8 = CatIncTable::MISSING;
 
-            // Define states.
-            let states = states![("X", ["0", "1"]), ("Y", ["0", "1"])];
+            // Define support.
+            let support = support![("X", ["0", "1"]), ("Y", ["0", "1"])];
 
             // Define values (incomplete).
             let values = array![
@@ -91,29 +91,29 @@ mod tests {
             .mapv(|x| x);
 
             // Create dataset.
-            let d = CatIncTable::new(states, values)?;
+            let data = CatIncTable::new(support, values)?;
 
             // Define missing mechanism. R_X (idx 0) depends on Y (idx 1). R_Y (idx 1) depends on nothing.
             let mut missing_mechanism =
-                MissingMechanism::new(d.labels().clone(), Default::default())?;
+                MissingMechanism::new(data.labels().clone(), Default::default())?;
             missing_mechanism.insert(0, set![1]);
             missing_mechanism.insert(1, set![]);
 
             // Create estimator with AIPW.
-            let sse = SSE::new(&d)
+            let sse = SSE::new(&data)
                 .with_missing_method(Some(MissingMethod::AIPW), Some(missing_mechanism))?;
 
             let x = set![0];
             let z = set![1];
 
-            let cpd: CatCPDS = sse.fit(&x, &z)?;
+            let distribution: CatCPDS = sse.fit(&x, &z)?;
 
-            assert_eq!(cpd.fitted_size(), 4.0);
+            assert_eq!(distribution.fitted_size(), 4.0);
 
             // Check conditional counts for AIPW.
             // AIPW is more complex to calculate by hand, but we verify it produces non-zero
             // valid counts for observed combinations.
-            let counts = cpd.fitted_conditional_counts();
+            let counts = distribution.fitted_conditional_counts();
             assert!(counts[[0, 0]] > 0.0);
             assert!(counts[[0, 1]] > 0.0);
             assert_eq!(counts[[1, 0]], 0.0); // No observed samples for (0, 1)
@@ -131,26 +131,26 @@ mod tests {
             // Define values.
             let values = array![[0.0, 0.0], [1.0, 0.0], [0.0, 1.0], [1.0, 1.0]];
             let labels = labels!["X", "Y"];
-            let d = GaussTable::new(labels, values)?;
+            let data = GaussTable::new(labels, values)?;
 
-            let sse = SSE::new(&d);
+            let sse = SSE::new(&data);
 
             // Fit P(X | Y).
             let x = set![0];
             let z = set![1];
 
             // Compute the sufficient statistics.
-            let cpd: GaussCPDS = sse.fit(&x, &z)?;
+            let distribution: GaussCPDS = sse.fit(&x, &z)?;
 
             // Check sample size.
-            assert_eq!(cpd.fitted_size(), 4.0);
+            assert_eq!(distribution.fitted_size(), 4.0);
 
             // mu_X = (0+1+0+1)/4 = 0.5
             // mu_Y = (0+0+1+1)/4 = 0.5
 
             // Check means.
-            assert_eq!(cpd.fitted_response_mean(), &array![0.5]);
-            assert_eq!(cpd.fitted_design_mean(), &array![0.5]);
+            assert_eq!(distribution.fitted_response_mean(), &array![0.5]);
+            assert_eq!(distribution.fitted_design_mean(), &array![0.5]);
 
             Ok(())
         }
@@ -172,7 +172,7 @@ mod tests {
             ];
 
             let labels = labels!["X", "Y", "W"];
-            let d = GaussIncTable::new(labels, values)?;
+            let data = GaussIncTable::new(labels, values)?;
 
             // PW Deletion.
             // Fit P(X | Y). X=0, Y=1.
@@ -186,13 +186,13 @@ mod tests {
             // [0, 1]
             // [1, 1]
 
-            let sse = SSE::new(&d).with_missing_method(Some(MissingMethod::PW), None)?;
+            let sse = SSE::new(&data).with_missing_method(Some(MissingMethod::PW), None)?;
 
-            let x_idx = d
+            let x_idx = data
                 .labels()
                 .get_index_of("X")
                 .ok_or_else(|| Error::InvalidParameter("x", "missing"))?;
-            let y_idx = d
+            let y_idx = data
                 .labels()
                 .get_index_of("Y")
                 .ok_or_else(|| Error::InvalidParameter("y", "missing"))?;
@@ -201,14 +201,14 @@ mod tests {
             let z = set![y_idx];
 
             // Compute the sufficient statistics.
-            let cpd: GaussCPDS = sse.fit(&x, &z)?;
+            let distribution: GaussCPDS = sse.fit(&x, &z)?;
 
             // Check sample size.
-            assert_eq!(cpd.fitted_size(), 4.0);
+            assert_eq!(distribution.fitted_size(), 4.0);
 
             // Check means.
-            assert_eq!(cpd.fitted_response_mean(), &array![0.5]);
-            assert_eq!(cpd.fitted_design_mean(), &array![0.5]);
+            assert_eq!(distribution.fitted_response_mean(), &array![0.5]);
+            assert_eq!(distribution.fitted_design_mean(), &array![0.5]);
 
             Ok(())
         }

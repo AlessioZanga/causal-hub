@@ -1,10 +1,12 @@
 use std::{
+    borrow::Cow,
     io::{Read, Write},
     sync::Arc,
 };
 
 use csv::{ReaderBuilder, WriterBuilder};
 use ndarray::prelude::*;
+use serde::{Deserialize, Serialize};
 
 use crate::{
     datasets::{
@@ -14,13 +16,13 @@ use crate::{
     estimators::{BE, CPDEstimator},
     io::CsvIO,
     labels,
-    models::{CPD, Labelled},
+    models::{CPD, GaussSupport, HasLabels},
     set,
     types::{Error, Labels, Result, Set},
 };
 
 /// A struct representing an incomplete gaussian dataset.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct GaussIncTable {
     labels: Labels,
     values: Array2<GaussType>,
@@ -47,7 +49,7 @@ impl<'a> Iterator for GaussIncTableEvidenceIter<'a> {
     }
 }
 
-impl Labelled for GaussIncTable {
+impl HasLabels for GaussIncTable {
     #[inline]
     fn labels(&self) -> &Labels {
         &self.labels
@@ -98,12 +100,22 @@ impl GaussIncTable {
 
 impl Dataset for GaussIncTable {
     type Values = Array2<GaussType>;
+    type Support = GaussSupport;
     type Evidence = GaussEv;
     type EvidenceIter<'a> = GaussIncTableEvidenceIter<'a>;
 
     #[inline]
     fn values(&self) -> &Self::Values {
         &self.values
+    }
+
+    fn support(&self) -> Cow<'_, Self::Support> {
+        Cow::Owned(
+            self.labels
+                .iter()
+                .map(|l| (l.clone(), (f64::NEG_INFINITY, f64::INFINITY)))
+                .collect(),
+        )
     }
 
     fn evidence_iter(&self) -> Self::EvidenceIter<'_> {
@@ -255,9 +267,9 @@ impl IncDataset for GaussIncTable {
     fn pw_deletion(&self, x: &Set<usize>) -> Result<Self::Complete> {
         // If no columns are specified, return an empty dataset.
         if x.is_empty() {
-            let s = labels![];
+            let stats = labels![];
             let v = Array::default((0, 0));
-            return GaussTable::new(s, v);
+            return GaussTable::new(stats, v);
         }
 
         // Check that the indices are valid.
@@ -313,10 +325,10 @@ impl IncDataset for GaussIncTable {
     fn ipw_deletion(&self, x: &Set<usize>, pr: &MissingMechanism) -> Result<Self::Weighted> {
         // If no columns are specified, return an empty dataset.
         if x.is_empty() {
-            let s = labels![];
+            let stats = labels![];
             let v = Array::default((0, 0));
             let w = Array::default(0);
-            return Self::Weighted::new(Self::Complete::new(s, v)?, w);
+            return Self::Weighted::new(Self::Complete::new(stats, v)?, w);
         }
 
         // Check that the indices are valid.
@@ -461,7 +473,7 @@ impl CsvIO for GaussIncTable {
                 .into_records()
                 .try_fold(Vec::new(), |mut values, row| -> Result<_> {
                     // Get the record row.
-                    let row = row.map_err(|e| Error::Csv(Arc::new(e)))?;
+                    let row = row.map_err(|evidence| Error::Csv(Arc::new(evidence)))?;
                     // Extend the values.
                     values.extend(
                         row.iter()

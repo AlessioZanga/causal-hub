@@ -5,7 +5,7 @@ use rand_distr::Uniform;
 
 use crate::{
     datasets::{CatIncTable, CatTable, CatType, Dataset, IncDataset, MissingMechanism},
-    models::Labelled,
+    models::HasLabels,
     random::Random,
     types::{Error, Result},
 };
@@ -78,8 +78,8 @@ impl<R: Rng> Random for RngCatIncTable<'_, R> {
     fn random(&mut self) -> Self::Output {
         // Get the missing indicator.
         const M: CatType = CatIncTable::MISSING;
-        // Get dataset states.
-        let states = self.dataset.states().clone();
+        // Get dataset support.
+        let support = self.dataset.support().clone();
         // Get dataset values.
         let mut values = self.dataset.values().clone();
 
@@ -132,6 +132,6 @@ impl<R: Rng> Random for RngCatIncTable<'_, R> {
         }
 
         // Return the incomplete dataset.
-        CatIncTable::new(states, values)
+        CatIncTable::new(support, values)
     }
 }

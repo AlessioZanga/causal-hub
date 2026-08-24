@@ -5,9 +5,8 @@ use std::{
 
 use backend::{
     io::JsonIO,
-    models::{CPD, CatCPD, Labelled},
+    models::{CPD, CatCPD, CatSupport, HasLabels},
     random::{Random, RngCatCPD},
-    types::States,
 };
 use numpy::{PyArray2, prelude::*};
 use pyo3::{
@@ -21,6 +20,7 @@ use rand_xoshiro::Xoshiro256PlusPlus;
 use crate::{error::to_pyerr, impl_from_into_lock};
 
 /// A struct representing a categorical conditional probability distribution.
+///
 #[gen_stub_pyclass]
 #[pyclass(name = "CatCPD", module = "causal_hub.models", eq, from_py_object)]
 #[derive(Clone, Debug)]
@@ -58,9 +58,9 @@ impl PyCatCPD {
     /// dict[str, tuple[str, ...]]
     ///     The states of the conditioned variable.
     ///
-    pub fn states<'a>(&'a self, py: Python<'a>) -> PyResult<BTreeMap<String, Bound<'a, PyTuple>>> {
+    pub fn support<'a>(&'a self, py: Python<'a>) -> PyResult<BTreeMap<String, Bound<'a, PyTuple>>> {
         self.lock()
-            .states()
+            .support()
             .iter()
             .map(|(label, states)| {
                 // Get reference to the label and states.
@@ -103,12 +103,12 @@ impl PyCatCPD {
     /// dict[str, tuple[str, ...]]
     ///     The states of the conditioning variables.
     ///
-    pub fn conditioning_states<'a>(
+    pub fn conditioning_support<'a>(
         &'a self,
         py: Python<'a>,
     ) -> PyResult<BTreeMap<String, Bound<'a, PyTuple>>> {
         self.lock()
-            .conditioning_states()
+            .conditioning_support()
             .iter()
             .map(|(label, states)| {
                 // Get reference to the label and states.
@@ -193,6 +193,7 @@ impl PyCatCPD {
     }
 
     /// Returns the string representation of the CatCPD.
+    ///
     pub fn __repr__(&self) -> PyResult<String> {
         // Get the string representation of the CatCPD.
         Ok(self.lock().to_string())
@@ -204,8 +205,8 @@ impl PyCatCPD {
     /// ----------
     /// states: dict[str, tuple[str, ...]]
     ///     The states of the variable.
-    /// conditioning_states: dict[str, tuple[str, ...]]
-    ///     The states of the conditioning variables.
+    /// conditioning_support: dict[str, tuple[str, ...]]
+    ///     The support of the conditioning variables.
     /// alpha: float, default=1.0
     ///     The parameter of the Dirichlet distribution.
     /// seed: int, default=31
@@ -219,38 +220,38 @@ impl PyCatCPD {
     #[classmethod]
     #[pyo3(signature = (
         states,
-        conditioning_states,
+        conditioning_support,
         alpha = 1.0,
         seed = 31
     ))]
     pub fn random(
         _cls: &Bound<'_, PyType>,
         states: &Bound<'_, PyDict>,
-        conditioning_states: &Bound<'_, PyDict>,
+        conditioning_support: &Bound<'_, PyDict>,
         alpha: f64,
         seed: u64,
     ) -> PyResult<Self> {
-        // Convert the PyDict to a States.
-        let mut inner_states = States::default();
+        // Convert the PyDict to a CatSupport.
+        let mut inner_states = CatSupport::default();
         for (label, states) in states {
             let label = label.extract::<String>()?;
             let states = states.extract::<Vec<String>>()?;
             inner_states.insert(label, states.into_iter().collect());
         }
 
-        // Convert the PyDict to a States.
-        let mut inner_conditioning_states = States::default();
-        for (label, states) in conditioning_states {
+        // Convert the PyDict to a CatSupport.
+        let mut inner_conditioning_support = CatSupport::default();
+        for (label, states) in conditioning_support {
             let label = label.extract::<String>()?;
             let states = states.extract::<Vec<String>>()?;
-            inner_conditioning_states.insert(label, states.into_iter().collect());
+            inner_conditioning_support.insert(label, states.into_iter().collect());
         }
 
         // Initialize the random number generator.
         let mut rng = Xoshiro256PlusPlus::seed_from_u64(seed);
 
         // Create a new RngCatCPD and generate a random CPD.
-        RngCatCPD::new(&mut rng, &inner_states, &inner_conditioning_states, alpha)
+        RngCatCPD::new(&mut rng, &inner_states, &inner_conditioning_support, alpha)
             .and_then(|mut x| x.random())
             .map(Into::into)
             .map_err(to_pyerr)

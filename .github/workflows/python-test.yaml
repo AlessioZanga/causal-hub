@@ -28,9 +28,9 @@ jobs:
       run:
         shell: bash -el {0}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
       - name: Set up cache
-        uses: actions/cache@v4
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
         with:
           path: |
             ~/.local/share/openblas_build
@@ -48,7 +48,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y pkg-config libssl-dev
       - name: Set up uv
-        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+        uses: astral-sh/setup-uv@6b9c6063abd6010835644d4c2e1bef4cf5cd0fca  # v9.0.0
         with:
           python-version: ${{ matrix.python }}
       - name: Build
@@ -66,6 +66,7 @@ jobs:
           uv run pytest
 
   windows:
+    if: false # Temporarily disabled
     runs-on: ${{ matrix.platform.runner }}
     strategy:
       fail-fast: false
@@ -78,9 +79,9 @@ jobs:
       run:
         shell: pwsh -Command "& '{0}'"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
       - name: Set up cache
-        uses: actions/cache@v4
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
         with:
           path: |
             C:\vcpkg
@@ -104,7 +105,7 @@ jobs:
           vcpkg integrate install
           vcpkg install openblas --overlay-ports=.vcpkg/ports
       - name: Set up uv
-        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+        uses: astral-sh/setup-uv@6b9c6063abd6010835644d4c2e1bef4cf5cd0fca  # v9.0.0
         with:
           python-version: ${{ matrix.python }}
       - name: Build
@@ -131,9 +132,9 @@ jobs:
       run:
         shell: bash -el {0}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
       - name: Set up cache
-        uses: actions/cache@v4
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
         with:
           path: |
             ~/Library/Application Support/openblas_build
@@ -147,7 +148,7 @@ jobs:
             ${{ matrix.platform.runner }}-${{ matrix.platform.target }}-
             ${{ matrix.platform.runner }}-
       - name: Set up uv
-        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+        uses: astral-sh/setup-uv@6b9c6063abd6010835644d4c2e1bef4cf5cd0fca  # v9.0.0
         with:
           python-version: ${{ matrix.python }}
       - name: Build

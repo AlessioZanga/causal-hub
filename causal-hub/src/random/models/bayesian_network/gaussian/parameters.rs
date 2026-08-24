@@ -19,7 +19,7 @@ where
     z: usize,
     s_a: f64,
     s_b: f64,
-    e: f64,
+    evidence: f64,
 }
 
 impl<'a, R> RngGaussCPDP<'a, R>
@@ -47,7 +47,7 @@ where
     ///
     /// A new `RngGaussCPDP` instance.
     ///
-    fn new(rng: &'a mut R, x: usize, z: usize, s_a: f64, s_b: f64, e: f64) -> Result<Self> {
+    fn new(rng: &'a mut R, x: usize, z: usize, s_a: f64, s_b: f64, evidence: f64) -> Result<Self> {
         // Check parameters.
         if s_a <= 0.0 {
             return Err(Error::InvalidParameter("s_a", "must be positive"));
@@ -55,7 +55,7 @@ where
         if s_b <= 0.0 {
             return Err(Error::InvalidParameter("s_b", "must be positive"));
         }
-        if e <= 0.0 {
+        if evidence <= 0.0 {
             return Err(Error::InvalidParameter("e", "must be positive"));
         }
 
@@ -65,7 +65,7 @@ where
             z,
             s_a,
             s_b,
-            e,
+            evidence,
         })
     }
 }
@@ -80,7 +80,7 @@ where
         // 1. Generate coefficient matrix A (x x z)
         let mut a = if self.x > 0 && self.z > 0 {
             let dist_a = Normal::new(0.0, self.s_a)
-                .map_err(|e| Error::InvalidParameter("s_a", &e.to_string()))?;
+                .map_err(|evidence| Error::InvalidParameter("s_a", &evidence.to_string()))?;
             Array2::from_shape_fn((self.x, self.z), |_| self.rng.sample(dist_a))
         } else {
             Array2::zeros((self.x, self.z))
@@ -88,10 +88,10 @@ where
 
         // 2. Control regression strength: spectral norm ||A||
         if self.x > 0 && self.z > 0 {
-            let (_, s, _) = a
+            let (_, stats, _) = a
                 .svd(false, false)
-                .map_err(|e| Error::Linalg(&format!("Failed to compute SVD: {e}")))?;
-            let spectral_norm = s[0];
+                .map_err(|evidence| Error::Linalg(&format!("Failed to compute SVD: {evidence}")))?;
+            let spectral_norm = stats[0];
             if spectral_norm > 1.0 {
                 a /= spectral_norm;
             }
@@ -100,42 +100,42 @@ where
         // 3. Generate intercept vector b (x)
         let b = if self.x > 0 {
             let dist_b = Normal::new(0.0, self.s_b)
-                .map_err(|e| Error::InvalidParameter("s_b", &e.to_string()))?;
+                .map_err(|evidence| Error::InvalidParameter("s_b", &evidence.to_string()))?;
             Array1::from_shape_fn(self.x, |_| self.rng.sample(dist_b))
         } else {
             Array1::zeros(self.x)
         };
 
         // 4. Generate covariance matrix Sigma (x x x)
-        let s = if self.x > 0 {
-            let mut s;
+        let stats = if self.x > 0 {
+            let mut stats;
             // Create the Normal distribution.
             let dist_m = Normal::new(0.0, 1.0)
-                .map_err(|e| Error::InvalidParameter("sigma", &e.to_string()))?;
+                .map_err(|evidence| Error::InvalidParameter("sigma", &evidence.to_string()))?;
             loop {
                 // Sample random matrix M (x x x)
-                let m = Array2::from_shape_fn((self.x, self.x), |_| self.rng.sample(dist_m));
+                let model = Array2::from_shape_fn((self.x, self.x), |_| self.rng.sample(dist_m));
 
                 // Compute Sigma = M * M^T
-                s = m.dot(&m.t());
+                stats = model.dot(&model.t());
 
                 // Regularize: Sigma = Sigma + e * I
                 for i in 0..self.x {
-                    s[[i, i]] += self.e;
+                    stats[[i, i]] += self.evidence;
                 }
 
                 // 5. Validation step: positive definite
-                if s.cholesky(UPLO::Lower).is_ok() {
+                if stats.cholesky(UPLO::Lower).is_ok() {
                     break;
                 }
             }
-            s
+            stats
         } else {
             Array2::zeros((self.x, self.x))
         };
 
         // 6. Construct GaussCPDP
-        GaussCPDP::new(a, b, s)
+        GaussCPDP::new(a, b, stats)
     }
 }
 
@@ -149,7 +149,7 @@ where
     conditioning_labels: &'a Labels,
     s_a: f64,
     s_b: f64,
-    e: f64,
+    evidence: f64,
 }
 
 impl<'a, R> RngGaussCPD<'a, R>
@@ -177,7 +177,7 @@ where
         conditioning_labels: &'a Labels,
         s_a: f64,
         s_b: f64,
-        e: f64,
+        evidence: f64,
     ) -> Result<Self> {
         Ok(Self {
             rng,
@@ -185,7 +185,7 @@ where
             conditioning_labels,
             s_a,
             s_b,
-            e,
+            evidence,
         })
     }
 }
@@ -204,7 +204,7 @@ where
             self.conditioning_labels.len(),
             self.s_a,
             self.s_b,
-            self.e,
+            self.evidence,
         )?;
         let parameters = rng_params.random()?;
 

@@ -3,9 +3,9 @@ mod tests {
     use causal_hub::{
         datasets::{CatTable, MissingMechanism},
         labels, map,
-        models::Labelled,
+        models::HasLabels,
         random::{Random, RngCatIncTable},
-        set, states,
+        set, support,
         types::{Error, ErrorKind, Result},
     };
     use ndarray::prelude::*;
@@ -15,9 +15,9 @@ mod tests {
     #[test]
     fn new() -> Result<()> {
         let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
-        let states = states![("A", ["0", "1"]), ("B", ["0", "1"])];
+        let support = support![("A", ["0", "1"]), ("B", ["0", "1"])];
         let values = array![[0, 0], [1, 1]];
-        let dataset = CatTable::new(states, values)?;
+        let dataset = CatTable::new(support, values)?;
         let mechanism = MissingMechanism::new(labels!["A", "B"], map![(0, set![1])])?;
 
         let res = RngCatIncTable::new(&mut rng, &dataset, &mechanism, 0.1, 0.2);
@@ -29,9 +29,9 @@ mod tests {
     #[test]
     fn new_invalid_labels() -> Result<()> {
         let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
-        let states = states![("A", ["0", "1"]), ("B", ["0", "1"])];
+        let support = support![("A", ["0", "1"]), ("B", ["0", "1"])];
         let values = array![[0, 0], [1, 1]];
-        let dataset = CatTable::new(states, values)?;
+        let dataset = CatTable::new(support, values)?;
         let mechanism = MissingMechanism::new(labels!["A", "C"], map![(0, set![1])])?;
 
         let res = RngCatIncTable::new(&mut rng, &dataset, &mechanism, 0.1, 0.2);
@@ -49,9 +49,9 @@ mod tests {
     #[test]
     fn new_invalid_p_min() -> Result<()> {
         let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
-        let states = states![("A", ["0", "1"]), ("B", ["0", "1"])];
+        let support = support![("A", ["0", "1"]), ("B", ["0", "1"])];
         let values = array![[0, 0], [1, 1]];
-        let dataset = CatTable::new(states, values)?;
+        let dataset = CatTable::new(support, values)?;
         let mechanism = MissingMechanism::new(labels!["A", "B"], map![(0, set![1])])?;
 
         let res = RngCatIncTable::new(&mut rng, &dataset, &mechanism, -0.1, 0.2);
@@ -78,9 +78,9 @@ mod tests {
     #[test]
     fn new_invalid_p_max() -> Result<()> {
         let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
-        let states = states![("A", ["0", "1"]), ("B", ["0", "1"])];
+        let support = support![("A", ["0", "1"]), ("B", ["0", "1"])];
         let values = array![[0, 0], [1, 1]];
-        let dataset = CatTable::new(states, values)?;
+        let dataset = CatTable::new(support, values)?;
         let mechanism = MissingMechanism::new(labels!["A", "B"], map![(0, set![1])])?;
 
         let res = RngCatIncTable::new(&mut rng, &dataset, &mechanism, 0.1, -0.2);
@@ -107,9 +107,9 @@ mod tests {
     #[test]
     fn new_p_min_greater_than_p_max() -> Result<()> {
         let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
-        let states = states![("A", ["0", "1"]), ("B", ["0", "1"])];
+        let support = support![("A", ["0", "1"]), ("B", ["0", "1"])];
         let values = array![[0, 0], [1, 1]];
-        let dataset = CatTable::new(states, values)?;
+        let dataset = CatTable::new(support, values)?;
         let mechanism = MissingMechanism::new(labels!["A", "B"], map![(0, set![1])])?;
 
         let res = RngCatIncTable::new(&mut rng, &dataset, &mechanism, 0.5, 0.2);
@@ -127,16 +127,16 @@ mod tests {
     #[test]
     fn random() -> Result<()> {
         let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
-        let states = states![("A", ["0", "1"]), ("B", ["0", "1"])];
+        let support = support![("A", ["0", "1"]), ("B", ["0", "1"])];
         let values = array![[0, 0], [1, 1]];
-        let dataset = CatTable::new(states, values)?;
+        let dataset = CatTable::new(support, values)?;
         let mechanism = MissingMechanism::new(labels!["A", "B"], map![(0, set![1])])?;
 
         let mut rng_cat_inc_table = RngCatIncTable::new(&mut rng, &dataset, &mechanism, 0.1, 0.2)?;
         let sample = rng_cat_inc_table.random()?;
 
         assert_eq!(sample.labels(), dataset.labels());
-        assert_eq!(sample.states(), dataset.states());
+        assert_eq!(sample.support(), dataset.support());
 
         Ok(())
     }
