@@ -3,7 +3,7 @@ mod tests {
     use causal_hub::{
         io::JsonIO,
         labels,
-        models::{Graph, Labelled, UnGraph},
+        models::{Graph, HasLabels, UnGraph},
         set,
         types::Result,
     };

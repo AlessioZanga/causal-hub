@@ -5,7 +5,7 @@ use std::{
 
 use backend::{
     datasets::{CatWtdTrj, CatWtdTrjs, Dataset},
-    models::Labelled,
+    models::HasLabels,
 };
 use numpy::{PyArray1, prelude::*};
 use pyo3::{prelude::*, types::PyTuple};

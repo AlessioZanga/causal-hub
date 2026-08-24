@@ -2,7 +2,7 @@ use std::sync::{Arc, RwLock};
 
 use backend::{
     io::JsonIO,
-    models::{GaussPhi, Labelled, Phi},
+    models::{GaussPhi, HasLabels, Phi},
 };
 use numpy::{PyArray1, PyArray2, prelude::*};
 use pyo3::{prelude::*, types::PyType};

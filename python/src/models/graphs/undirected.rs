@@ -2,7 +2,7 @@ use std::sync::{Arc, RwLock};
 
 use backend::{
     io::{DotIO, GmlIO, JsonIO},
-    models::{Graph, Labelled, UnGraph},
+    models::{Graph, HasLabels, UnGraph},
     random::{Random, RngUnGraph},
     types::Labels,
 };

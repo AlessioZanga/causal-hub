@@ -1,6 +1,6 @@
 use std::sync::{Arc, RwLock};
 
-use backend::models::{CPD, Labelled, MixedCPD};
+use backend::models::{CPD, HasLabels, MixedCPD};
 use pyo3::{prelude::*, types::PyType};
 use pyo3_stub_gen::derive::*;
 

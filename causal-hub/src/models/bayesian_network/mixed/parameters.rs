@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     datasets::{CatSample, GaussSample},
-    models::{CPD, CatCPD, CatCPDS, CatSupport, GaussCPD, GaussCPDS, GaussSupport, Labelled},
+    models::{CPD, CatCPD, CatCPDS, CatSupport, GaussCPD, GaussCPDS, GaussSupport, HasLabels},
     types::{Error, Labels, Result},
 };
 
@@ -96,7 +96,7 @@ impl From<GaussSample> for MixedSample {
     }
 }
 
-impl Labelled for MixedCPD {
+impl HasLabels for MixedCPD {
     fn labels(&self) -> &Labels {
         match self {
             Self::Categorical(distribution) => distribution.labels(),

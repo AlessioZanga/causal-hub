@@ -2,7 +2,7 @@
 mod tests {
     use causal_hub::{
         io::DotIO,
-        models::{DiGraph, Graph, Labelled, UnGraph},
+        models::{DiGraph, Graph, HasLabels, UnGraph},
         types::Result,
     };
 

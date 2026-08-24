@@ -8,7 +8,7 @@ mod tests {
         },
         labels,
         models::{
-            CatCPDS, GaussCPDS, Labelled, MixedCPDS, MixedEv, MixedIncTable, MixedSample,
+            CatCPDS, GaussCPDS, HasLabels, MixedCPDS, MixedEv, MixedIncTable, MixedSample,
             MixedTable, MixedWtdTable,
         },
         support,

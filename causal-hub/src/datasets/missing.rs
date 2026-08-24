@@ -10,7 +10,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     datasets::Dataset,
-    models::Labelled,
+    models::HasLabels,
     types::{Error, Labels, Map, Result, Set},
 };
 
@@ -83,7 +83,7 @@ impl MissingMechanism {
     }
 }
 
-impl Labelled for MissingMechanism {
+impl HasLabels for MissingMechanism {
     #[inline]
     fn labels(&self) -> &Labels {
         &self.labels
@@ -172,7 +172,7 @@ pub struct MissingTable {
     complete_rows_count: usize,
 }
 
-impl Labelled for MissingTable {
+impl HasLabels for MissingTable {
     #[inline]
     fn labels(&self) -> &Labels {
         &self.labels

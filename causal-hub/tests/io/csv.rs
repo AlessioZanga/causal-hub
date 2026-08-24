@@ -6,7 +6,7 @@ mod tests {
         datasets::{CatIncTable, CatTable, Dataset, GaussTable, IncDataset},
         io::CsvIO,
         labels,
-        models::Labelled,
+        models::HasLabels,
         types::{Error, Result},
     };
     use ndarray::prelude::*;

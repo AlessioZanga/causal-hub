@@ -11,7 +11,7 @@ use backend::{
         ParBNCausalInference, ParBNInference,
     },
     io::JsonIO,
-    models::{BN, DiGraph, GaussBN, Labelled},
+    models::{BN, DiGraph, GaussBN, HasLabels},
     random::{Random, RngGaussBN},
     samplers::{BNSampler, ForwardSampler, ParBNSampler},
     types::Labels,

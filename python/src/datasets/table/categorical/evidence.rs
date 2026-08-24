@@ -5,7 +5,7 @@ use std::{
 
 use backend::{
     datasets::{CatEv, CatEvT},
-    models::{CatSupport, Labelled},
+    models::{CatSupport, HasLabels},
     types::Set,
 };
 use pyo3::{

@@ -4,7 +4,7 @@ mod tests {
     use causal_hub::{
         datasets::{CatTrj, CatTrjEv, CatTrjEvT as E, CatWtdTrj, Dataset},
         labels,
-        models::Labelled,
+        models::HasLabels,
         set, support,
         types::Result,
     };

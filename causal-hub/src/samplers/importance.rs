@@ -15,7 +15,7 @@ use crate::{
         CatWtdTable, CatWtdTrj, CatWtdTrjs, GaussEv, GaussEvT, GaussTable, GaussType,
         GaussWtdSample, GaussWtdTable,
     },
-    models::{BN, CIM, CPD, CTBN, CatBN, CatCTBN, GaussBN, Labelled},
+    models::{BN, CIM, CPD, CTBN, CatBN, CatCTBN, GaussBN, HasLabels},
     samplers::{BNSampler, CTBNSampler, ParBNSampler, ParCTBNSampler},
     set,
     types::{EPSILON, Error, Result, Set},
@@ -31,8 +31,8 @@ pub struct ImportanceSampler<'a, R, M, E> {
 
 impl<'a, R, M, E> ImportanceSampler<'a, R, M, E>
 where
-    M: Labelled,
-    E: Labelled,
+    M: HasLabels,
+    E: HasLabels,
 {
     /// Construct a new importance sampler.
     ///

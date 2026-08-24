@@ -2,7 +2,7 @@
 mod tests {
     use causal_hub::{
         labels,
-        models::{CPD, GaussCPD, Labelled},
+        models::{CPD, GaussCPD, HasLabels},
         random::{Random, RngGaussCPD},
         types::Result,
     };

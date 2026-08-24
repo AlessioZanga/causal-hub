@@ -8,7 +8,7 @@ use rayon::prelude::*;
 
 use crate::{
     datasets::{CatTable, CatTrjEv, CatTrjEvT, CatType, Dataset},
-    models::{CatSupport, Labelled},
+    models::{CatSupport, HasLabels},
     types::{Error, Labels, Result, Set},
 };
 
@@ -185,7 +185,7 @@ impl CatTrj {
     }
 }
 
-impl Labelled for CatTrj {
+impl HasLabels for CatTrj {
     #[inline]
     fn labels(&self) -> &Labels {
         self.events.labels()
@@ -400,7 +400,7 @@ impl<'a> IntoParallelRefIterator<'a> for CatTrjs {
     }
 }
 
-impl Labelled for CatTrjs {
+impl HasLabels for CatTrjs {
     #[inline]
     fn labels(&self) -> &Labels {
         &self.labels

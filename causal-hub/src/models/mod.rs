@@ -20,7 +20,7 @@ pub use graphs::*;
 use crate::types::{Error, Labels, Result, Set};
 
 /// A trait for models with labelled variables.
-pub trait Labelled {
+pub trait HasLabels {
     /// Returns the labels of the variables.
     ///
     /// # Returns
@@ -169,10 +169,10 @@ pub trait Labelled {
     }
 }
 
-impl<L, R> Labelled for Either<L, R>
+impl<L, R> HasLabels for Either<L, R>
 where
-    L: Labelled,
-    R: Labelled,
+    L: HasLabels,
+    R: HasLabels,
 {
     fn labels(&self) -> &Labels {
         match self {
@@ -183,7 +183,7 @@ where
 }
 
 /// A trait for conditional probability distributions.
-pub trait CPD: Clone + Debug + Labelled + PartialEq + AbsDiffEq + RelativeEq {
+pub trait CPD: Clone + Debug + HasLabels + PartialEq + AbsDiffEq + RelativeEq {
     /// The type of the samples.
     type Sample;
     /// The type of the support metadata (variable ranges / state sets).
@@ -292,7 +292,7 @@ pub trait CPD: Clone + Debug + Labelled + PartialEq + AbsDiffEq + RelativeEq {
 }
 
 /// A trait for conditional intensity matrices.
-pub trait CIM: Clone + Debug + Labelled + PartialEq + AbsDiffEq + RelativeEq {
+pub trait CIM: Clone + Debug + HasLabels + PartialEq + AbsDiffEq + RelativeEq {
     /// The type of the samples.
     type Sample;
     /// The type of the support metadata (variable ranges / state sets).
@@ -363,7 +363,7 @@ pub trait CIM: Clone + Debug + Labelled + PartialEq + AbsDiffEq + RelativeEq {
 pub trait Phi:
     Clone
     + Debug
-    + Labelled
+    + HasLabels
     + PartialEq
     + AbsDiffEq
     + RelativeEq

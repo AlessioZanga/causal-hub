@@ -3,7 +3,7 @@ mod tests {
     use causal_hub::{
         assets::*,
         inference::GraphicalSeparation,
-        models::{BN, DiGraph, Graph, Labelled},
+        models::{BN, DiGraph, Graph, HasLabels},
         set,
         types::Result,
     };

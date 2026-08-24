@@ -57,6 +57,10 @@ repos:
     rev: 914e7df21a07ef503a81201c76d2b11c789d3fca  # v1.7.12
     hooks:
       - id: actionlint
+        # Allow temporarily disabled jobs/steps via `if: false`.
+        args:
+          - -ignore
+          - 'constant expression "false" in condition'
 
   - repo: https://github.com/igorshubovych/markdownlint-cli
     rev: 5b5dddc4fb0f83c3ea1fc5616fa63e115dce83e0  # v0.49.1

@@ -4,9 +4,9 @@ use itertools::iproduct;
 use rayon::prelude::*;
 
 use crate::{
-    estimators::{PK, ScoringCriterion},
+    estimators::{BNEstimator, HasEstimator, PK, ParBNEstimator, ScoringCriterion},
     inference::TopologicalOrder,
-    models::{DiGraph, Graph, Labelled},
+    models::{DiGraph, Graph, HasLabels},
     set,
     types::{Error, ErrorKind, Result, Set},
 };
@@ -47,7 +47,7 @@ pub struct HC<'a, S> {
 
 impl<'a, S> HC<'a, S>
 where
-    S: ScoringCriterion + Labelled,
+    S: ScoringCriterion + HasLabels,
 {
     /// Creates a new hill climbing instance.
     ///
@@ -200,7 +200,7 @@ impl<S> HC<'_, S> {
 
 impl<S> HC<'_, S>
 where
-    S: ScoringCriterion + Labelled,
+    S: ScoringCriterion + HasLabels,
 {
     /// Initializes the search space, the in-degrees and the current solution.
     fn init(&self) -> Result<(ES, Vec<usize>, DiGraph)> {
@@ -565,10 +565,9 @@ where
         ))
     }
 }
-
 impl<S> HC<'_, S>
 where
-    S: ScoringCriterion + Labelled,
+    S: ScoringCriterion + HasLabels,
 {
     /// Execute the HC algorithm.
     ///
@@ -578,9 +577,13 @@ where
     ///
     /// # Returns
     ///
-    /// The fitted graph.
+    /// The fitted model over the learned structure.
     ///
-    pub fn fit(&self) -> Result<DiGraph> {
+    pub fn fit<M>(&self) -> Result<M>
+    where
+        S: HasEstimator,
+        S::Estimator: BNEstimator<M>,
+    {
         // Initialize the search space, the in-degrees and the current solution.
         let ((mut add, mut del, mut rev), mut in_degree, mut g) = self.init()?;
 
@@ -604,14 +607,14 @@ where
             i += 1;
         }
 
-        // Return the final graph.
-        Ok(g)
+        // Fit the model over the learned structure.
+        self.score.estimator().fit(g)
     }
 }
 
 impl<S> HC<'_, S>
 where
-    S: ScoringCriterion + Sync + Labelled,
+    S: ScoringCriterion + HasLabels + Sync,
 {
     /// Execute the HC algorithm in parallel.
     ///
@@ -621,9 +624,13 @@ where
     ///
     /// # Returns
     ///
-    /// The fitted graph.
+    /// The fitted model over the learned structure.
     ///
-    pub fn par_fit(&self) -> Result<DiGraph> {
+    pub fn par_fit<M>(&self) -> Result<M>
+    where
+        S: HasEstimator,
+        S::Estimator: ParBNEstimator<M>,
+    {
         // Initialize the search space, the in-degrees and the current solution.
         let ((mut add, mut del, mut rev), mut in_degree, mut g) = self.init()?;
 
@@ -647,7 +654,7 @@ where
             i += 1;
         }
 
-        // Return the final graph.
-        Ok(g)
+        // Fit the model over the learned structure.
+        self.score.estimator().par_fit(g)
     }
 }

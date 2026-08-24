@@ -15,7 +15,7 @@ use crate::{
     },
     estimators::{BE, CPDEstimator},
     io::CsvIO,
-    models::{CPD, CatSupport, Labelled},
+    models::{CPD, CatSupport, HasLabels},
     set, support,
     types::{Error, Labels, Result, Set},
 };
@@ -54,7 +54,7 @@ impl<'a> Iterator for CatIncTableEvidenceIter<'a> {
     }
 }
 
-impl Labelled for CatIncTable {
+impl HasLabels for CatIncTable {
     #[inline]
     fn labels(&self) -> &Labels {
         &self.labels

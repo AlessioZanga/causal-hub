@@ -5,7 +5,7 @@ mod tests {
         assets::*,
         datasets::Dataset,
         estimators::{BNEstimator, MLE, ParCTBNEstimator},
-        models::{BN, CTBN, CatBN, CatCTBN, GaussBN, Labelled},
+        models::{BN, CTBN, CatBN, CatCTBN, GaussBN, HasLabels},
         samplers::{BNSampler, CTBNSampler, ForwardSampler, ParBNSampler, ParCTBNSampler},
         types::{Error, Result},
     };

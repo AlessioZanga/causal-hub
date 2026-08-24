@@ -3,7 +3,7 @@ mod tests {
     use causal_hub::{
         datasets::{CatTable, Dataset},
         labels,
-        models::Labelled,
+        models::HasLabels,
         support,
         types::{Result, Set},
     };

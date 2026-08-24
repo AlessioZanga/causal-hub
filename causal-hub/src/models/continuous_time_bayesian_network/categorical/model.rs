@@ -11,7 +11,7 @@ use serde::{
 use crate::{
     datasets::{CatSample, CatTrj, CatTrjs},
     impl_json_io,
-    models::{BN, CIM, CTBN, CatBN, CatCIM, CatCPD, CatSupport, DiGraph, Graph, Labelled},
+    models::{BN, CIM, CTBN, CatBN, CatCIM, CatCPD, CatSupport, DiGraph, Graph, HasLabels},
     set,
     types::{Error, Labels, Map, Result, Set},
 };
@@ -128,7 +128,7 @@ impl RelativeEq for CatCTBN {
     }
 }
 
-impl Labelled for CatCTBN {
+impl HasLabels for CatCTBN {
     #[inline]
     fn labels(&self) -> &Labels {
         &self.labels

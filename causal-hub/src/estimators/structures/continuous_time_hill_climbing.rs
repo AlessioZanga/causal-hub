@@ -2,8 +2,8 @@ use itertools::Itertools;
 use rayon::prelude::*;
 
 use crate::{
-    estimators::{PK, ScoringCriterion},
-    models::{DiGraph, Graph, Labelled},
+    estimators::{CTBNEstimator, HasEstimator, PK, ParCTBNEstimator, ScoringCriterion},
+    models::{DiGraph, Graph, HasLabels},
     set,
     types::{Error, Result, Set},
 };
@@ -19,7 +19,7 @@ pub struct CTHC<'a, S> {
 
 impl<'a, S> CTHC<'a, S>
 where
-    S: ScoringCriterion + Labelled,
+    S: ScoringCriterion + HasLabels,
 {
     /// Creates a new continuous time hill climbing instance.
     ///
@@ -141,11 +141,19 @@ where
 
     /// Execute the CTHC algorithm.
     ///
+    /// # Errors
+    ///
+    /// * If the scoring criterion fails.
+    ///
     /// # Returns
     ///
-    /// The fitted graph.
+    /// The fitted model over the learned structure.
     ///
-    pub fn fit(&self) -> Result<DiGraph> {
+    pub fn fit<M>(&self) -> Result<M>
+    where
+        S: HasEstimator,
+        S::Estimator: CTBNEstimator<M>,
+    {
         // Get the initial graph, or an empty graph over the labels of the scoring criterion.
         let initial_graph = match self.initial_graph {
             Some(graph) => graph.clone(),
@@ -232,22 +240,30 @@ where
             }
         }
 
-        // Return the final graph.
-        Ok(graph)
+        // Fit the model over the learned structure.
+        self.score.estimator().fit(graph)
     }
 }
 
 impl<'a, S> CTHC<'a, S>
 where
-    S: ScoringCriterion + Sync + Labelled,
+    S: ScoringCriterion + HasLabels + Sync,
 {
     /// Execute the CTHC algorithm in parallel.
     ///
+    /// # Errors
+    ///
+    /// * If the scoring criterion fails.
+    ///
     /// # Returns
     ///
-    /// The fitted graph.
+    /// The fitted model over the learned structure.
     ///
-    pub fn par_fit(&self) -> Result<DiGraph> {
+    pub fn par_fit<M>(&self) -> Result<M>
+    where
+        S: HasEstimator,
+        S::Estimator: ParCTBNEstimator<M>,
+    {
         // Get the initial graph, or an empty graph over the labels of the scoring criterion.
         let initial_graph = match self.initial_graph {
             Some(graph) => graph.clone(),
@@ -364,7 +380,7 @@ where
             }
         }
 
-        // Return the final graph.
-        Ok(graph)
+        // Fit the model over the learned structure.
+        self.score.estimator().par_fit(graph)
     }
 }

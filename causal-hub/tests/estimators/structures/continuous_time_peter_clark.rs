@@ -3,7 +3,7 @@ mod tests {
     use causal_hub::{
         assets::load_eating,
         estimators::{CTPC, ChiSquaredTest, FTest, MLE},
-        models::{CTBN, DiGraph, Graph, Labelled},
+        models::{CTBN, CatCTBN, DiGraph, Graph, HasLabels},
         samplers::{ForwardSampler, ParCTBNSampler},
         types::{Cache, Result},
     };
@@ -36,10 +36,11 @@ mod tests {
         // Initialize the CTPC algorithm with the custom initial graph.
         let ctpc = CTPC::new(&f_test, &chi_sq_test)?.with_initial_graph(&initial_graph)?;
         // Run the CTPC algorithm.
-        let fitted_graph = ctpc.fit()?;
+        let fitted_model: CatCTBN = ctpc.fit()?;
+        let fitted_graph = fitted_model.graph();
 
         // Assert that the fitted model is equal to the original model.
-        assert_eq!(model.graph(), &fitted_graph);
+        assert_eq!(model.graph(), fitted_graph);
 
         Ok(())
     }
@@ -67,11 +68,12 @@ mod tests {
 
         // Initialize the CTPC algorithm with the default complete initial graph.
         let ctpc = CTPC::new(&f_test, &chi_sq_test)?;
-        // Run the CTPC algorithm.
-        let fitted_graph = ctpc.par_fit()?;
+        // Run the CTPC algorithm in parallel.
+        let fitted_model: CatCTBN = ctpc.par_fit()?;
+        let fitted_graph = fitted_model.graph();
 
         // Assert that the fitted model is equal to the original model.
-        assert_eq!(model.graph(), &fitted_graph);
+        assert_eq!(model.graph(), fitted_graph);
 
         Ok(())
     }

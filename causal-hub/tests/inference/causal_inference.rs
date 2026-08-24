@@ -6,7 +6,7 @@ mod tests {
         inference::{
             ApproximateInference, BNCausalInference, CausalInference, ParBNCausalInference,
         },
-        models::{CatCPD, Labelled},
+        models::{CatCPD, HasLabels},
         set, support,
         types::{Error, Result},
     };

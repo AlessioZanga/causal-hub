@@ -13,7 +13,7 @@ use rayon::prelude::*;
 use crate::{
     datasets::{CatSample, CatTable, CatTrj, CatType, GaussTable},
     models::{
-        BN, CIM, CPD, CTBN, CatBN, CatCTBN, GaussBN, Labelled, MixedBN, MixedCPD, MixedSample,
+        BN, CIM, CPD, CTBN, CatBN, CatCTBN, GaussBN, HasLabels, MixedBN, MixedCPD, MixedSample,
         MixedSupport, MixedTable,
     },
     samplers::{BNSampler, CTBNSampler, ParBNSampler, ParCTBNSampler},

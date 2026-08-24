@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     datasets::{CatEv, CatSample, CatTable, Dataset},
-    models::{CatSupport, Labelled},
+    models::{CatSupport, HasLabels},
     types::{Error, Labels, Result, Set},
 };
 
@@ -19,7 +19,7 @@ pub struct CatWtdTable {
     weights: Array1<f64>,
 }
 
-impl Labelled for CatWtdTable {
+impl HasLabels for CatWtdTable {
     #[inline]
     fn labels(&self) -> &Labels {
         self.dataset.labels()

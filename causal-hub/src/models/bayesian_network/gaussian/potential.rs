@@ -16,7 +16,7 @@ use serde::{
 use crate::{
     datasets::{GaussEv, GaussEvT},
     impl_json_io,
-    models::{CPD, GaussCPD, GaussCPDP, GaussSupport, Labelled, Phi},
+    models::{CPD, GaussCPD, GaussCPDP, GaussSupport, HasLabels, Phi},
     types::{Error, LN_2_PI, Labels, Result, Set},
     utils::PseudoInverse,
 };
@@ -242,7 +242,7 @@ impl GaussPhi {
     }
 }
 
-impl Labelled for GaussPhi {
+impl HasLabels for GaussPhi {
     #[inline]
     fn labels(&self) -> &Labels {
         &self.labels

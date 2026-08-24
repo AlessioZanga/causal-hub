@@ -5,7 +5,7 @@ mod tests {
         assets::load_asia,
         datasets::{CatEv, CatEvT},
         inference::{ApproximateInference, BNInference, ParBNInference},
-        models::{CatCPD, Labelled},
+        models::{CatCPD, HasLabels},
         set, support,
         types::{Error, Result},
     };

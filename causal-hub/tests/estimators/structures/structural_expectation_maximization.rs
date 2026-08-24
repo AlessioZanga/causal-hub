@@ -7,8 +7,8 @@ mod tests {
         use causal_hub::{
             assets::load_eating,
             datasets::{CatTrjsEv, CatWtdTrj, CatWtdTrjs, Dataset},
-            estimators::{BE, CTPC, ChiSquaredTest, EMBuilder, FTest, ParCTBNEstimator},
-            models::{CTBN, CatCIM, CatCTBN, DiGraph, Graph, Labelled},
+            estimators::{BE, CTPC, ChiSquaredTest, EMBuilder, FTest},
+            models::{CTBN, CatCIM, CatCTBN, DiGraph, Graph, HasLabels},
             random::{Random, RngCatTrjEv},
             samplers::{CTBNSampler, ForwardSampler, ImportanceSampler, ParCTBNSampler},
             support,
@@ -143,10 +143,8 @@ mod tests {
                 let chi_sq_test = ChiSquaredTest::new(&cache, 1e-4)?;
                 // Initialize the CTPC algorithm with the complete initial graph.
                 let ctpc = CTPC::new(&f_test, &chi_sq_test)?.with_initial_graph(&initial_graph)?;
-                // Fit the new structure using CTPC.
-                let fitted_graph = ctpc.par_fit()?;
                 // Fit the new model using the expectation.
-                estimator.par_fit(fitted_graph)
+                ctpc.par_fit()
             };
 
             // Define the stopping criteria.

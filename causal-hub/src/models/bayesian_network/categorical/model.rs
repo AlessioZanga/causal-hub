@@ -14,7 +14,7 @@ use crate::{
     impl_json_io,
     inference::TopologicalOrder,
     io::{BifIO, BifParser},
-    models::{BN, CPD, CatCPD, CatSupport, DiGraph, Graph, Labelled},
+    models::{BN, CPD, CatCPD, CatSupport, DiGraph, Graph, HasLabels},
     set,
     types::{Error, Labels, Map, Result, Set},
 };
@@ -121,7 +121,7 @@ impl RelativeEq for CatBN {
     }
 }
 
-impl Labelled for CatBN {
+impl HasLabels for CatBN {
     #[inline]
     fn labels(&self) -> &Labels {
         &self.labels

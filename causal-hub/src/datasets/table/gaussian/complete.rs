@@ -11,7 +11,7 @@ use serde::{Deserialize, Serialize};
 use crate::{
     datasets::{Dataset, GaussEv, GaussEvT},
     io::CsvIO,
-    models::{GaussSupport, Labelled},
+    models::{GaussSupport, HasLabels},
     types::{Error, Labels, Result, Set},
 };
 
@@ -48,7 +48,7 @@ impl<'a> Iterator for GaussTableEvidenceIter<'a> {
     }
 }
 
-impl Labelled for GaussTable {
+impl HasLabels for GaussTable {
     #[inline]
     fn labels(&self) -> &Labels {
         &self.labels

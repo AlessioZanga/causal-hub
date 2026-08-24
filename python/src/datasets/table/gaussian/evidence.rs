@@ -2,7 +2,7 @@ use std::sync::{Arc, RwLock};
 
 use backend::{
     datasets::{GaussEv, GaussEvT},
-    models::Labelled,
+    models::HasLabels,
     types::Labels,
 };
 use pyo3::{

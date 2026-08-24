@@ -5,7 +5,7 @@ use ndarray_linalg::Determinant;
 use crate::{
     datasets::{GaussIncTable, GaussTable, GaussWtdTable},
     estimators::{CPDEstimator, CSSEstimator, MLE, ParCPDEstimator, ParCSSEstimator, SSE},
-    models::{GaussCPD, GaussCPDP, GaussCPDS, Labelled},
+    models::{GaussCPD, GaussCPDP, GaussCPDS, HasLabels},
     types::{EPSILON, Error, LN_2_PI, Labels, Result, Set},
     utils::PseudoInverse,
 };

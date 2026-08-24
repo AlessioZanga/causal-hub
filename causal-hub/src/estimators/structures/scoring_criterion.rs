@@ -4,9 +4,24 @@ use dry::macro_for;
 
 use crate::{
     estimators::CPDEstimator,
-    models::{CIM, CPD, CatCIM, CatCPD, GaussCPD, Labelled},
+    models::{CIM, CPD, CatCIM, CatCPD, GaussCPD, HasLabels},
     types::{Error, Labels, Result, Set},
 };
+
+/// A trait for types wrapping an underlying parameter estimator,
+/// such as scoring criteria and conditional independence tests.
+pub trait HasEstimator {
+    /// The wrapped estimator type.
+    type Estimator;
+
+    /// Returns a reference to the wrapped estimator.
+    ///
+    /// # Returns
+    ///
+    /// A reference to the wrapped estimator.
+    ///
+    fn estimator(&self) -> &Self::Estimator;
+}
 
 /// A trait for scoring criteria used in score-based structure learning.
 pub trait ScoringCriterion {
@@ -51,9 +66,18 @@ macro_rules! impl_scoring_struct {
             }
         }
 
-        impl<'a, E, P> Labelled for $name<'a, E, P>
+        impl<E, P> HasEstimator for $name<'_, E, P> {
+            type Estimator = E;
+
+            #[inline]
+            fn estimator(&self) -> &Self::Estimator {
+                self.estimator
+            }
+        }
+
+        impl<'a, E, P> HasLabels for $name<'a, E, P>
         where
-            E: Labelled,
+            E: HasLabels,
         {
             #[inline]
             fn labels(&self) -> &Labels {

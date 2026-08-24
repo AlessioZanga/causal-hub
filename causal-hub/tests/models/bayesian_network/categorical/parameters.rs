@@ -3,7 +3,7 @@ mod tests {
     use approx::assert_relative_eq;
     use causal_hub::{
         labels,
-        models::{CPD, CatCPD, Labelled},
+        models::{CPD, CatCPD, HasLabels},
         set, support,
         types::Result,
     };

@@ -1,10 +1,10 @@
 use backend::{
     datasets::{MissingMechanism, MissingMethod},
     estimators::{HC, PK},
-    models::DiGraph,
+    models::{CatBN, DiGraph, GaussBN},
     types::Cache,
 };
-use pyo3::{prelude::*, types::PyDict};
+use pyo3::{IntoPyObjectExt, prelude::*, types::PyDict};
 use pyo3_stub_gen::derive::*;
 
 use crate::{
@@ -13,7 +13,7 @@ use crate::{
     error::to_pyerr,
     estimators::{PyEstimatorMethod, PyPK, PyScorerMethod},
     kwarg,
-    models::PyDiGraph,
+    models::{PyCatBN, PyDiGraph, PyGaussBN},
 };
 
 /// Perform structure learning using the Hill Climbing (HC) algorithm.
@@ -56,10 +56,15 @@ use crate::{
 ///
 /// Returns
 /// -------
-/// DiGraph
-///     The learned structure.
+/// CatBN | GaussBN
+///     The fitted model over the learned structure: `CatBN` for categorical
+///     datasets, `GaussBN` for Gaussian ones.
 ///
 #[gen_stub_pyfunction(module = "causal_hub.estimators")]
+#[gen_stub(override_return_type(
+    type_repr = "typing.Union[models.CatBN, models.GaussBN]",
+    imports = ("typing")
+))]
 #[pyfunction]
 #[pyo3(signature = (dataset, scorer_method = PyScorerMethod::BIC, parallel = true, **kwargs))]
 pub fn hc(
@@ -68,7 +73,7 @@ pub fn hc(
     scorer_method: PyScorerMethod,
     parallel: bool,
     kwargs: Option<&Bound<'_, PyDict>>,
-) -> PyResult<PyDiGraph> {
+) -> PyResult<Py<PyAny>> {
     // Get the estimator method from the keyword arguments, if any.
     let estimator_method: Option<_> = kwarg!(kwargs, "estimator_method", PyEstimatorMethod)?;
     // Default to the BE estimator.
@@ -101,8 +106,8 @@ pub fn hc(
     crate::utils::ensure_kwargs_consumed(kwargs)?;
 
     // Macro to run the HC algorithm on the given table type.
-    macro_rules! fit_hc {
-        ($dataset:expr) => {{
+    macro_rules! fit {
+        ($dataset:expr, $model:ty, $pymodel:ty) => {{
             // Get a read lock on the table.
             let dataset = $dataset.lock();
             // Dispatch over the estimator method and scoring criterion, and run HC.
@@ -134,13 +139,16 @@ pub fn hc(
                         if let Some(prior_knowledge) = prior_knowledge {
                             hc = hc.with_prior_knowledge(prior_knowledge).map_err(to_pyerr)?;
                         }
-                        // Run the algorithm.
-                        if parallel {
+                        // Run the algorithm and fit the model over the learned structure.
+                        let model: $model = if parallel {
                             py.detach(move || hc.par_fit())
                         } else {
                             hc.fit()
                         }
-                        .map_err(to_pyerr)
+                        .map_err(to_pyerr)?;
+                        // Convert the fitted model into a Python object.
+                        let pymodel: $pymodel = model.into();
+                        pymodel.into_py_any(py)
                     })
                 }
             )
@@ -148,15 +156,12 @@ pub fn hc(
     }
 
     // Match the dataset type.
-    let graph = match dataset {
-        PyDataset::Categorical(dataset) => fit_hc!(dataset),
-        PyDataset::CategoricalIncomplete(dataset) => fit_hc!(dataset),
-        PyDataset::CategoricalWeighted(dataset) => fit_hc!(dataset),
-        PyDataset::Gaussian(dataset) => fit_hc!(dataset),
-        PyDataset::GaussianIncomplete(dataset) => fit_hc!(dataset),
-        PyDataset::GaussianWeighted(dataset) => fit_hc!(dataset),
-    }?;
-
-    // Convert the fitted graph into a Python object.
-    Ok(graph.into())
+    match dataset {
+        PyDataset::Categorical(dataset) => fit!(dataset, CatBN, PyCatBN),
+        PyDataset::CategoricalIncomplete(dataset) => fit!(dataset, CatBN, PyCatBN),
+        PyDataset::CategoricalWeighted(dataset) => fit!(dataset, CatBN, PyCatBN),
+        PyDataset::Gaussian(dataset) => fit!(dataset, GaussBN, PyGaussBN),
+        PyDataset::GaussianIncomplete(dataset) => fit!(dataset, GaussBN, PyGaussBN),
+        PyDataset::GaussianWeighted(dataset) => fit!(dataset, GaussBN, PyGaussBN),
+    }
 }

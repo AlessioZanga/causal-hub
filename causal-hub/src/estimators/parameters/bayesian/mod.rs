@@ -5,7 +5,7 @@ mod trajectory;
 
 use crate::{
     datasets::{MissingMechanism, MissingMethod},
-    models::Labelled,
+    models::HasLabels,
     types::{Error, Labels, Result},
 };
 
@@ -101,9 +101,9 @@ impl<'a, D, T> BE<'a, D, T> {
     }
 }
 
-impl<D, T> Labelled for BE<'_, D, T>
+impl<D, T> HasLabels for BE<'_, D, T>
 where
-    D: Labelled,
+    D: HasLabels,
 {
     #[inline]
     fn labels(&self) -> &Labels {

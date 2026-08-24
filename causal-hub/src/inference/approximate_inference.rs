@@ -6,7 +6,7 @@ use rand::{Rng, SeedableRng};
 use crate::{
     estimators::{BE, CPDEstimator, ParCPDEstimator},
     inference::Modelled,
-    models::{BN, CatBN, GaussBN, Labelled, MixedBN, MixedCPD},
+    models::{BN, CatBN, GaussBN, HasLabels, MixedBN, MixedCPD},
     samplers::{BNSampler, ForwardSampler, ImportanceSampler, ParBNSampler},
     set,
     types::{Error, Result, Set},

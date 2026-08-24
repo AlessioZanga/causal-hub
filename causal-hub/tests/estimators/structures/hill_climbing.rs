@@ -4,7 +4,7 @@ mod tests {
         assets::load_asia,
         estimators::{BIC, HC, MLE, PK, ScoringCriterion},
         inference::TopologicalOrder,
-        models::{BN, DiGraph, Graph, Labelled},
+        models::{BN, CatBN, DiGraph, GaussBN, Graph, HasLabels},
         random::{Random, RngGaussBN},
         samplers::{ForwardSampler, ParBNSampler},
         set,
@@ -49,13 +49,14 @@ mod tests {
         // Initialize the HC algorithm with the default empty initial graph.
         let hc = HC::new(&bic);
         // Run the HC algorithm.
-        let fitted_graph = hc.fit()?;
+        let fitted_model: CatBN = hc.fit()?;
+        let fitted_graph = fitted_model.graph();
 
         // Assert that the fitted graph is acyclic ...
         assert!(fitted_graph.topological_order().is_some());
         // ... and that its score matches the score of the true graph,
         // i.e., the learned structure is Markov-equivalent to the true one.
-        let fitted_score = total_score(&fitted_graph, &bic)?;
+        let fitted_score = total_score(fitted_graph, &bic)?;
         let true_score = total_score(model.graph(), &bic)?;
         assert!(
             (fitted_score - true_score).abs() < 1e-6,
@@ -87,13 +88,14 @@ mod tests {
         // Initialize the HC algorithm with the default empty initial graph.
         let hc = HC::new(&bic);
         // Run the HC algorithm in parallel.
-        let fitted_graph = hc.par_fit()?;
+        let fitted_model: CatBN = hc.par_fit()?;
+        let fitted_graph = fitted_model.graph();
 
         // Assert that the fitted graph is acyclic ...
         assert!(fitted_graph.topological_order().is_some());
         // ... and that its score matches the score of the true graph,
         // i.e., the learned structure is Markov-equivalent to the true one.
-        let fitted_score = total_score(&fitted_graph, &bic)?;
+        let fitted_score = total_score(fitted_graph, &bic)?;
         let true_score = total_score(model.graph(), &bic)?;
         assert!(
             (fitted_score - true_score).abs() < 1e-6,
@@ -132,10 +134,11 @@ mod tests {
         // Initialize the HC algorithm with the custom initial graph.
         let hc = HC::new(&bic).with_initial_graph(&initial_graph)?;
         // Run the HC algorithm.
-        let fitted_graph = hc.fit()?;
+        let fitted_model: CatBN = hc.fit()?;
+        let fitted_graph = fitted_model.graph();
 
         // Assert that the fitted graph score matches the score of the true graph.
-        let fitted_score = total_score(&fitted_graph, &bic)?;
+        let fitted_score = total_score(fitted_graph, &bic)?;
         let true_score = total_score(model.graph(), &bic)?;
         assert!(
             (fitted_score - true_score).abs() < 1e-6,
@@ -167,7 +170,8 @@ mod tests {
         // Initialize the HC algorithm with maximum one parent per vertex.
         let hc = HC::new(&bic).with_max_parents(1);
         // Run the HC algorithm.
-        let fitted_graph = hc.fit()?;
+        let fitted_model: CatBN = hc.fit()?;
+        let fitted_graph = fitted_model.graph();
 
         // Assert that every vertex has at most one parent.
         for x in fitted_graph.vertices() {
@@ -211,7 +215,8 @@ mod tests {
         // Initialize the HC algorithm.
         let hc = HC::new(&bic).with_prior_knowledge(&prior_knowledge)?;
         // Run the HC algorithm.
-        let fitted_graph = hc.fit()?;
+        let fitted_model: CatBN = hc.fit()?;
+        let fitted_graph = fitted_model.graph();
 
         // Assert that the forbidden edge is not in the fitted graph.
         assert!(!fitted_graph.has_edge(x, y)?);
@@ -259,7 +264,8 @@ mod tests {
         // Initialize the HC algorithm.
         let hc = HC::new(&bic).with_prior_knowledge(&prior_knowledge)?;
         // Run the HC algorithm.
-        let fitted_graph = hc.fit()?;
+        let fitted_model: CatBN = hc.fit()?;
+        let fitted_graph = fitted_model.graph();
 
         // Assert that the required edge is in the fitted graph.
         assert!(fitted_graph.has_edge(x, y)?);
@@ -387,8 +393,11 @@ mod tests {
         // Initialize the HC algorithm.
         let hc = HC::new(&bic).with_initial_graph(&initial_graph)?;
 
+        // Fit the model.
+        let fitted_model: Result<CatBN> = hc.fit();
+
         // Match error kind.
-        match hc.fit() {
+        match fitted_model {
             Err(err) => assert!(matches!(
                 err,
                 Error {
@@ -425,7 +434,8 @@ mod tests {
         // Initialize the HC algorithm with the default empty initial graph.
         let hc = HC::new(&bic);
         // Run the HC algorithm.
-        let fitted_graph = hc.fit()?;
+        let fitted_model: GaussBN = hc.fit()?;
+        let fitted_graph = fitted_model.graph();
 
         // Assert that the fitted graph is acyclic.
         assert!(fitted_graph.topological_order().is_some());
@@ -478,7 +488,8 @@ mod tests {
         // Initialize the HC algorithm with the default empty initial graph.
         let hc = HC::new(&bic);
         // Run the HC algorithm in parallel.
-        let fitted_graph = hc.par_fit()?;
+        let fitted_model: GaussBN = hc.par_fit()?;
+        let fitted_graph = fitted_model.graph();
 
         // Assert that the fitted graph is acyclic.
         assert!(fitted_graph.topological_order().is_some());
@@ -533,13 +544,14 @@ mod tests {
         // Initialize the HC algorithm with the default empty initial graph.
         let hc = HC::new(&bic);
         // Run the HC algorithm.
-        let fitted_graph = hc.fit()?;
+        let fitted_model: GaussBN = hc.fit()?;
+        let fitted_graph = fitted_model.graph();
 
         // Assert that the fitted graph is acyclic and spans the same variables.
         assert!(fitted_graph.topological_order().is_some());
         assert_eq!(fitted_graph.vertices(), model.graph().vertices());
         // Assert that the search improved over the empty graph.
-        assert!(total_score(&fitted_graph, &bic)? > total_score(&initial_graph, &bic)?);
+        assert!(total_score(fitted_graph, &bic)? > total_score(&initial_graph, &bic)?);
 
         Ok(())
     }

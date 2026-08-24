@@ -85,7 +85,7 @@ def cthc(
     scorer_method: ScorerMethod = ScorerMethod.BIC,
     parallel: builtins.bool = True,
     **kwargs: typing.Any,
-) -> models.DiGraph:
+) -> models.CatCTBN:
     r"""
     Perform structure learning using the Continuous Time Hill Climbing (CTHC) algorithm.
 
@@ -127,8 +127,8 @@ def cthc(
 
     Returns
     -------
-    DiGraph
-        The learned structure.
+    CatCTBN
+        The fitted model over the learned structure.
     """
 
 def ctpc(
@@ -137,7 +137,7 @@ def ctpc(
     c_test: builtins.float = 0.01,
     parallel: builtins.bool = True,
     **kwargs: typing.Any,
-) -> models.DiGraph:
+) -> models.CatCTBN:
     r"""
     Perform structure learning using the Continuous Time Peter-Clark (CTPC) algorithm.
 
@@ -180,8 +180,8 @@ def ctpc(
 
     Returns
     -------
-    DiGraph
-        The learned structure.
+    CatCTBN
+        The fitted model over the learned structure.
     """
 
 def em(
@@ -199,7 +199,7 @@ def hc(
     scorer_method: ScorerMethod = ScorerMethod.BIC,
     parallel: builtins.bool = True,
     **kwargs: typing.Any,
-) -> models.DiGraph:
+) -> typing.Union[models.CatBN, models.GaussBN]:
     r"""
     Perform structure learning using the Hill Climbing (HC) algorithm.
 
@@ -241,8 +241,9 @@ def hc(
 
     Returns
     -------
-    DiGraph
-        The learned structure.
+    CatBN | GaussBN
+        The fitted model over the learned structure: `CatBN` for categorical
+        datasets, `GaussBN` for Gaussian ones.
     """
 
 def sem(

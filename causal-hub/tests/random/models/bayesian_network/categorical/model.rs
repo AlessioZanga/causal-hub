@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
     use causal_hub::{
-        models::{CatBN, Labelled},
+        models::{CatBN, HasLabels},
         random::{Random, RngCatBN},
         support,
         types::{Labels, Result},

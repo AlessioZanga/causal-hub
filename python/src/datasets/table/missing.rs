@@ -3,7 +3,7 @@ use std::{
     sync::{Arc, RwLock},
 };
 
-use backend::{datasets::MissingTable, models::Labelled};
+use backend::{datasets::MissingTable, models::HasLabels};
 use numpy::{PyArray1, PyArray2, PyArrayMethods, ToPyArray};
 use pyo3::prelude::*;
 use pyo3_stub_gen::derive::*;

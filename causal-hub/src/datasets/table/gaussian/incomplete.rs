@@ -16,7 +16,7 @@ use crate::{
     estimators::{BE, CPDEstimator},
     io::CsvIO,
     labels,
-    models::{CPD, GaussSupport, Labelled},
+    models::{CPD, GaussSupport, HasLabels},
     set,
     types::{Error, Labels, Result, Set},
 };
@@ -49,7 +49,7 @@ impl<'a> Iterator for GaussIncTableEvidenceIter<'a> {
     }
 }
 
-impl Labelled for GaussIncTable {
+impl HasLabels for GaussIncTable {
     #[inline]
     fn labels(&self) -> &Labels {
         &self.labels

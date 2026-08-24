@@ -7,7 +7,7 @@ use serde::{
 
 use crate::{
     impl_json_io,
-    models::{Graph, Labelled},
+    models::{Graph, HasLabels},
     types::{Error, Labels, Result, Set},
 };
 
@@ -66,7 +66,7 @@ impl UnGraph {
     }
 }
 
-impl Labelled for UnGraph {
+impl HasLabels for UnGraph {
     fn labels(&self) -> &Labels {
         &self.labels
     }

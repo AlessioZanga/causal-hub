@@ -167,7 +167,7 @@ mod tests {
     }
 
     mod multiple {
-        use causal_hub::models::Labelled;
+        use causal_hub::models::HasLabels;
 
         use super::*;
 

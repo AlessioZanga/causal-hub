@@ -4,7 +4,7 @@ use std::sync::Arc;
 pub use parser::*;
 
 use crate::{
-    models::{DiGraph, Graph, Labelled, UnGraph},
+    models::{DiGraph, Graph, HasLabels, UnGraph},
     types::{Error, Result},
 };
 

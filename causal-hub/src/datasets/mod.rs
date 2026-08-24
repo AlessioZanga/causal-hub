@@ -10,12 +10,12 @@ use std::borrow::Cow;
 pub use trajectory::*;
 
 use crate::{
-    models::Labelled,
+    models::HasLabels,
     types::{Result, Set},
 };
 
 /// A trait for dataset.
-pub trait Dataset: Labelled {
+pub trait Dataset: HasLabels {
     /// The type of the values.
     type Values;
     /// The type of the support metadata (variable ranges / state sets).

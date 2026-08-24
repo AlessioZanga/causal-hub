@@ -277,12 +277,12 @@ def test_structure_learning_hc() -> None:
     pk = PK(["A", "B"], [], [], [])
 
     # 3. Learn Structure
-    graph = hc(dataset, prior_knowledge=pk)
+    fitted_model = hc(dataset, prior_knowledge=pk)
 
-    assert isinstance(graph, DiGraph)
-    assert set(graph.vertices()) == {"A", "B"}
+    assert isinstance(fitted_model, CatBN)
+    assert set(fitted_model.graph().vertices()) == {"A", "B"}
     # The learned edge is Markov-equivalent in both directions.
-    assert set(graph.edges()) in [{("A", "B")}, {("B", "A")}]
+    assert set(fitted_model.graph().edges()) in [{("A", "B")}, {("B", "A")}]
 
 
 def test_structure_learning_hc_no_prior_knowledge() -> None:
@@ -297,11 +297,11 @@ def test_structure_learning_hc_no_prior_knowledge() -> None:
 
     dataset = CatTable.from_pandas(df)
 
-    graph = hc(dataset)
+    fitted_model = hc(dataset)
 
-    assert isinstance(graph, DiGraph)
-    assert set(graph.vertices()) == {"A", "B"}
-    assert set(graph.edges()) in [{("A", "B")}, {("B", "A")}]
+    assert isinstance(fitted_model, CatBN)
+    assert set(fitted_model.graph().vertices()) == {"A", "B"}
+    assert set(fitted_model.graph().edges()) in [{("A", "B")}, {("B", "A")}]
 
 
 def test_structure_learning_hc_initial_graph() -> None:
@@ -318,11 +318,11 @@ def test_structure_learning_hc_initial_graph() -> None:
 
     initial_graph = DiGraph.empty(["A", "B"])
 
-    graph = hc(dataset, initial_graph=initial_graph)
+    fitted_model = hc(dataset, initial_graph=initial_graph)
 
-    assert isinstance(graph, DiGraph)
-    assert set(graph.vertices()) == {"A", "B"}
-    assert set(graph.edges()) in [{("A", "B")}, {("B", "A")}]
+    assert isinstance(fitted_model, CatBN)
+    assert set(fitted_model.graph().vertices()) == {"A", "B"}
+    assert set(fitted_model.graph().edges()) in [{("A", "B")}, {("B", "A")}]
 
 
 def test_structure_learning_hc_initial_graph_mismatch() -> None:
@@ -358,13 +358,13 @@ def test_structure_learning_hc_prior_knowledge() -> None:
     # Forbid the edge A -> B.
     pk = PK(["A", "B"], [("A", "B")], [], [])
 
-    graph = hc(dataset, prior_knowledge=pk, max_parents=1)
+    fitted_model = hc(dataset, prior_knowledge=pk, max_parents=1)
 
-    assert isinstance(graph, DiGraph)
-    assert not graph.has_edge("A", "B")
+    assert isinstance(fitted_model, CatBN)
+    assert not fitted_model.graph().has_edge("A", "B")
     # Every vertex has at most one parent.
-    for v in graph.vertices():
-        assert len(graph.parents(v)) <= 1
+    for v in fitted_model.graph().vertices():
+        assert len(fitted_model.graph().parents(v)) <= 1
 
 
 def test_structure_learning_hc_invalid_dataset() -> None:
@@ -397,10 +397,10 @@ def test_structure_learning_hc_incomplete_dataset() -> None:
     mechanism = MissingMechanism.random(model.graph(), MT.MCAR, 1.0, seed=42)
     inc_table = CatIncTable.random(cat_table, mechanism, 0.1, 0.5, seed=42)
 
-    graph = hc(inc_table)
+    fitted_model = hc(inc_table)
 
-    assert isinstance(graph, DiGraph)
-    assert set(graph.vertices()) == {"X", "Y"}
+    assert isinstance(fitted_model, CatBN)
+    assert set(fitted_model.graph().vertices()) == {"X", "Y"}
 
 
 def test_structure_learning_hc_weighted_dataset() -> None:
@@ -416,11 +416,11 @@ def test_structure_learning_hc_weighted_dataset() -> None:
     cat_table = CatTable.from_pandas(df)
     dataset = CatWtdTable(cat_table, np.ones(size))
 
-    graph = hc(dataset)
+    fitted_model = hc(dataset)
 
-    assert isinstance(graph, DiGraph)
-    assert set(graph.vertices()) == {"A", "B"}
-    assert set(graph.edges()) in [{("A", "B")}, {("B", "A")}]
+    assert isinstance(fitted_model, CatBN)
+    assert set(fitted_model.graph().vertices()) == {"A", "B"}
+    assert set(fitted_model.graph().edges()) in [{("A", "B")}, {("B", "A")}]
 
 
 def test_structure_learning_hc_gauss() -> None:
@@ -435,11 +435,11 @@ def test_structure_learning_hc_gauss() -> None:
 
     pk = PK(["X", "Y"], [], [], [])
 
-    graph = hc(dataset, prior_knowledge=pk)
+    fitted_model = hc(dataset, prior_knowledge=pk)
 
-    assert isinstance(graph, DiGraph)
-    assert set(graph.vertices()) == {"X", "Y"}
-    assert set(graph.edges()) in [{("X", "Y")}, {("Y", "X")}]
+    assert isinstance(fitted_model, GaussBN)
+    assert set(fitted_model.graph().vertices()) == {"X", "Y"}
+    assert set(fitted_model.graph().edges()) in [{("X", "Y")}, {("Y", "X")}]
 
 
 def test_structure_learning_ctpc() -> None:
@@ -450,12 +450,12 @@ def test_structure_learning_ctpc() -> None:
 
     pk = PK(model.labels(), [], [], [])
 
-    graph = ctpc(dataset, prior_knowledge=pk, f_test=0.01, c_test=0.01)
+    fitted_model = ctpc(dataset, prior_knowledge=pk, f_test=0.01, c_test=0.01)
 
-    assert isinstance(graph, DiGraph)
-    assert set(graph.vertices()) == set(model.labels())
+    assert isinstance(fitted_model, CatCTBN)
+    assert set(fitted_model.graph().vertices()) == set(model.labels())
     # CTPC recovers the true structure on this dataset.
-    assert set(graph.edges()) == set(model.graph().edges())
+    assert set(fitted_model.graph().edges()) == set(model.graph().edges())
 
 
 def test_structure_learning_ctpc_no_prior_knowledge() -> None:
@@ -464,11 +464,11 @@ def test_structure_learning_ctpc_no_prior_knowledge() -> None:
     model = load_eating()
     dataset = model.sample(100, max_len=100, seed=42)
 
-    graph = ctpc(dataset)
+    fitted_model = ctpc(dataset)
 
-    assert isinstance(graph, DiGraph)
-    assert set(graph.vertices()) == set(model.labels())
-    assert set(graph.edges()) == set(model.graph().edges())
+    assert isinstance(fitted_model, CatCTBN)
+    assert set(fitted_model.graph().vertices()) == set(model.labels())
+    assert set(fitted_model.graph().edges()) == set(model.graph().edges())
 
 
 def test_structure_learning_hc_scores() -> None:
@@ -493,12 +493,12 @@ def test_structure_learning_hc_scores() -> None:
         ScorerMethod.BICC,
         ScorerMethod.HQC,
     ]:
-        graph = hc(dataset, prior_knowledge=pk, scorer_method=scorer_method)
+        fitted_model = hc(dataset, prior_knowledge=pk, scorer_method=scorer_method)
 
-        assert isinstance(graph, DiGraph)
-        assert set(graph.vertices()) == {"A", "B"}
+        assert isinstance(fitted_model, CatBN)
+        assert set(fitted_model.graph().vertices()) == {"A", "B"}
         # The learned edge is Markov-equivalent in both directions.
-        assert set(graph.edges()) in [{("A", "B")}, {("B", "A")}]
+        assert set(fitted_model.graph().edges()) in [{("A", "B")}, {("B", "A")}]
 
 
 def test_structure_learning_hc_gauss_score() -> None:
@@ -513,11 +513,11 @@ def test_structure_learning_hc_gauss_score() -> None:
 
     pk = PK(["X", "Y"], [], [], [])
 
-    graph = hc(dataset, prior_knowledge=pk, scorer_method=ScorerMethod.AIC)
+    fitted_model = hc(dataset, prior_knowledge=pk, scorer_method=ScorerMethod.AIC)
 
-    assert isinstance(graph, DiGraph)
-    assert set(graph.vertices()) == {"X", "Y"}
-    assert set(graph.edges()) in [{("X", "Y")}, {("Y", "X")}]
+    assert isinstance(fitted_model, GaussBN)
+    assert set(fitted_model.graph().vertices()) == {"X", "Y"}
+    assert set(fitted_model.graph().edges()) in [{("X", "Y")}, {("Y", "X")}]
 
 
 def test_structure_learning_hc_rejects_unknown_kwarg() -> None:
@@ -564,13 +564,13 @@ def test_structure_learning_cthc() -> None:
 
     pk = PK(model.labels(), [], [], [])
 
-    graph = cthc(dataset, prior_knowledge=pk, max_parents=2)
+    fitted_model = cthc(dataset, prior_knowledge=pk, max_parents=2)
 
-    assert isinstance(graph, DiGraph)
-    assert set(graph.vertices()) == set(model.labels())
+    assert isinstance(fitted_model, CatCTBN)
+    assert set(fitted_model.graph().vertices()) == set(model.labels())
     # Every vertex has at most two parents.
-    for v in graph.vertices():
-        assert len(graph.parents(v)) <= 2
+    for v in fitted_model.graph().vertices():
+        assert len(fitted_model.graph().parents(v)) <= 2
 
 
 def test_structure_learning_cthc_no_prior_knowledge() -> None:
@@ -579,10 +579,10 @@ def test_structure_learning_cthc_no_prior_knowledge() -> None:
     model = load_eating()
     dataset = model.sample(100, max_len=100, seed=42)
 
-    graph = cthc(dataset)
+    fitted_model = cthc(dataset)
 
-    assert isinstance(graph, DiGraph)
-    assert set(graph.vertices()) == set(model.labels())
+    assert isinstance(fitted_model, CatCTBN)
+    assert set(fitted_model.graph().vertices()) == set(model.labels())
 
 
 def test_structure_learning_cthc_initial_graph() -> None:
@@ -593,13 +593,13 @@ def test_structure_learning_cthc_initial_graph() -> None:
 
     initial_graph = DiGraph.empty(model.labels())
 
-    graph = cthc(dataset, initial_graph=initial_graph, max_parents=2)
+    fitted_model = cthc(dataset, initial_graph=initial_graph, max_parents=2)
 
-    assert isinstance(graph, DiGraph)
-    assert set(graph.vertices()) == set(model.labels())
+    assert isinstance(fitted_model, CatCTBN)
+    assert set(fitted_model.graph().vertices()) == set(model.labels())
     # Every vertex has at most two parents.
-    for v in graph.vertices():
-        assert len(graph.parents(v)) <= 2
+    for v in fitted_model.graph().vertices():
+        assert len(fitted_model.graph().parents(v)) <= 2
 
 
 def test_structure_learning_sequential() -> None:
@@ -616,22 +616,22 @@ def test_structure_learning_sequential() -> None:
 
     pk = PK(["A", "B"], [], [], [])
 
-    graph = hc(dataset, prior_knowledge=pk, parallel=False)
+    fitted_model = hc(dataset, prior_knowledge=pk, parallel=False)
 
-    assert isinstance(graph, DiGraph)
-    assert set(graph.vertices()) == {"A", "B"}
-    assert set(graph.edges()) in [{("A", "B")}, {("B", "A")}]
+    assert isinstance(fitted_model, CatBN)
+    assert set(fitted_model.graph().vertices()) == {"A", "B"}
+    assert set(fitted_model.graph().edges()) in [{("A", "B")}, {("B", "A")}]
 
     # Load the Eating model and sample trajectories from it.
     model = load_eating()
     trajectories = model.sample(100, max_len=100, seed=42)
 
-    graph = cthc(
+    fitted_model = cthc(
         trajectories, prior_knowledge=PK(model.labels(), [], [], []), parallel=False
     )
 
-    assert isinstance(graph, DiGraph)
-    assert set(graph.vertices()) == set(model.labels())
+    assert isinstance(fitted_model, CatCTBN)
+    assert set(fitted_model.graph().vertices()) == set(model.labels())
 
 
 def test_structure_learning_cthc_score() -> None:
@@ -642,15 +642,15 @@ def test_structure_learning_cthc_score() -> None:
 
     pk = PK(model.labels(), [], [], [])
 
-    graph = cthc(
+    fitted_model = cthc(
         dataset, prior_knowledge=pk, scorer_method=ScorerMethod.AICC, max_parents=2
     )
 
-    assert isinstance(graph, DiGraph)
-    assert set(graph.vertices()) == set(model.labels())
+    assert isinstance(fitted_model, CatCTBN)
+    assert set(fitted_model.graph().vertices()) == set(model.labels())
     # Every vertex has at most two parents.
-    for v in graph.vertices():
-        assert len(graph.parents(v)) <= 2
+    for v in fitted_model.graph().vertices():
+        assert len(fitted_model.graph().parents(v)) <= 2
 
 
 def test_structure_learning_hc_estimator() -> None:
@@ -668,11 +668,11 @@ def test_structure_learning_hc_estimator() -> None:
     pk = PK(["A", "B"], [], [], [])
 
     for estimator in [EstimatorMethod.MLE, EstimatorMethod.BE]:
-        graph = hc(dataset, prior_knowledge=pk, estimator_method=estimator)
+        fitted_model = hc(dataset, prior_knowledge=pk, estimator_method=estimator)
 
-        assert isinstance(graph, DiGraph)
-        assert set(graph.vertices()) == {"A", "B"}
-        assert set(graph.edges()) in [{("A", "B")}, {("B", "A")}]
+        assert isinstance(fitted_model, CatBN)
+        assert set(fitted_model.graph().vertices()) == {"A", "B"}
+        assert set(fitted_model.graph().edges()) in [{("A", "B")}, {("B", "A")}]
 
 
 def test_structure_learning_cthc_estimator() -> None:
@@ -683,15 +683,15 @@ def test_structure_learning_cthc_estimator() -> None:
 
     pk = PK(model.labels(), [], [], [])
 
-    graph = cthc(
+    fitted_model = cthc(
         dataset, prior_knowledge=pk, max_parents=2, estimator_method=EstimatorMethod.MLE
     )
 
-    assert isinstance(graph, DiGraph)
-    assert set(graph.vertices()) == set(model.labels())
+    assert isinstance(fitted_model, CatCTBN)
+    assert set(fitted_model.graph().vertices()) == set(model.labels())
     # Every vertex has at most two parents.
-    for v in graph.vertices():
-        assert len(graph.parents(v)) <= 2
+    for v in fitted_model.graph().vertices():
+        assert len(fitted_model.graph().parents(v)) <= 2
 
 
 def test_prior_knowledge() -> None:

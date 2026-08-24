@@ -4,7 +4,7 @@ mod tests {
     use causal_hub::{
         datasets::{Dataset, GaussTable, GaussWtdTable},
         labels,
-        models::Labelled,
+        models::HasLabels,
         set,
         types::Result,
     };

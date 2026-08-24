@@ -6,7 +6,7 @@ mod tests {
         },
         estimators::{CSSEstimator, SSE},
         labels,
-        models::{CatCPDS, GaussCPDS, Labelled},
+        models::{CatCPDS, GaussCPDS, HasLabels},
         set, support,
         types::{Error, Result},
     };

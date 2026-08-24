@@ -6,7 +6,7 @@ mod tests {
         use causal_hub::{
             assets::load_eating,
             datasets::{CatTrjEv, CatTrjEvT as E, Dataset},
-            models::Labelled,
+            models::HasLabels,
             samplers::{CTBNSampler, ImportanceSampler, ParCTBNSampler},
             types::{Error, Result},
         };

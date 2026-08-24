@@ -1,7 +1,7 @@
 use crate::{
     datasets::{CatIncTable, IncDataset, MissingMethod},
     estimators::{CSSEstimator, ParCSSEstimator, SSE},
-    models::{CatCPDS, Labelled},
+    models::{CatCPDS, HasLabels},
     types::{Result, Set},
 };
 

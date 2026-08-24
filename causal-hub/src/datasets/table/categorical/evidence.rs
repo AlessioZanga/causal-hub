@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     datasets::CatTrjEvT,
-    models::{CatSupport, Labelled},
+    models::{CatSupport, HasLabels},
     types::{Error, Labels, Result, Set},
 };
 
@@ -117,7 +117,7 @@ pub struct CatEv {
     evidences: Vec<Option<CatEvT>>,
 }
 
-impl Labelled for CatEv {
+impl HasLabels for CatEv {
     fn labels(&self) -> &Labels {
         &self.labels
     }

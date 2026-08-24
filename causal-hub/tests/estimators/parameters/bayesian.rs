@@ -5,7 +5,7 @@ mod tests {
         datasets::CatTable,
         estimators::{BE, CPDEstimator, ParCPDEstimator},
         labels,
-        models::{CPD, Labelled},
+        models::{CPD, HasLabels},
         set, support,
         types::{Error, Result},
     };

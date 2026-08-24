@@ -2,8 +2,8 @@ use ndarray::{Zip, prelude::*};
 use statrs::distribution::{ChiSquared, ContinuousCDF, FisherSnedecor};
 
 use crate::{
-    estimators::CPDEstimator,
-    models::{CIM, CatCIM, Labelled},
+    estimators::{CPDEstimator, HasEstimator},
+    models::{CIM, CatCIM, HasLabels},
     types::{Error, Labels, Result, Set},
 };
 
@@ -53,13 +53,22 @@ impl<'a, E> ChiSquaredTest<'a, E> {
     }
 }
 
-impl<'a, E> Labelled for ChiSquaredTest<'a, E>
+impl<'a, E> HasLabels for ChiSquaredTest<'a, E>
 where
-    E: Labelled,
+    E: HasLabels,
 {
     #[inline]
     fn labels(&self) -> &Labels {
         self.estimator.labels()
+    }
+}
+
+impl<E> HasEstimator for ChiSquaredTest<'_, E> {
+    type Estimator = E;
+
+    #[inline]
+    fn estimator(&self) -> &Self::Estimator {
+        self.estimator
     }
 }
 
@@ -174,13 +183,22 @@ impl<'a, E> FTest<'a, E> {
     }
 }
 
-impl<E> Labelled for FTest<'_, E>
+impl<E> HasLabels for FTest<'_, E>
 where
-    E: Labelled,
+    E: HasLabels,
 {
     #[inline]
     fn labels(&self) -> &Labels {
         self.estimator.labels()
+    }
+}
+
+impl<E> HasEstimator for FTest<'_, E> {
+    type Estimator = E;
+
+    #[inline]
+    fn estimator(&self) -> &Self::Estimator {
+        self.estimator
     }
 }
 

@@ -3,7 +3,7 @@ use std::sync::{Arc, RwLock};
 use backend::{
     datasets::{CatEv, GaussEv},
     io::JsonIO,
-    models::{CatPhi, GaussPhi, Labelled, MixedPhi, Phi},
+    models::{CatPhi, GaussPhi, HasLabels, MixedPhi, Phi},
 };
 use pyo3::{exceptions::PyTypeError, prelude::*, types::PyType};
 use pyo3_stub_gen::derive::*;

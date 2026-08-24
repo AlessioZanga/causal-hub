@@ -5,7 +5,7 @@ use std::{
 
 use backend::{
     io::JsonIO,
-    models::{CatPhi, Labelled, Phi},
+    models::{CatPhi, HasLabels, Phi},
 };
 use numpy::{PyArrayDyn, prelude::*};
 use pyo3::{

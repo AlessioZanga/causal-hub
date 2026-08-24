@@ -7,7 +7,7 @@ use backend::{
         BE, BIC, CTBNEstimator, CTHC, CTPC, ChiSquaredTest, EMBuilder, EMOutput, FTest, PK,
         ParCTBNEstimator, RAWE,
     },
-    models::{CTBN, CatCTBN, DiGraph, Graph, Labelled},
+    models::{CTBN, CatCTBN, DiGraph, Graph, HasLabels},
     samplers::{CTBNSampler, ImportanceSampler, ParCTBNSampler},
     types::{Cache, Error as BackendError, Result},
 };
@@ -209,8 +209,8 @@ pub fn sem<'a>(
         .with_prior((1, 1.));
         // Cache the parameter estimator.
         let cache = Cache::new(&estimator);
-        // Learn the graph.
-        let fitted_graph = match algorithm {
+        // Learn the structure and fit the new model using the expectation.
+        match algorithm {
             "ctpc" => {
                 // Initialize the F test, shadowing the alpha value.
                 let f_test = FTest::new(&cache, f_test)?;
@@ -252,12 +252,6 @@ pub fn sem<'a>(
             _ => Err(BackendError::Unreachable(
                 "Unsupported structure learning algorithm.",
             )),
-        }?;
-        // Fit the new model using the expectation.
-        if parallel {
-            estimator.par_fit(fitted_graph)
-        } else {
-            estimator.fit(fitted_graph)
         }
     };
 

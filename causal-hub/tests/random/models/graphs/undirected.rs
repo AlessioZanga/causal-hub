@@ -2,7 +2,7 @@
 mod tests {
     use causal_hub::{
         labels,
-        models::{Graph, Labelled},
+        models::{Graph, HasLabels},
         random::{Random, RngUnGraph},
         types::Result,
     };

@@ -14,7 +14,7 @@ use crate::{
     },
     impl_json_io,
     inference::TopologicalOrder,
-    models::{BN, CPD, DiGraph, Graph, Labelled, MixedCPD, MixedSample, MixedSupport},
+    models::{BN, CPD, DiGraph, Graph, HasLabels, MixedCPD, MixedSample, MixedSupport},
     set,
     types::{Error, Labels, Map, Result, Set},
 };
@@ -217,7 +217,7 @@ impl RelativeEq for MixedBN {
     }
 }
 
-impl Labelled for MixedBN {
+impl HasLabels for MixedBN {
     #[inline]
     fn labels(&self) -> &Labels {
         &self.labels

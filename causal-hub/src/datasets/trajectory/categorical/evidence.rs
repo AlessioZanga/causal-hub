@@ -6,7 +6,7 @@ use rayon::prelude::*;
 
 use crate::{
     datasets::CatEv,
-    models::{CatSupport, Labelled},
+    models::{CatSupport, HasLabels},
     types::{EPSILON, Error, Labels, Result, Set},
 };
 
@@ -130,7 +130,7 @@ pub struct CatTrjEv {
     evidences: Vec<Vec<CatTrjEvT>>,
 }
 
-impl Labelled for CatTrjEv {
+impl HasLabels for CatTrjEv {
     #[inline]
     fn labels(&self) -> &Labels {
         &self.labels
@@ -658,7 +658,7 @@ pub struct CatTrjsEv {
     evidences: Vec<CatTrjEv>,
 }
 
-impl Labelled for CatTrjsEv {
+impl HasLabels for CatTrjsEv {
     #[inline]
     fn labels(&self) -> &Labels {
         &self.labels

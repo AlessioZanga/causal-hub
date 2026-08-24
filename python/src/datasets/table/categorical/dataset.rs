@@ -5,7 +5,7 @@ use std::{
 
 use backend::{
     datasets::{CatTable, CatType, Dataset},
-    models::{CatSupport, Labelled},
+    models::{CatSupport, HasLabels},
     types::Set,
 };
 use numpy::{PyArray1, PyArray2, PyArrayMethods, ToPyArray, ndarray::prelude::*};

@@ -11,7 +11,7 @@ use crate::{
     datasets::{GaussEv, GaussIncTable, GaussSample, GaussTable, GaussWtdTable},
     impl_json_io,
     inference::TopologicalOrder,
-    models::{BN, CPD, DiGraph, GaussCPD, GaussSupport, Graph, Labelled},
+    models::{BN, CPD, DiGraph, GaussCPD, GaussSupport, Graph, HasLabels},
     set,
     types::{Error, Labels, Map, Result, Set},
 };
@@ -84,7 +84,7 @@ impl RelativeEq for GaussBN {
     }
 }
 
-impl Labelled for GaussBN {
+impl HasLabels for GaussBN {
     #[inline]
     fn labels(&self) -> &Labels {
         &self.labels

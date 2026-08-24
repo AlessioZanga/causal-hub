@@ -3,7 +3,7 @@ use dry::macro_for;
 use crate::{
     datasets::Dataset,
     inference::{BNInference, BackdoorCriterion, Modelled, ParBNInference},
-    models::{BN, CatBN, GaussBN, Labelled, MixedBN, Phi},
+    models::{BN, CatBN, GaussBN, HasLabels, MixedBN, Phi},
     set,
     types::{Error, Result, Set},
 };

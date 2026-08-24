@@ -5,7 +5,7 @@ use std::{
 
 use backend::{
     datasets::{CatTrj, CatTrjEv, CatTrjEvT, CatTrjs, CatTrjsEv},
-    models::{CatSupport, Labelled},
+    models::{CatSupport, HasLabels},
     random::{Random, RngCatTrjEv},
     types::Set,
 };

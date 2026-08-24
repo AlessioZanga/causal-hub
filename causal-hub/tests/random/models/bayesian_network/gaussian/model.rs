@@ -2,7 +2,7 @@
 mod tests {
     use causal_hub::{
         labels,
-        models::{GaussBN, Labelled},
+        models::{GaussBN, HasLabels},
         random::{Random, RngGaussBN},
         types::{Error, ErrorKind, Result},
     };

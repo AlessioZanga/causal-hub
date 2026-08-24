@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     datasets::GaussType,
-    models::Labelled,
+    models::HasLabels,
     types::{Error, Labels, Result, Set},
 };
 
@@ -54,7 +54,7 @@ pub struct GaussEv {
     evidences: Vec<Option<GaussEvT>>,
 }
 
-impl Labelled for GaussEv {
+impl HasLabels for GaussEv {
     #[inline]
     fn labels(&self) -> &Labels {
         &self.labels

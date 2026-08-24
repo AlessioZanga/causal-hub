@@ -18,7 +18,7 @@ use serde::{
 use crate::{
     datasets::{CatSample, CatType},
     impl_json_io,
-    models::{CPD, CatPhi, Labelled, Phi},
+    models::{CPD, CatPhi, HasLabels, Phi},
     types::{EPSILON, Error, Labels, Map, Result, Set},
     utils::MI,
 };
@@ -615,7 +615,7 @@ impl CatCPD {
     }
 }
 
-impl Labelled for CatCPD {
+impl HasLabels for CatCPD {
     #[inline]
     fn labels(&self) -> &Labels {
         &self.labels

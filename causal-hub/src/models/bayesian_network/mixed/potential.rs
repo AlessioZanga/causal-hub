@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     impl_json_io,
-    models::{CatPhi, GaussPhi, Labelled, Phi},
+    models::{CatPhi, GaussPhi, HasLabels, Phi},
     types::{Error, Labels, Result, Set},
 };
 
@@ -23,7 +23,7 @@ pub enum MixedPhi {
     Gaussian(GaussPhi),
 }
 
-impl Labelled for MixedPhi {
+impl HasLabels for MixedPhi {
     #[inline]
     fn labels(&self) -> &Labels {
         match self {

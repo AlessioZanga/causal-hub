@@ -1,7 +1,7 @@
 use backend::{
     datasets::{CatTrjs, MissingMechanism, MissingMethod},
     estimators::{CTHC, PK},
-    models::DiGraph,
+    models::{CatCTBN, DiGraph},
     types::Cache,
 };
 use pyo3::{prelude::*, types::PyDict};
@@ -13,7 +13,7 @@ use crate::{
     error::to_pyerr,
     estimators::{PyEstimatorMethod, PyPK, PyScorerMethod},
     kwarg,
-    models::PyDiGraph,
+    models::{PyCatCTBN, PyDiGraph},
 };
 
 /// Perform structure learning using the Continuous Time Hill Climbing (CTHC) algorithm.
@@ -56,8 +56,8 @@ use crate::{
 ///
 /// Returns
 /// -------
-/// DiGraph
-///     The learned structure.
+/// CatCTBN
+///     The fitted model over the learned structure.
 ///
 #[gen_stub_pyfunction(module = "causal_hub.estimators")]
 #[pyfunction]
@@ -68,7 +68,7 @@ pub fn cthc(
     scorer_method: PyScorerMethod,
     parallel: bool,
     kwargs: Option<&Bound<'_, PyDict>>,
-) -> PyResult<PyDiGraph> {
+) -> PyResult<PyCatCTBN> {
     // Get the trajectories.
     let trajectories: PyCatTrjs = trajectories.extract()?;
     // Get the reference to the trajectories.
@@ -104,7 +104,7 @@ pub fn cthc(
     crate::utils::ensure_kwargs_consumed(kwargs)?;
 
     // Dispatch over the estimator method and scoring criterion, and run the CTHC algorithm.
-    let graph = dispatch_estimator_method!(
+    dispatch_estimator_method!(
         trajectories,
         estimator_method,
         missing_method,
@@ -112,6 +112,7 @@ pub fn cthc(
         |estimator| {
             // Cache the parameter estimator.
             let cache = Cache::new(estimator);
+            // Dispatch over the scoring criterion and run the CTHC algorithm.
             dispatch_scorer_method!(&cache, scorer_method, |scorer_method| {
                 // Initialize the CTHC algorithm.
                 let mut cthc = CTHC::new(scorer_method);
@@ -129,17 +130,16 @@ pub fn cthc(
                         .with_prior_knowledge(prior_knowledge)
                         .map_err(to_pyerr)?;
                 }
-                // Run the algorithm.
-                if parallel {
+                // Run the algorithm and fit the model over the learned structure.
+                let model: CatCTBN = if parallel {
                     py.detach(move || cthc.par_fit())
                 } else {
                     cthc.fit()
                 }
-                .map_err(to_pyerr)
+                .map_err(to_pyerr)?;
+                // Convert the fitted model into a Python object.
+                Ok(model.into())
             })
         }
-    )?;
-
-    // Convert the fitted graph into a Python object.
-    Ok(graph.into())
+    )
 }

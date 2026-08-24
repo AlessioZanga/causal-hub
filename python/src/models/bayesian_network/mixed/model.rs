@@ -5,7 +5,7 @@ use std::{
 
 use backend::{
     io::JsonIO,
-    models::{BN, DiGraph, Labelled, MixedBN},
+    models::{BN, DiGraph, HasLabels, MixedBN},
     samplers::{BNSampler, ForwardSampler, ParBNSampler},
 };
 use pyo3::{prelude::*, types::PyType};

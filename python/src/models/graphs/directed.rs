@@ -3,7 +3,7 @@ use std::sync::{Arc, RwLock};
 use backend::{
     inference::{BackdoorCriterion, GraphicalSeparation, TopologicalOrder},
     io::{DotIO, GmlIO, JsonIO},
-    models::{DiGraph, Graph, Labelled},
+    models::{DiGraph, Graph, HasLabels},
     random::{Random, RngDag, RngDiGraph},
     types::Labels,
 };

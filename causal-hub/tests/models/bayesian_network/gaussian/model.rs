@@ -2,7 +2,7 @@
 mod tests {
     use causal_hub::{
         labels,
-        models::{BN, DiGraph, GaussBN, GaussCPD, GaussCPDP, Graph, Labelled},
+        models::{BN, DiGraph, GaussBN, GaussCPD, GaussCPDP, Graph, HasLabels},
         set,
         types::Result,
     };

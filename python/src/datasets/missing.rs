@@ -5,7 +5,7 @@ use std::{
 
 use backend::{
     datasets::{MissingMechanism, MissingMethod, MissingType as MissingType_},
-    models::Labelled,
+    models::HasLabels,
     random::{Random, RngMissingMechanism},
 };
 use pyo3::{prelude::*, types::PyType};

@@ -3,8 +3,8 @@ use log::debug;
 use rayon::prelude::*;
 
 use crate::{
-    estimators::{CITest, PK},
-    models::{DiGraph, Graph, Labelled},
+    estimators::{CITest, CTBNEstimator, HasEstimator, PK, ParCTBNEstimator},
+    models::{DiGraph, Graph, HasLabels},
     set,
     types::{Error, Result, Set},
 };
@@ -20,8 +20,8 @@ pub struct CTPC<'a, T, S> {
 
 impl<'a, T, S> CTPC<'a, T, S>
 where
-    T: CITest + Labelled,
-    S: CITest + Labelled,
+    T: CITest + HasLabels,
+    S: CITest + HasLabels,
 {
     /// Creates a new `CTPC` instance.
     ///
@@ -148,11 +148,24 @@ where
 
     /// Execute the CTPC algorithm.
     ///
+    /// # Errors
+    ///
+    /// * If a conditional independence test fails.
+    ///
     /// # Returns
     ///
-    /// The fitted graph.
+    /// The fitted model over the learned structure.
     ///
-    pub fn fit(&self) -> Result<DiGraph> {
+    /// # Notes
+    ///
+    /// The model parameters are estimated using the estimator wrapped by
+    /// the null time-to-transition hypothesis test.
+    ///
+    pub fn fit<M>(&self) -> Result<M>
+    where
+        T: HasEstimator,
+        T::Estimator: CTBNEstimator<M>,
+    {
         // Get the initial graph, or a complete graph over the labels of the hypothesis tests.
         let mut graph = match self.initial_graph {
             Some(graph) => graph.clone(),
@@ -231,23 +244,36 @@ where
             }
         }
 
-        // Return the fitted graph.
-        Ok(graph)
+        // Fit the model over the learned structure.
+        self.null_time.estimator().fit(graph)
     }
 }
 
 impl<'a, T, S> CTPC<'a, T, S>
 where
-    T: CITest + Sync + Labelled,
-    S: CITest + Sync + Labelled,
+    T: CITest + HasLabels + Sync,
+    S: CITest + HasLabels + Sync,
 {
-    /// Execute the CTPC algorithm and return the fitted graph in parallel.
+    /// Execute the CTPC algorithm in parallel.
+    ///
+    /// # Errors
+    ///
+    /// * If a conditional independence test fails.
     ///
     /// # Returns
     ///
-    /// The fitted graph.
+    /// The fitted model over the learned structure.
     ///
-    pub fn par_fit(&self) -> Result<DiGraph> {
+    /// # Notes
+    ///
+    /// The model parameters are estimated using the estimator wrapped by
+    /// the null time-to-transition hypothesis test.
+    ///
+    pub fn par_fit<M>(&self) -> Result<M>
+    where
+        T: HasEstimator,
+        T::Estimator: ParCTBNEstimator<M>,
+    {
         // Get the initial graph, or a complete graph over the labels of the hypothesis tests.
         let initial_graph = match self.initial_graph {
             Some(graph) => graph.clone(),
@@ -324,7 +350,7 @@ where
             })
         })?;
 
-        // Return the fitted graph.
-        Ok(graph)
+        // Fit the model over the learned structure.
+        self.null_time.estimator().par_fit(graph)
     }
 }

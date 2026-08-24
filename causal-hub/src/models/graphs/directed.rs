@@ -9,7 +9,7 @@ use serde::{
 
 use crate::{
     impl_json_io,
-    models::{Graph, Labelled},
+    models::{Graph, HasLabels},
     set,
     types::{Error, Labels, Result, Set},
 };
@@ -198,7 +198,7 @@ impl DiGraph {
     }
 }
 
-impl Labelled for DiGraph {
+impl HasLabels for DiGraph {
     fn labels(&self) -> &Labels {
         &self.labels
     }

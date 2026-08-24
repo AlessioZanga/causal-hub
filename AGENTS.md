@@ -97,7 +97,7 @@ python/causal_hub/        (Python package — nearly pure FFI)
 
 | Trait | Location | Key Methods |
 | ------- | ---------- | ------------- |
-| `Labelled` | `models/mod.rs` | `labels()`, `label_to_index()`, `index_to_label()`, `index_to()`, `indices_to()`, `index_from()`, `indices_from()` |
+| `HasLabels` | `models/mod.rs` | `labels()`, `label_to_index()`, `index_to_label()`, `index_to()`, `indices_to()`, `index_from()`, `indices_from()` |
 | `Graph` | `models/graphs/mod.rs` | `empty(labels)`, `complete(labels)`, `vertices()`, `edges()`, `has_vertex(x)`, `has_edge(x,y)`, `add_edge(x,y)`, `del_edge(x,y)`, `select(x)`, `from_adjacency_matrix(labels, mat)`, `to_adjacency_matrix()` |
 | `CPD` | `models/mod.rs` | `conditioning_labels()`, `parameters()`, `parameters_size()`, `fitted_statistics()`, `fitted_log_likelihood()`, `pf(x, z)`, `sample(rng, z)` |
 | `CIM` | `models/mod.rs` | `conditioning_labels()`, `parameters()`, `parameters_size()`, `fitted_statistics()`, `fitted_log_likelihood()` |

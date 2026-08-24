@@ -1,7 +1,7 @@
 use backend::{
     datasets::{CatTrjs, MissingMechanism, MissingMethod},
     estimators::{CTPC, ChiSquaredTest, FTest, PK},
-    models::DiGraph,
+    models::{CatCTBN, DiGraph},
     types::Cache,
 };
 use pyo3::{prelude::*, types::PyDict};
@@ -13,7 +13,7 @@ use crate::{
     error::to_pyerr,
     estimators::{PyEstimatorMethod, PyPK},
     kwarg,
-    models::PyDiGraph,
+    models::{PyCatCTBN, PyDiGraph},
 };
 
 /// Perform structure learning using the Continuous Time Peter-Clark (CTPC) algorithm.
@@ -57,8 +57,8 @@ use crate::{
 ///
 /// Returns
 /// -------
-/// DiGraph
-///     The learned structure.
+/// CatCTBN
+///     The fitted model over the learned structure.
 ///
 #[gen_stub_pyfunction(module = "causal_hub.estimators")]
 #[pyfunction]
@@ -70,7 +70,7 @@ pub fn ctpc(
     c_test: f64,
     parallel: bool,
     kwargs: Option<&Bound<'_, PyDict>>,
-) -> PyResult<PyDiGraph> {
+) -> PyResult<PyCatCTBN> {
     // Get the trajectories.
     let trajectories: PyCatTrjs = trajectories.extract()?;
     // Get the reference to the trajectories.
@@ -104,7 +104,7 @@ pub fn ctpc(
     crate::utils::ensure_kwargs_consumed(kwargs)?;
 
     // Dispatch over the estimator method and run the CTPC algorithm.
-    let graph = dispatch_estimator_method!(
+    dispatch_estimator_method!(
         trajectories,
         estimator_method,
         missing_method,
@@ -129,16 +129,15 @@ pub fn ctpc(
                     .with_prior_knowledge(prior_knowledge)
                     .map_err(to_pyerr)?;
             }
-            // Run the algorithm.
-            if parallel {
+            // Run the algorithm and fit the model over the learned structure.
+            let model: CatCTBN = if parallel {
                 py.detach(move || ctpc.par_fit())
             } else {
                 ctpc.fit()
             }
-            .map_err(to_pyerr)
+            .map_err(to_pyerr)?;
+            // Convert the fitted model into a Python object.
+            Ok(model.into())
         }
-    )?;
-
-    // Convert the fitted graph into a Python object.
-    Ok(graph.into())
+    )
 }

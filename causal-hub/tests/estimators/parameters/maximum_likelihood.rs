@@ -6,7 +6,7 @@ mod tests {
         estimators::{BNEstimator, CPDEstimator, MLE, ParCPDEstimator},
         io::CsvIO,
         labels,
-        models::{BN, CPD, CatBN, CatCPD, DiGraph, GaussCPD, Graph, Labelled},
+        models::{BN, CPD, CatBN, CatCPD, DiGraph, GaussCPD, Graph, HasLabels},
         set, support,
         types::{Error, Result},
     };

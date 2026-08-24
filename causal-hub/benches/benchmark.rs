@@ -5,7 +5,7 @@ use causal_hub::{
     datasets::{CatEv, CatEvT, CatTable},
     estimators::{BE, BNEstimator, CSSEstimator, MLE, SSE},
     inference::{ApproximateInference, BNCausalInference, BNInference, CausalInference},
-    models::{BN, CatBN, Labelled},
+    models::{BN, CatBN, HasLabels},
     samplers::{BNSampler, ForwardSampler, ImportanceSampler},
     set,
     types::{Result, Set},

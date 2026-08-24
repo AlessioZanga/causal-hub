@@ -6,7 +6,7 @@ use causal_hub::{
     io::JsonIO,
     labels,
     models::{
-        BN, CPD, CatCPD, DiGraph, GaussCPD, GaussCPDP, Graph, Labelled, MixedBN, MixedCPD,
+        BN, CPD, CatCPD, DiGraph, GaussCPD, GaussCPDP, Graph, HasLabels, MixedBN, MixedCPD,
         MixedSupport, MixedTable,
     },
     random::Random,

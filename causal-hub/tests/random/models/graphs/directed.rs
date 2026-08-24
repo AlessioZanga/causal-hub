@@ -2,7 +2,7 @@
 mod tests {
     use causal_hub::{
         labels,
-        models::{Graph, Labelled},
+        models::{Graph, HasLabels},
         random::{Random, RngDiGraph},
         types::Result,
     };
@@ -36,7 +36,7 @@ mod tests {
         use causal_hub::{
             inference::TopologicalOrder,
             labels,
-            models::{Graph, Labelled},
+            models::{Graph, HasLabels},
             random::{Random, RngDag},
             types::Result,
         };

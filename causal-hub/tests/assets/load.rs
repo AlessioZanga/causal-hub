@@ -3,7 +3,7 @@ mod tests {
     use causal_hub::{
         assets::*,
         labels,
-        models::{BN, CPD, Graph, Labelled},
+        models::{BN, CPD, Graph, HasLabels},
         support,
         types::{Error, Result},
     };

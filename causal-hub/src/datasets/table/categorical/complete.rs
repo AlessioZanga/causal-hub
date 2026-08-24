@@ -14,7 +14,7 @@ use serde::{Deserialize, Serialize};
 use crate::{
     datasets::{CatEv, CatEvT, Dataset},
     io::CsvIO,
-    models::{CatSupport, Labelled},
+    models::{CatSupport, HasLabels},
     types::{Error, Labels, Result, Set},
 };
 
@@ -56,7 +56,7 @@ impl<'a> Iterator for CatTableEvidenceIter<'a> {
     }
 }
 
-impl Labelled for CatTable {
+impl HasLabels for CatTable {
     #[inline]
     fn labels(&self) -> &Labels {
         &self.labels

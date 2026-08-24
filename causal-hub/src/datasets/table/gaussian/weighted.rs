@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     datasets::{Dataset, GaussEv, GaussSample, GaussTable},
-    models::{GaussSupport, Labelled},
+    models::{GaussSupport, HasLabels},
     types::{Error, Labels, Result, Set},
 };
 
@@ -19,7 +19,7 @@ pub struct GaussWtdTable {
     weights: Array1<f64>,
 }
 
-impl Labelled for GaussWtdTable {
+impl HasLabels for GaussWtdTable {
     #[inline]
     fn labels(&self) -> &Labels {
         self.dataset.labels()

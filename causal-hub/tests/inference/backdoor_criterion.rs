@@ -3,7 +3,7 @@ mod tests {
     mod digraph {
         use causal_hub::{
             inference::BackdoorCriterion,
-            models::{DiGraph, Graph, Labelled},
+            models::{DiGraph, Graph, HasLabels},
             set,
             types::Result,
         };

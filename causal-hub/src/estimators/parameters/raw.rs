@@ -7,7 +7,7 @@ use rayon::prelude::*;
 use crate::{
     datasets::{CatTrj, CatTrjEv, CatTrjEvT, CatTrjs, CatTrjsEv, CatType},
     estimators::{BE, CPDEstimator, ParCPDEstimator},
-    models::{CatCIM, Labelled},
+    models::{CatCIM, HasLabels},
     types::{Error, Labels, Result, Set},
 };
 
@@ -33,9 +33,9 @@ impl<D> RAWE<D> {
     }
 }
 
-impl<D> Labelled for RAWE<D>
+impl<D> HasLabels for RAWE<D>
 where
-    D: Labelled,
+    D: HasLabels,
 {
     #[inline]
     fn labels(&self) -> &Labels {

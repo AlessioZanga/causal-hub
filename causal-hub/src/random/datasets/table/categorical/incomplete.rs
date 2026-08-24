@@ -5,7 +5,7 @@ use rand_distr::Uniform;
 
 use crate::{
     datasets::{CatIncTable, CatTable, CatType, Dataset, IncDataset, MissingMechanism},
-    models::Labelled,
+    models::HasLabels,
     random::Random,
     types::{Error, Result},
 };

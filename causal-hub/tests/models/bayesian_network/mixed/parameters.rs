@@ -3,7 +3,9 @@ mod tests {
     use approx::assert_relative_eq;
     use causal_hub::{
         labels,
-        models::{CPD, CatCPD, GaussCPD, GaussCPDP, Labelled, MixedCPD, MixedSample, MixedSupport},
+        models::{
+            CPD, CatCPD, GaussCPD, GaussCPDP, HasLabels, MixedCPD, MixedSample, MixedSupport,
+        },
         support,
         types::Result,
     };

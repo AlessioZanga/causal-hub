@@ -6,7 +6,7 @@ use rand::{
 use crate::{
     datasets::{MissingMechanism, MissingType},
     inference::VStructures,
-    models::{DiGraph, Graph, Labelled},
+    models::{DiGraph, Graph, HasLabels},
     random::Random,
     set,
     types::{Error, Map, Result, Set},

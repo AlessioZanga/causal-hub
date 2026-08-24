@@ -15,7 +15,7 @@ use serde::{
 use crate::{
     datasets::CatSample,
     impl_json_io,
-    models::{CIM, CatSupport, Labelled},
+    models::{CIM, CatSupport, HasLabels},
     types::{EPSILON, Error, Labels, Result, Set},
     utils::MI,
 };
@@ -756,7 +756,7 @@ impl RelativeEq for CatCIM {
     }
 }
 
-impl Labelled for CatCIM {
+impl HasLabels for CatCIM {
     #[inline]
     fn labels(&self) -> &Labels {
         &self.labels

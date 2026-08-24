@@ -2,7 +2,7 @@ use std::sync::{Arc, RwLock};
 
 use backend::{
     datasets::{Dataset, GaussTable, GaussType},
-    models::Labelled,
+    models::HasLabels,
     types::Labels,
 };
 use numpy::{PyArray1, PyArray2, PyArrayMethods, ToPyArray, ndarray::prelude::*};

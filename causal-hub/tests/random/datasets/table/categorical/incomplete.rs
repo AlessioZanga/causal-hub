@@ -3,7 +3,7 @@ mod tests {
     use causal_hub::{
         datasets::{CatTable, MissingMechanism},
         labels, map,
-        models::Labelled,
+        models::HasLabels,
         random::{Random, RngCatIncTable},
         set, support,
         types::{Error, ErrorKind, Result},

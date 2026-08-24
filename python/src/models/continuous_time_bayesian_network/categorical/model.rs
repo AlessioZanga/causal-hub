@@ -7,7 +7,7 @@ use backend::{
     datasets::CatTrjs,
     estimators::{BE, MLE},
     io::JsonIO,
-    models::{CTBN, CatCTBN, DiGraph, Labelled},
+    models::{CTBN, CatCTBN, DiGraph, HasLabels},
     samplers::{CTBNSampler, ForwardSampler, ParCTBNSampler},
 };
 use pyo3::{

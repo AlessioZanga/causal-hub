@@ -3,7 +3,7 @@ mod tests {
     use causal_hub::{
         datasets::{GaussEv, GaussEvT},
         labels,
-        models::Labelled,
+        models::HasLabels,
         set,
         types::Result,
     };

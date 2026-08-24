@@ -5,7 +5,7 @@ use std::{
 
 use backend::{
     io::JsonIO,
-    models::{CPD, GaussCPD, Labelled},
+    models::{CPD, GaussCPD, HasLabels},
     random::{Random, RngGaussCPD},
     types::Labels,
 };

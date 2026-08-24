@@ -4,7 +4,7 @@ use rayon::prelude::*;
 use crate::{
     datasets::{Dataset, GaussIncTable, GaussTable, GaussWtdTable, IncDataset, MissingMethod},
     estimators::{CSSEstimator, ParCSSEstimator, SSE},
-    models::{GaussCPDS, Labelled},
+    models::{GaussCPDS, HasLabels},
     types::{AXIS_CHUNK_LENGTH, Error, Result, Set},
 };
 

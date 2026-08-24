@@ -5,7 +5,7 @@ use std::{
 
 use backend::{
     io::JsonIO,
-    models::{CPD, CatCPD, CatSupport, Labelled},
+    models::{CPD, CatCPD, CatSupport, HasLabels},
     random::{Random, RngCatCPD},
 };
 use numpy::{PyArray2, prelude::*};
