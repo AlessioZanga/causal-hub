@@ -1,4 +1,4 @@
-﻿causal\_hub
+causal\_hub
 ===========
 
 .. automodule:: causal_hub
