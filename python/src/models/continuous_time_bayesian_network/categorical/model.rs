@@ -175,7 +175,7 @@ impl PyCatCTBN {
     /// graph: DiGraph
     ///     The graph to fit the model to.
     /// estimator: EstimatorMethod | None
-    ///     The estimator to use for fitting (default is `EstimatorMethod.MLE`).
+    ///     The estimator to use for fitting (default is `EstimatorMethod.BE`).
     /// **kwargs: dict | None
     ///     Optional keyword arguments:
     ///
@@ -197,7 +197,7 @@ impl PyCatCTBN {
     #[pyo3(signature = (
         dataset,
         graph,
-        estimator_method = PyEstimatorMethod::MLE,
+        estimator_method = PyEstimatorMethod::BE,
         **kwargs
     ))]
     pub fn fit(
