@@ -19,6 +19,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Security
 
+## v0.0.6 - 2026-08-24
+
+### Added
+
+* Added `MixedBN` model with mixed categorical-gaussian CPDs, potentials, datasets, and Python bindings.
+* Added `HillClimbing` (`HC`) score-based structure learning algorithm.
+* Added `HC`, `CTHC`, and `CTPC` structure learning wrappers in the Python frontend.
+* Added `fit`, `fit_parameters`, and `fit_structure` methods for models and estimators.
+* Added `DOT` and `GML` parsers for graph I/O.
+* Added `CatWtdTable` and `GaussWtdTable` weighted datasets to the Python frontend.
+* Added vertex manipulation methods for graphs.
+* Added `Support` trait definition with `CatSupport` and `GaussSupport` implementations.
+
+### Changed
+
+* Updated structure estimators to return already fitted models.
+* Updated default estimator for CTBNs.
+* Updated `initial_graph` interface of structure estimators.
+* Updated core dependencies.
+
+### Removed
+
+* Removed Windows support from CI workflows.
+
+### Fixed
+
+* Fixed Python documentation, Sphinx autodoc, and README badges.
+* Fixed GitHub Actions deprecations and version SHA pinning.
+
 ## v0.0.5 - 2026-04-29
 
 ### Added
