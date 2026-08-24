@@ -3,11 +3,11 @@
 
 .. automodule:: causal_hub.models
 
-   
+
    .. rubric:: Classes
 
    .. autosummary::
-   
+
       CatBN
       CatCIM
       CatCPD
@@ -21,4 +21,3 @@
       MixedCPD
       MixedPhi
       UnGraph
-   

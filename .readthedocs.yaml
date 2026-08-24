@@ -9,13 +9,18 @@ build:
   os: ubuntu-lts-latest
   apt_packages:
     - libopenblas-dev
+    - libssl-dev
+    - pkg-config
   tools:
     python: "3.14"
     rust: latest
   jobs:
+    # Link against the system OpenBLAS instead of compiling it from source
+    pre_install:
+      - sed -i 's|"backend/openblas-static"|"backend/openblas-system"|' python/Cargo.toml
     pre_build:
       - echo "Building causal-hub with maturin"
-      - uv run maturin develop --release
+      - uv run --no-sync maturin develop --release
 
 python:
   install:

@@ -3,10 +3,9 @@
 
 .. automodule:: causal_hub
 
-   
+
    .. rubric:: Exceptions
 
    .. autosummary::
-   
+
       Error
-   

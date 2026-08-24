@@ -3,11 +3,11 @@
 
 .. automodule:: causal_hub.datasets
 
-   
+
    .. rubric:: Classes
 
    .. autosummary::
-   
+
       CatEv
       CatIncTable
       CatTable
@@ -27,4 +27,3 @@
       MixedEv
       MixedIncTable
       MixedTable
-   
