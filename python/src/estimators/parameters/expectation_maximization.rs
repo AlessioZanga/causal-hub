@@ -21,10 +21,16 @@ use rayon::prelude::*;
 use crate::{
     datasets::{PyCatTrjsEv, PyCatWtdTrjs},
     error::to_pyerr,
+    kwarg,
     models::{PyCatCTBN, PyDiGraph},
 };
 
 /// A function to perform parameter learning using the Expectation Maximization (EM) algorithm.
+///
+/// **kwargs: dict | None
+///     Optional keyword arguments:
+///
+/// - `seed`: The seed of the random number generator (default is `42`).
 ///
 #[gen_stub_pyfunction(module = "causal_hub.estimators")]
 #[pyfunction]
@@ -32,14 +38,14 @@ use crate::{
     evidence,
     graph,
     max_iter = 10,
-    seed = 42
+    **kwargs
 ))]
 pub fn em<'a>(
     py: Python<'a>,
     evidence: &Bound<'_, PyCatTrjsEv>,
     graph: &Bound<'_, PyDiGraph>,
     max_iter: usize,
-    seed: u64,
+    kwargs: Option<&Bound<'_, PyDict>>,
 ) -> PyResult<Bound<'a, PyDict>> {
     // Get the evidence.
     let evidence: PyCatTrjsEv = evidence.extract()?;
@@ -50,6 +56,12 @@ pub fn em<'a>(
     let graph: PyDiGraph = graph.extract()?;
     // Get the reference to the graph.
     let graph: &DiGraph = &graph.lock();
+
+    // Get the seed from the keyword arguments, or default to `42`.
+    let seed = kwarg!(kwargs, "seed", u64, 42)?;
+
+    // Reject any unknown keyword arguments.
+    crate::utils::ensure_kwargs_consumed(kwargs)?;
 
     // Release the GIL to allow parallel execution.
     let output = py

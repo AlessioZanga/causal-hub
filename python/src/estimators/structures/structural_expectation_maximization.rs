@@ -32,19 +32,19 @@ use crate::{
 
 /// A function to perform structure learning using the Structural Expectation Maximization (SEM) algorithm.
 ///
-/// parallel: bool
-///     Whether to run the algorithm in parallel (default is `True`).
+/// **kwargs: dict | None
+///     Optional keyword arguments:
+///
+/// - `parallel`: Whether to run the algorithm in parallel (default is `True`).
+/// - `seed`: The seed of the random number generator (default is `42`).
 #[gen_stub_pyfunction(module = "causal_hub.estimators")]
 #[pyfunction]
-#[allow(clippy::too_many_arguments)]
 #[pyo3(signature = (
     evidence,
     algorithm,
     max_iter = 10,
-    seed = 42,
     f_test = 0.01,
     c_test = 0.01,
-    parallel = true,
     **kwargs
 ))]
 pub fn sem<'a>(
@@ -52,10 +52,8 @@ pub fn sem<'a>(
     evidence: &Bound<'_, PyCatTrjsEv>,
     algorithm: &str,
     max_iter: usize,
-    seed: u64,
     f_test: f64,
     c_test: f64,
-    parallel: bool,
     kwargs: Option<&Bound<'_, PyDict>>,
 ) -> PyResult<Bound<'a, PyDict>> {
     // Get the evidence.
@@ -63,20 +61,29 @@ pub fn sem<'a>(
     // Get the reference to the evidence.
     let evidence: &CatTrjsEv = &evidence.lock();
 
-    // Get the maximum number of parents from the keyword arguments, if any.
-    let max_parents = kwarg!(kwargs, "max_parents", usize)?;
-    // Get the prior knowledge from the keyword arguments, if any.
-    let prior_knowledge: Option<PyPK> = kwarg!(kwargs, "prior_knowledge", PyPK)?;
-    // Lock the prior knowledge, if any.
-    let prior_knowledge_locks = prior_knowledge.as_ref().map(|x| x.lock());
-    // Get the reference to the prior knowledge, if any.
-    let prior_knowledge: Option<&PK> = prior_knowledge_locks.as_deref();
     // Get the initial graph from the keyword arguments, if any.
     let initial_graph: Option<PyDiGraph> = kwarg!(kwargs, "initial_graph", PyDiGraph)?;
     // Lock the initial graph, if any.
     let initial_graph_locks = initial_graph.as_ref().map(|x| x.lock());
     // Get the reference to the initial graph, if any.
     let initial_graph: Option<&DiGraph> = initial_graph_locks.as_deref();
+
+    // Get the maximum number of parents from the keyword arguments, if any.
+    let max_parents = kwarg!(kwargs, "max_parents", usize)?;
+
+    // Get the parallel flag from the keyword arguments, or default to parallel execution.
+    let parallel = kwarg!(kwargs, "parallel", bool, true)?;
+
+    // Get the prior knowledge from the keyword arguments, if any.
+    let prior_knowledge: Option<PyPK> = kwarg!(kwargs, "prior_knowledge", PyPK)?;
+    // Lock the prior knowledge, if any.
+    let prior_knowledge_locks = prior_knowledge.as_ref().map(|x| x.lock());
+    // Get the reference to the prior knowledge, if any.
+    let prior_knowledge: Option<&PK> = prior_knowledge_locks.as_deref();
+
+    // Get the seed from the keyword arguments, or default to `42`.
+    let seed = kwarg!(kwargs, "seed", u64, 42)?;
+
     // Reject any unknown keyword arguments.
     crate::utils::ensure_kwargs_consumed(kwargs)?;
 

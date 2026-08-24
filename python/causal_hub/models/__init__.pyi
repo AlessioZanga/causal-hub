@@ -150,9 +150,6 @@ class CatBN:
         dataset: datasets.Dataset,
         graph: DiGraph,
         estimator_method: estimators.EstimatorMethod = estimators.EstimatorMethod.BE,
-        missing_method: datasets.MissingMethod = datasets.MissingMethod.PW,
-        missing_mechanism: typing.Optional[datasets.MissingMechanism] = None,
-        parallel: builtins.bool = True,
         **kwargs: typing.Any,
     ) -> CatBN:
         r"""
@@ -166,16 +163,17 @@ class CatBN:
             The graph to fit the model to.
         estimator: EstimatorMethod | None
             The estimator to use for fitting (default is `EstimatorMethod.BE`).
-        missing_method: MissingMethod | None
-            The method to use for handling missing data (default is `MissingMethod.PW`).
-        missing_mechanism: MissingMechanism | None
-            The missing mechanism to use for handling missing data (default is `None`).
-        parallel: bool
-            The flag to enable parallel fitting (default is `true`).
         **kwargs: dict | None
             Optional keyword arguments:
 
         - `alpha`: The prior of the Bayesian estimator (float64).
+        - `missing_method`: The method (`MissingMethod`) used to handle missing
+          data (default is `MissingMethod.PW`).
+        - `missing_mechanism`: The mechanism (`MissingMechanism`) associated to
+          the dataset (default is `None`). It is required by
+          `MissingMethod.IPW` and `MissingMethod.AIPW`, and it must be `None`
+          otherwise.
+        - `parallel`: The flag to enable parallel fitting (default is `true`).
 
         Returns
         -------
@@ -183,9 +181,7 @@ class CatBN:
             A new fitted model.
         """
 
-    def sample(
-        self, n: builtins.int, seed: builtins.int = 31, parallel: builtins.bool = True
-    ) -> datasets.CatTable:
+    def sample(self, n: builtins.int, **kwargs: typing.Any) -> datasets.CatTable:
         r"""
         Generate samples from the model.
 
@@ -193,10 +189,17 @@ class CatBN:
         ----------
         n: int
             The number of samples to generate.
-        seed: int
-            The seed of the random number generator (default is `31`).
-        parallel: bool
-            The flag to enable parallel sampling (default is `true`).
+        **kwargs: dict | None
+            Optional keyword arguments:
+
+        - `missing_method`: The method (`MissingMethod`) used to handle missing
+          data (default is `MissingMethod.PW`).
+        - `missing_mechanism`: The mechanism (`MissingMechanism`) associated to
+          the dataset (default is `None`). It is required by
+          `MissingMethod.IPW` and `MissingMethod.AIPW`, and it must be `None`
+          otherwise.
+        - `parallel`: The flag to enable parallel sampling (default is `true`).
+        - `seed`: The seed of the random number generator (default is `31`).
 
         Returns
         -------
@@ -210,10 +213,7 @@ class CatBN:
         z: typing.Any,
         w: typing.Optional[typing.Any] = None,
         estimator_method: estimators.EstimatorMethod = estimators.EstimatorMethod.BE,
-        missing_method: datasets.MissingMethod = datasets.MissingMethod.PW,
-        missing_mechanism: typing.Optional[datasets.MissingMechanism] = None,
-        seed: builtins.int = 31,
-        parallel: builtins.bool = True,
+        **kwargs: typing.Any,
     ) -> CatCPD:
         r"""
         Estimate a conditional probability distribution (CPD).
@@ -228,14 +228,17 @@ class CatBN:
             Optional evidence to condition on during inference.
         estimator: EstimatorMethod | None
             The estimator to use for estimation (default is `EstimatorMethod.BE`).
-        missing_method: MissingMethod | None
-            The method to use for handling missing data (default is `MissingMethod.PW`).
-        missing_mechanism: MissingMechanism | None
-            The missing mechanism to use for handling missing data (default is `None`).
-        seed: int
-            The seed of the random number generator (default is `31`).
-        parallel: bool
-            The flag to enable parallel estimation (default is `true`).
+        **kwargs: dict | None
+            Optional keyword arguments:
+
+        - `missing_method`: The method (`MissingMethod`) used to handle missing
+          data (default is `MissingMethod.PW`).
+        - `missing_mechanism`: The mechanism (`MissingMechanism`) associated to
+          the dataset (default is `None`). It is required by
+          `MissingMethod.IPW` and `MissingMethod.AIPW`, and it must be `None`
+          otherwise.
+        - `parallel`: The flag to enable parallel estimation (default is `true`).
+        - `seed`: The seed of the random number generator (default is `31`).
 
         Returns
         -------
@@ -250,10 +253,7 @@ class CatBN:
         z: typing.Any,
         w: typing.Optional[typing.Any] = None,
         estimator_method: estimators.EstimatorMethod = estimators.EstimatorMethod.BE,
-        missing_method: datasets.MissingMethod = datasets.MissingMethod.PW,
-        missing_mechanism: typing.Optional[datasets.MissingMechanism] = None,
-        seed: builtins.int = 31,
-        parallel: builtins.bool = True,
+        **kwargs: typing.Any,
     ) -> typing.Optional[CatCPD]:
         r"""
         Estimate a conditional population average causal effect (CPACE).
@@ -270,14 +270,17 @@ class CatBN:
             Optional evidence to condition on during inference.
         estimator: EstimatorMethod | None
             The estimator to use for estimation (default is `EstimatorMethod.BE`).
-        missing_method: MissingMethod | None
-            The method to use for handling missing data (default is `MissingMethod.PW`).
-        missing_mechanism: MissingMechanism | None
-            The missing mechanism to use for handling missing data (default is `None`).
-        seed: int
-            The seed of the random number generator (default is `31`).
-        parallel: bool
-            The flag to enable parallel estimation (default is `true`).
+        **kwargs: dict | None
+            Optional keyword arguments:
+
+        - `missing_method`: The method (`MissingMethod`) used to handle missing
+          data (default is `MissingMethod.PW`).
+        - `missing_mechanism`: The mechanism (`MissingMechanism`) associated to
+          the dataset (default is `None`). It is required by
+          `MissingMethod.IPW` and `MissingMethod.AIPW`, and it must be `None`
+          otherwise.
+        - `parallel`: The flag to enable parallel estimation (default is `true`).
+        - `seed`: The seed of the random number generator (default is `31`).
 
         Returns
         -------
@@ -868,9 +871,6 @@ class CatCTBN:
         dataset: datasets.CatTrjs,
         graph: DiGraph,
         estimator_method: estimators.EstimatorMethod = estimators.EstimatorMethod.MLE,
-        missing_method: datasets.MissingMethod = datasets.MissingMethod.PW,
-        missing_mechanism: typing.Optional[datasets.MissingMechanism] = None,
-        parallel: builtins.bool = True,
         **kwargs: typing.Any,
     ) -> CatCTBN:
         r"""
@@ -884,16 +884,17 @@ class CatCTBN:
             The graph to fit the model to.
         estimator: EstimatorMethod | None
             The estimator to use for fitting (default is `EstimatorMethod.MLE`).
-        missing_method: MissingMethod | None
-            The method to use for handling missing data (default is `MissingMethod.PW`).
-        missing_mechanism: MissingMechanism | None
-            The missing mechanism to use for handling missing data (default is `None`).
-        parallel: bool
-            The flag to enable parallel fitting (default is `true`).
         **kwargs: dict | None
             Optional keyword arguments:
 
         - `alpha`: The prior of the Bayesian estimator (int, float64).
+        - `missing_method`: The method (`MissingMethod`) used to handle missing
+          data (default is `MissingMethod.PW`).
+        - `missing_mechanism`: The mechanism (`MissingMechanism`) associated to
+          the dataset (default is `None`). It is required by
+          `MissingMethod.IPW` and `MissingMethod.AIPW`, and it must be `None`
+          otherwise.
+        - `parallel`: The flag to enable parallel fitting (default is `true`).
 
         Returns
         -------
@@ -906,8 +907,7 @@ class CatCTBN:
         n: builtins.int,
         max_len: typing.Optional[builtins.int] = None,
         max_time: typing.Optional[builtins.float] = None,
-        seed: builtins.int = 31,
-        parallel: builtins.bool = True,
+        **kwargs: typing.Any,
     ) -> datasets.CatTrjs:
         r"""
         Sample from the model.
@@ -922,10 +922,11 @@ class CatCTBN:
         max_time: float | None
             The maximum time of each trajectory (default is `None`).
             Must be set if `max_len` is `None`.
-        seed: int
-            The seed of the random number generator (default is `31`).
-        parallel: bool
-            The flag to enable parallel sampling (default is `true`).
+        **kwargs: dict | None
+            Optional keyword arguments:
+
+        - `parallel`: The flag to enable parallel sampling (default is `true`).
+        - `seed`: The seed of the random number generator (default is `31`).
 
         Returns
         -------
@@ -1935,9 +1936,6 @@ class GaussBN:
         dataset: datasets.Dataset,
         graph: DiGraph,
         estimator_method: estimators.EstimatorMethod = estimators.EstimatorMethod.BE,
-        missing_method: datasets.MissingMethod = datasets.MissingMethod.PW,
-        missing_mechanism: typing.Optional[datasets.MissingMechanism] = None,
-        parallel: builtins.bool = True,
         **kwargs: typing.Any,
     ) -> GaussBN:
         r"""
@@ -1951,16 +1949,17 @@ class GaussBN:
             The graph to fit the model to.
         estimator: EstimatorMethod | None
             The estimator to use for fitting (default is `EstimatorMethod.BE`).
-        missing_method: MissingMethod | None
-            The method to use for handling missing data (default is `MissingMethod.PW`).
-        missing_mechanism: MissingMechanism | None
-            The missing mechanism to use for handling missing data (default is `None`).
-        parallel: bool
-            The flag to enable parallel fitting (default is `true`).
         **kwargs: dict | None
             Optional keyword arguments:
 
         - `alpha`: The prior of the Bayesian estimator (float64).
+        - `missing_method`: The method (`MissingMethod`) used to handle missing
+          data (default is `MissingMethod.PW`).
+        - `missing_mechanism`: The mechanism (`MissingMechanism`) associated to
+          the dataset (default is `None`). It is required by
+          `MissingMethod.IPW` and `MissingMethod.AIPW`, and it must be `None`
+          otherwise.
+        - `parallel`: The flag to enable parallel fitting (default is `true`).
 
         Returns
         -------
@@ -1968,9 +1967,7 @@ class GaussBN:
             A new fitted model.
         """
 
-    def sample(
-        self, n: builtins.int, seed: builtins.int = 31, parallel: builtins.bool = True
-    ) -> datasets.GaussTable:
+    def sample(self, n: builtins.int, **kwargs: typing.Any) -> datasets.GaussTable:
         r"""
         Generate samples from the model.
 
@@ -1978,10 +1975,11 @@ class GaussBN:
         ----------
         n: int
             The number of samples to generate.
-        seed: int
-            The seed of the random number generator (default is `31`).
-        parallel: bool
-            The flag to enable parallel sampling (default is `true`).
+        **kwargs: dict | None
+            Optional keyword arguments:
+
+        - `parallel`: The flag to enable parallel sampling (default is `true`).
+        - `seed`: The seed of the random number generator (default is `31`).
 
         Returns
         -------
@@ -1995,10 +1993,7 @@ class GaussBN:
         z: typing.Any,
         w: typing.Optional[typing.Any] = None,
         estimator_method: estimators.EstimatorMethod = estimators.EstimatorMethod.BE,
-        missing_method: datasets.MissingMethod = datasets.MissingMethod.PW,
-        missing_mechanism: typing.Optional[datasets.MissingMechanism] = None,
-        seed: builtins.int = 31,
-        parallel: builtins.bool = True,
+        **kwargs: typing.Any,
     ) -> GaussCPD:
         r"""
         Estimate a conditional probability distribution (CPD).
@@ -2013,14 +2008,17 @@ class GaussBN:
             Optional evidence to condition on during inference.
         estimator: EstimatorMethod | None
             The estimator to use for estimation (default is `EstimatorMethod.BE`).
-        missing_method: MissingMethod | None
-            The method to use for handling missing data (default is `MissingMethod.PW`).
-        missing_mechanism: MissingMechanism | None
-            The missing mechanism to use for handling missing data (default is `None`).
-        seed: int
-            The seed of the random number generator (default is `31`).
-        parallel: bool
-            The flag to enable parallel estimation (default is `true`).
+        **kwargs: dict | None
+            Optional keyword arguments:
+
+        - `missing_method`: The method (`MissingMethod`) used to handle missing
+          data (default is `MissingMethod.PW`).
+        - `missing_mechanism`: The mechanism (`MissingMechanism`) associated to
+          the dataset (default is `None`). It is required by
+          `MissingMethod.IPW` and `MissingMethod.AIPW`, and it must be `None`
+          otherwise.
+        - `parallel`: The flag to enable parallel estimation (default is `true`).
+        - `seed`: The seed of the random number generator (default is `31`).
 
         Returns
         -------
@@ -2035,10 +2033,7 @@ class GaussBN:
         z: typing.Any,
         w: typing.Optional[typing.Any] = None,
         estimator_method: estimators.EstimatorMethod = estimators.EstimatorMethod.BE,
-        missing_method: datasets.MissingMethod = datasets.MissingMethod.PW,
-        missing_mechanism: typing.Optional[datasets.MissingMechanism] = None,
-        seed: builtins.int = 31,
-        parallel: builtins.bool = True,
+        **kwargs: typing.Any,
     ) -> typing.Optional[GaussCPD]:
         r"""
         Estimate a conditional population average causal effect (CPACE).
@@ -2055,14 +2050,17 @@ class GaussBN:
             Optional evidence to condition on during inference.
         estimator: EstimatorMethod | None
             The estimator to use for estimation (default is `EstimatorMethod.BE`).
-        missing_method: MissingMethod | None
-            The method to use for handling missing data (default is `MissingMethod.PW`).
-        missing_mechanism: MissingMechanism | None
-            The missing mechanism to use for handling missing data (default is `None`).
-        seed: int
-            The seed of the random number generator (default is `31`).
-        parallel: bool
-            The flag to enable parallel estimation (default is `true`).
+        **kwargs: dict | None
+            Optional keyword arguments:
+
+        - `missing_method`: The method (`MissingMethod`) used to handle missing
+          data (default is `MissingMethod.PW`).
+        - `missing_mechanism`: The mechanism (`MissingMechanism`) associated to
+          the dataset (default is `None`). It is required by
+          `MissingMethod.IPW` and `MissingMethod.AIPW`, and it must be `None`
+          otherwise.
+        - `parallel`: The flag to enable parallel estimation (default is `true`).
+        - `seed`: The seed of the random number generator (default is `31`).
 
         Returns
         -------
@@ -2505,11 +2503,15 @@ class MixedBN:
             A topological ordering of the variables.
         """
 
-    def sample(
-        self, n: builtins.int, seed: builtins.int = 31, parallel: builtins.bool = True
-    ) -> datasets.MixedTable:
+    def sample(self, n: builtins.int, **kwargs: typing.Any) -> datasets.MixedTable:
         r"""
         Generate samples from the model.
+
+        **kwargs: dict | None
+            Optional keyword arguments:
+
+        - `parallel`: The flag to enable parallel sampling (default is `true`).
+        - `seed`: The seed of the random number generator (default is `31`).
         """
 
     @classmethod

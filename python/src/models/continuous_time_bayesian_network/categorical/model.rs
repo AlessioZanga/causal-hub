@@ -4,7 +4,7 @@ use std::{
 };
 
 use backend::{
-    datasets::CatTrjs,
+    datasets::{CatTrjs, MissingMethod},
     estimators::{BE, MLE},
     io::JsonIO,
     models::{CTBN, CatCTBN, DiGraph, HasLabels},
@@ -176,16 +176,17 @@ impl PyCatCTBN {
     ///     The graph to fit the model to.
     /// estimator: EstimatorMethod | None
     ///     The estimator to use for fitting (default is `EstimatorMethod.MLE`).
-    /// missing_method: MissingMethod | None
-    ///     The method to use for handling missing data (default is `MissingMethod.PW`).
-    /// missing_mechanism: MissingMechanism | None
-    ///     The missing mechanism to use for handling missing data (default is `None`).
-    /// parallel: bool
-    ///     The flag to enable parallel fitting (default is `true`).
     /// **kwargs: dict | None
     ///     Optional keyword arguments:
     ///
     /// - `alpha`: The prior of the Bayesian estimator (int, float64).
+    /// - `missing_method`: The method (`MissingMethod`) used to handle missing
+    ///   data (default is `MissingMethod.PW`).
+    /// - `missing_mechanism`: The mechanism (`MissingMechanism`) associated to
+    ///   the dataset (default is `None`). It is required by
+    ///   `MissingMethod.IPW` and `MissingMethod.AIPW`, and it must be `None`
+    ///   otherwise.
+    /// - `parallel`: The flag to enable parallel fitting (default is `true`).
     ///
     /// Returns
     /// -------
@@ -197,39 +198,49 @@ impl PyCatCTBN {
         dataset,
         graph,
         estimator_method = PyEstimatorMethod::MLE,
-        missing_method = PyMissingMethod::PW,
-        missing_mechanism = None,
-        parallel = true,
         **kwargs
     ))]
-    #[allow(clippy::too_many_arguments)]
     pub fn fit(
         _cls: &Bound<'_, PyType>,
         py: Python<'_>,
         dataset: &Bound<'_, PyCatTrjs>,
         graph: &Bound<'_, PyDiGraph>,
         estimator_method: PyEstimatorMethod,
-        missing_method: PyMissingMethod,
-        missing_mechanism: Option<PyMissingMechanism>,
-        parallel: bool,
         kwargs: Option<&Bound<'_, PyDict>>,
     ) -> PyResult<Self> {
         // Get the dataset and the graph.
         let dataset: CatTrjs = dataset.extract::<PyCatTrjs>()?.into();
         let graph: DiGraph = graph.extract::<PyDiGraph>()?.into();
-        // Get the prior `alpha` from the keyword arguments, if any.
+
+        // Get the alpha prior from the keyword arguments, if any.
         let alpha = kwarg!(kwargs, "alpha", (usize, f64))?;
+
+        // Get the missing data handling method from the keyword arguments, or default to the PW
+        // missing data handling method.
+        let missing_method: MissingMethod = kwarg!(
+            kwargs,
+            "missing_method",
+            PyMissingMethod,
+            PyMissingMethod::PW
+        )?
+        .into();
+
+        // Get the missing data mechanism from the keyword arguments, if any.
+        let missing_mechanism: Option<PyMissingMechanism> =
+            kwarg!(kwargs, "missing_mechanism", PyMissingMechanism)?;
+
+        // Get the parallel flag from the keyword arguments, or default to parallel execution.
+        let parallel = kwarg!(kwargs, "parallel", bool, true)?;
         // Reject any unknown keyword arguments.
         crate::utils::ensure_kwargs_consumed(kwargs)?;
 
-        // Get the estimator method.
         // Initialize the estimator.
         let estimator: Box<dyn PyCTBNEstimator<CatCTBN>> = match estimator_method {
             // Initialize the maximum likelihood estimator.
             PyEstimatorMethod::MLE => Box::new(
                 MLE::new(&dataset)
                     .with_missing_method(
-                        Some(missing_method.into()),
+                        Some(missing_method),
                         missing_mechanism.as_ref().map(|m| (*m.lock()).clone()),
                     )
                     .map_err(to_pyerr)?,
@@ -239,7 +250,7 @@ impl PyCatCTBN {
                 // Initialize the Bayesian estimator.
                 let estimator = BE::new(&dataset)
                     .with_missing_method(
-                        Some(missing_method.into()),
+                        Some(missing_method),
                         missing_mechanism.as_ref().map(|m| (*m.lock()).clone()),
                     )
                     .map_err(to_pyerr)?;
@@ -275,10 +286,11 @@ impl PyCatCTBN {
     /// max_time: float | None
     ///     The maximum time of each trajectory (default is `None`).
     ///     Must be set if `max_len` is `None`.
-    /// seed: int
-    ///     The seed of the random number generator (default is `31`).
-    /// parallel: bool
-    ///     The flag to enable parallel sampling (default is `true`).
+    /// **kwargs: dict | None
+    ///     Optional keyword arguments:
+    ///
+    /// - `parallel`: The flag to enable parallel sampling (default is `true`).
+    /// - `seed`: The seed of the random number generator (default is `31`).
     ///
     /// Returns
     /// -------
@@ -289,8 +301,7 @@ impl PyCatCTBN {
         n,
         max_len = None,
         max_time = None,
-        seed = 31,
-        parallel = true,
+        **kwargs
     ))]
     pub fn sample(
         &self,
@@ -298,8 +309,7 @@ impl PyCatCTBN {
         n: usize,
         max_len: Option<usize>,
         max_time: Option<f64>,
-        seed: u64,
-        parallel: bool,
+        kwargs: Option<&Bound<'_, PyDict>>,
     ) -> PyResult<PyCatTrjs> {
         // Check at least one of max_len or max_time is set.
         if max_len.is_none() && max_time.is_none() {
@@ -307,6 +317,14 @@ impl PyCatCTBN {
                 "At least one of 'max_len' or 'max_time' must be set.",
             ));
         }
+        // Get the parallel flag from the keyword arguments, or default to parallel execution.
+        let parallel = kwarg!(kwargs, "parallel", bool, true)?;
+
+        // Get the seed from the keyword arguments, or default to `31`.
+        let seed = kwarg!(kwargs, "seed", u64, 31)?;
+        // Reject any unknown keyword arguments.
+        crate::utils::ensure_kwargs_consumed(kwargs)?;
+
         // Initialize the random number generator.
         let mut rng = Xoshiro256PlusPlus::seed_from_u64(seed);
         // Get a lock on the inner field.

@@ -83,7 +83,6 @@ class ScorerMethod(enum.Enum):
 def cthc(
     trajectories: datasets.CatTrjs,
     scorer_method: ScorerMethod = ScorerMethod.BIC,
-    parallel: builtins.bool = True,
     **kwargs: typing.Any,
 ) -> models.CatCTBN:
     r"""
@@ -102,17 +101,12 @@ def cthc(
     scorer_method: ScorerMethod | None
         The scoring criterion to maximize, one of `ScorerMethod.{LL, AIC,
         AICC, BIC, BICC, HQC}` (default is `ScorerMethod.BIC`).
-    parallel: bool
-        Whether to run the algorithm in parallel (default is `True`).
     **kwargs: dict | None
         Optional keyword arguments:
 
     - `estimator_method`: The parameter estimator used to fit the local
       models, either `EstimatorMethod.MLE` or `EstimatorMethod.BE`
       (default is `EstimatorMethod.BE`).
-    - `prior_knowledge`: The prior knowledge (`PK`) constraining the search,
-      e.g., forbidden and required edges or temporal tiers
-      (default is `None`).
     - `initial_graph`: The initial graph (`DiGraph`) to start the search
       from (default is an empty graph). Its labels must match the
       trajectories.
@@ -124,6 +118,10 @@ def cthc(
       associated to the trajectories (default is `None`). It is required by
       `MissingMethod.IPW` and `MissingMethod.AIPW`, and it must be `None`
       otherwise.
+    - `parallel`: Whether to run the algorithm in parallel (default is `True`).
+    - `prior_knowledge`: The prior knowledge (`PK`) constraining the search,
+      e.g., forbidden and required edges or temporal tiers
+      (default is `None`).
 
     Returns
     -------
@@ -135,7 +133,6 @@ def ctpc(
     trajectories: datasets.CatTrjs,
     f_test: builtins.float = 0.01,
     c_test: builtins.float = 0.01,
-    parallel: builtins.bool = True,
     **kwargs: typing.Any,
 ) -> models.CatCTBN:
     r"""
@@ -157,17 +154,12 @@ def ctpc(
     c_test: float | None
         The significance level of the chi-squared test for the initial
         distributions (default is `0.01`). It must be in `[0, 1]`.
-    parallel: bool
-        Whether to run the algorithm in parallel (default is `True`).
     **kwargs: dict | None
         Optional keyword arguments:
 
     - `estimator_method`: The parameter estimator used to fit the local
       models, either `EstimatorMethod.MLE` or `EstimatorMethod.BE`
       (default is `EstimatorMethod.BE`).
-    - `prior_knowledge`: The prior knowledge (`PK`) constraining the search,
-      e.g., forbidden and required edges or temporal tiers
-      (default is `None`).
     - `initial_graph`: The initial graph (`DiGraph`) to start the search
       from (default is a complete graph). Its labels must match the
       trajectories.
@@ -177,6 +169,10 @@ def ctpc(
       associated to the trajectories (default is `None`). It is required by
       `MissingMethod.IPW` and `MissingMethod.AIPW`, and it must be `None`
       otherwise.
+    - `parallel`: Whether to run the algorithm in parallel (default is `True`).
+    - `prior_knowledge`: The prior knowledge (`PK`) constraining the search,
+      e.g., forbidden and required edges or temporal tiers
+      (default is `None`).
 
     Returns
     -------
@@ -188,16 +184,20 @@ def em(
     evidence: datasets.CatTrjsEv,
     graph: models.DiGraph,
     max_iter: builtins.int = 10,
-    seed: builtins.int = 42,
+    **kwargs: typing.Any,
 ) -> dict:
     r"""
     A function to perform parameter learning using the Expectation Maximization (EM) algorithm.
+
+    **kwargs: dict | None
+        Optional keyword arguments:
+
+    - `seed`: The seed of the random number generator (default is `42`).
     """
 
 def hc(
     dataset: datasets.Dataset,
     scorer_method: ScorerMethod = ScorerMethod.BIC,
-    parallel: builtins.bool = True,
     **kwargs: typing.Any,
 ) -> typing.Union[models.CatBN, models.GaussBN]:
     r"""
@@ -215,17 +215,12 @@ def hc(
     scorer_method: ScorerMethod | None
         The scoring criterion to maximize, one of `ScorerMethod.{LL, AIC,
         AICC, BIC, BICC, HQC}` (default is `ScorerMethod.BIC`).
-    parallel: bool
-        Whether to run the algorithm in parallel (default is `True`).
     **kwargs: dict | None
         Optional keyword arguments:
 
     - `estimator_method`: The parameter estimator used to fit the local
       models, either `EstimatorMethod.MLE` or `EstimatorMethod.BE`
       (default is `EstimatorMethod.BE`).
-    - `prior_knowledge`: The prior knowledge (`PK`) constraining the search,
-      e.g., forbidden and required edges or temporal tiers
-      (default is `None`).
     - `initial_graph`: The initial graph (`DiGraph`) to start the search
       from (default is an empty graph). Its labels must match the dataset.
     - `max_parents`: The maximum number of parents for each vertex
@@ -238,6 +233,10 @@ def hc(
       associated to the dataset (default is `None`). It is required by
       `MissingMethod.IPW` and `MissingMethod.AIPW`, and it must be `None`
       otherwise.
+    - `parallel`: Whether to run the algorithm in parallel (default is `True`).
+    - `prior_knowledge`: The prior knowledge (`PK`) constraining the search,
+      e.g., forbidden and required edges or temporal tiers
+      (default is `None`).
 
     Returns
     -------
@@ -250,15 +249,16 @@ def sem(
     evidence: datasets.CatTrjsEv,
     algorithm: builtins.str,
     max_iter: builtins.int = 10,
-    seed: builtins.int = 42,
     f_test: builtins.float = 0.01,
     c_test: builtins.float = 0.01,
-    parallel: builtins.bool = True,
     **kwargs: typing.Any,
 ) -> dict:
     r"""
     A function to perform structure learning using the Structural Expectation Maximization (SEM) algorithm.
 
-    parallel: bool
-        Whether to run the algorithm in parallel (default is `True`).
+    **kwargs: dict | None
+        Optional keyword arguments:
+
+    - `parallel`: Whether to run the algorithm in parallel (default is `True`).
+    - `seed`: The seed of the random number generator (default is `42`).
     """

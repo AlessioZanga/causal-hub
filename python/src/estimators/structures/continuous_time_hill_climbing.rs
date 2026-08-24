@@ -1,5 +1,5 @@
 use backend::{
-    datasets::{CatTrjs, MissingMechanism, MissingMethod},
+    datasets::CatTrjs,
     estimators::{CTHC, PK},
     models::{CatCTBN, DiGraph},
     types::Cache,
@@ -31,17 +31,12 @@ use crate::{
 /// scorer_method: ScorerMethod | None
 ///     The scoring criterion to maximize, one of `ScorerMethod.{LL, AIC,
 ///     AICC, BIC, BICC, HQC}` (default is `ScorerMethod.BIC`).
-/// parallel: bool
-///     Whether to run the algorithm in parallel (default is `True`).
 /// **kwargs: dict | None
 ///     Optional keyword arguments:
 ///
 /// - `estimator_method`: The parameter estimator used to fit the local
 ///   models, either `EstimatorMethod.MLE` or `EstimatorMethod.BE`
 ///   (default is `EstimatorMethod.BE`).
-/// - `prior_knowledge`: The prior knowledge (`PK`) constraining the search,
-///   e.g., forbidden and required edges or temporal tiers
-///   (default is `None`).
 /// - `initial_graph`: The initial graph (`DiGraph`) to start the search
 ///   from (default is an empty graph). Its labels must match the
 ///   trajectories.
@@ -53,6 +48,10 @@ use crate::{
 ///   associated to the trajectories (default is `None`). It is required by
 ///   `MissingMethod.IPW` and `MissingMethod.AIPW`, and it must be `None`
 ///   otherwise.
+/// - `parallel`: Whether to run the algorithm in parallel (default is `True`).
+/// - `prior_knowledge`: The prior knowledge (`PK`) constraining the search,
+///   e.g., forbidden and required edges or temporal tiers
+///   (default is `None`).
 ///
 /// Returns
 /// -------
@@ -61,12 +60,11 @@ use crate::{
 ///
 #[gen_stub_pyfunction(module = "causal_hub.estimators")]
 #[pyfunction]
-#[pyo3(signature = (trajectories, scorer_method = PyScorerMethod::BIC, parallel = true, **kwargs))]
+#[pyo3(signature = (trajectories, scorer_method = PyScorerMethod::BIC, **kwargs))]
 pub fn cthc(
     py: Python<'_>,
     trajectories: &Bound<'_, PyCatTrjs>,
     scorer_method: PyScorerMethod,
-    parallel: bool,
     kwargs: Option<&Bound<'_, PyDict>>,
 ) -> PyResult<PyCatCTBN> {
     // Get the trajectories.
@@ -75,31 +73,41 @@ pub fn cthc(
     let trajectories: &CatTrjs = &trajectories.lock();
 
     // Get the estimator method from the keyword arguments, if any.
-    let estimator_method: Option<_> = kwarg!(kwargs, "estimator_method", PyEstimatorMethod)?;
-    // Default to the BE estimator.
-    let estimator_method = estimator_method.unwrap_or(PyEstimatorMethod::BE);
-    // Get the maximum number of parents from the keyword arguments, if any.
-    let max_parents = kwarg!(kwargs, "max_parents", usize)?;
-    // Get the prior knowledge from the keyword arguments, if any.
-    let prior_knowledge: Option<PyPK> = kwarg!(kwargs, "prior_knowledge", PyPK)?;
-    // Lock the prior knowledge, if any.
-    let prior_knowledge_locks = prior_knowledge.as_ref().map(|x| x.lock());
-    // Get the reference to the prior knowledge, if any.
-    let prior_knowledge: Option<&PK> = prior_knowledge_locks.as_deref();
+    // Get the estimator method from the keyword arguments, or default to the BE estimator.
+    let estimator_method = kwarg!(
+        kwargs,
+        "estimator_method",
+        PyEstimatorMethod,
+        PyEstimatorMethod::BE
+    )?;
+
     // Get the initial graph from the keyword arguments, if any.
     let initial_graph: Option<PyDiGraph> = kwarg!(kwargs, "initial_graph", PyDiGraph)?;
     // Lock the initial graph, if any.
     let initial_graph_locks = initial_graph.as_ref().map(|x| x.lock());
     // Get the reference to the initial graph, if any.
     let initial_graph: Option<&DiGraph> = initial_graph_locks.as_deref();
+
+    // Get the maximum number of parents from the keyword arguments, if any.
+    let max_parents = kwarg!(kwargs, "max_parents", usize)?;
+
     // Get the missing data handling method from the keyword arguments, if any.
-    let missing_method: Option<PyMissingMethod> =
-        kwarg!(kwargs, "missing_method", PyMissingMethod)?;
-    let missing_method: Option<MissingMethod> = missing_method.map(Into::into);
+    let missing_method = kwarg!(kwargs, "missing_method", PyMissingMethod)?.map(Into::into);
+
     // Get the missing data mechanism from the keyword arguments, if any.
-    let missing_mechanism: Option<PyMissingMechanism> =
-        kwarg!(kwargs, "missing_mechanism", PyMissingMechanism)?;
-    let missing_mechanism: Option<MissingMechanism> = missing_mechanism.map(Into::into);
+    let missing_mechanism =
+        kwarg!(kwargs, "missing_mechanism", PyMissingMechanism)?.map(Into::into);
+
+    // Get the parallel flag from the keyword arguments, or default to parallel execution.
+    let parallel = kwarg!(kwargs, "parallel", bool, true)?;
+
+    // Get the prior knowledge from the keyword arguments, if any.
+    let prior_knowledge: Option<PyPK> = kwarg!(kwargs, "prior_knowledge", PyPK)?;
+    // Lock the prior knowledge, if any.
+    let prior_knowledge_locks = prior_knowledge.as_ref().map(|x| x.lock());
+    // Get the reference to the prior knowledge, if any.
+    let prior_knowledge: Option<&PK> = prior_knowledge_locks.as_deref();
+
     // Reject any unknown keyword arguments.
     crate::utils::ensure_kwargs_consumed(kwargs)?;
 

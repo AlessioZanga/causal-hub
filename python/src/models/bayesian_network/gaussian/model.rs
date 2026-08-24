@@ -4,7 +4,7 @@ use std::{
 };
 
 use backend::{
-    datasets::{GaussIncTable, GaussTable},
+    datasets::{GaussIncTable, GaussTable, MissingMethod},
     estimators::{BE, CPDEstimator, MLE, ParCPDEstimator},
     inference::{
         ApproximateInference, BNCausalInference, BNInference, CausalInference,
@@ -226,16 +226,17 @@ impl PyGaussBN {
     ///     The graph to fit the model to.
     /// estimator: EstimatorMethod | None
     ///     The estimator to use for fitting (default is `EstimatorMethod.BE`).
-    /// missing_method: MissingMethod | None
-    ///     The method to use for handling missing data (default is `MissingMethod.PW`).
-    /// missing_mechanism: MissingMechanism | None
-    ///     The missing mechanism to use for handling missing data (default is `None`).
-    /// parallel: bool
-    ///     The flag to enable parallel fitting (default is `true`).
     /// **kwargs: dict | None
     ///     Optional keyword arguments:
     ///
     /// - `alpha`: The prior of the Bayesian estimator (float64).
+    /// - `missing_method`: The method (`MissingMethod`) used to handle missing
+    ///   data (default is `MissingMethod.PW`).
+    /// - `missing_mechanism`: The mechanism (`MissingMechanism`) associated to
+    ///   the dataset (default is `None`). It is required by
+    ///   `MissingMethod.IPW` and `MissingMethod.AIPW`, and it must be `None`
+    ///   otherwise.
+    /// - `parallel`: The flag to enable parallel fitting (default is `true`).
     ///
     /// Returns
     /// -------
@@ -247,35 +248,47 @@ impl PyGaussBN {
         dataset,
         graph,
         estimator_method = PyEstimatorMethod::BE,
-        missing_method = PyMissingMethod::PW,
-        missing_mechanism = None,
-        parallel = true,
         **kwargs
     ))]
-    #[allow(clippy::too_many_arguments)]
     pub fn fit(
         _cls: &Bound<'_, PyType>,
         py: Python<'_>,
         dataset: PyDataset,
         graph: &Bound<'_, PyDiGraph>,
         estimator_method: PyEstimatorMethod,
-        missing_method: PyMissingMethod,
-        missing_mechanism: Option<PyMissingMechanism>,
-        parallel: bool,
         kwargs: Option<&Bound<'_, PyDict>>,
     ) -> PyResult<Self> {
         // Get the graph.
         let graph: DiGraph = graph.extract::<PyDiGraph>()?.into();
+
+        // Get the alpha prior from the keyword arguments, if any.
+        let alpha = kwarg!(kwargs, "alpha", f64)?;
+
+        // Get the missing data handling method from the keyword arguments, or default to the PW
+        // missing data handling method.
+        let missing_method: MissingMethod = kwarg!(
+            kwargs,
+            "missing_method",
+            PyMissingMethod,
+            PyMissingMethod::PW
+        )?
+        .into();
+
+        // Get the missing data mechanism from the keyword arguments, if any.
+        let missing_mechanism: Option<PyMissingMechanism> =
+            kwarg!(kwargs, "missing_mechanism", PyMissingMechanism)?;
+
+        // Get the parallel flag from the keyword arguments, or default to parallel execution.
+        let parallel = kwarg!(kwargs, "parallel", bool, true)?;
+
+        // Reject any unknown keyword arguments.
+        crate::utils::ensure_kwargs_consumed(kwargs)?;
 
         // Macro to fit the model.
         macro_rules! fit {
             ($type: ty, $dataset: expr) => {{
                 // Get the dataset.
                 let dataset: $type = $dataset.into();
-                // Get the prior `alpha` from the keyword arguments, if any.
-                let alpha = kwarg!(kwargs, "alpha", f64)?;
-                // Reject any unknown keyword arguments.
-                crate::utils::ensure_kwargs_consumed(kwargs)?;
 
                 // Initialize the estimator.
                 let estimator: Box<dyn PyBNEstimator<GaussBN>> = match estimator_method {
@@ -283,7 +296,7 @@ impl PyGaussBN {
                     PyEstimatorMethod::MLE => Box::new(
                         MLE::new(&dataset)
                             .with_missing_method(
-                                Some(missing_method.into()),
+                                Some(missing_method),
                                 missing_mechanism.as_ref().map(|m| (*m.lock()).clone()),
                             )
                             .map_err(to_pyerr)?,
@@ -293,7 +306,7 @@ impl PyGaussBN {
                         // Initialize the Bayesian estimator.
                         let estimator = BE::new(&dataset)
                             .with_missing_method(
-                                Some(missing_method.into()),
+                                Some(missing_method),
                                 missing_mechanism.as_ref().map(|m| (*m.lock()).clone()),
                             )
                             .map_err(to_pyerr)?;
@@ -334,10 +347,11 @@ impl PyGaussBN {
     /// ----------
     /// n: int
     ///     The number of samples to generate.
-    /// seed: int
-    ///     The seed of the random number generator (default is `31`).
-    /// parallel: bool
-    ///     The flag to enable parallel sampling (default is `true`).
+    /// **kwargs: dict | None
+    ///     Optional keyword arguments:
+    ///
+    /// - `parallel`: The flag to enable parallel sampling (default is `true`).
+    /// - `seed`: The seed of the random number generator (default is `31`).
     ///
     /// Returns
     /// -------
@@ -346,16 +360,23 @@ impl PyGaussBN {
     ///
     #[pyo3(signature = (
         n,
-        seed = 31,
-        parallel = true
+        **kwargs
     ))]
     pub fn sample(
         &self,
         py: Python<'_>,
         n: usize,
-        seed: u64,
-        parallel: bool,
+        kwargs: Option<&Bound<'_, PyDict>>,
     ) -> PyResult<PyGaussTable> {
+        // Get the parallel flag from the keyword arguments, or default to parallel execution.
+        let parallel = kwarg!(kwargs, "parallel", bool, true)?;
+
+        // Get the seed from the keyword arguments, or default to `31`.
+        let seed = kwarg!(kwargs, "seed", u64, 31)?;
+
+        // Reject any unknown keyword arguments.
+        crate::utils::ensure_kwargs_consumed(kwargs)?;
+
         // Initialize the random number generator.
         let mut rng = Xoshiro256PlusPlus::seed_from_u64(seed);
         // Get a lock on the inner field.
@@ -387,14 +408,17 @@ impl PyGaussBN {
     ///     Optional evidence to condition on during inference.
     /// estimator: EstimatorMethod | None
     ///     The estimator to use for estimation (default is `EstimatorMethod.BE`).
-    /// missing_method: MissingMethod | None
-    ///     The method to use for handling missing data (default is `MissingMethod.PW`).
-    /// missing_mechanism: MissingMechanism | None
-    ///     The missing mechanism to use for handling missing data (default is `None`).
-    /// seed: int
-    ///     The seed of the random number generator (default is `31`).
-    /// parallel: bool
-    ///     The flag to enable parallel estimation (default is `true`).
+    /// **kwargs: dict | None
+    ///     Optional keyword arguments:
+    ///
+    /// - `missing_method`: The method (`MissingMethod`) used to handle missing
+    ///   data (default is `MissingMethod.PW`).
+    /// - `missing_mechanism`: The mechanism (`MissingMechanism`) associated to
+    ///   the dataset (default is `None`). It is required by
+    ///   `MissingMethod.IPW` and `MissingMethod.AIPW`, and it must be `None`
+    ///   otherwise.
+    /// - `parallel`: The flag to enable parallel estimation (default is `true`).
+    /// - `seed`: The seed of the random number generator (default is `31`).
     ///
     /// Returns
     /// -------
@@ -406,12 +430,8 @@ impl PyGaussBN {
         z,
         w = None,
         estimator_method = PyEstimatorMethod::BE,
-        missing_method = PyMissingMethod::PW,
-        missing_mechanism = None,
-        seed = 31,
-        parallel = true
+        **kwargs
     ))]
-    #[allow(clippy::too_many_arguments)]
     pub fn estimate(
         &self,
         py: Python<'_>,
@@ -419,10 +439,7 @@ impl PyGaussBN {
         z: &Bound<'_, PyAny>,
         w: Option<&Bound<'_, PyAny>>,
         estimator_method: PyEstimatorMethod,
-        missing_method: PyMissingMethod,
-        missing_mechanism: Option<PyMissingMechanism>,
-        seed: u64,
-        parallel: bool,
+        kwargs: Option<&Bound<'_, PyDict>>,
     ) -> PyResult<PyGaussCPD> {
         // Get a lock on the inner field.
         let lock = self.lock();
@@ -433,6 +450,29 @@ impl PyGaussBN {
         let w = w
             .map(|w| PyGaussEv::from_any(w, lock.labels()).map(Into::into))
             .transpose()?;
+        // Get the missing data handling method from the keyword arguments, or default to the PW
+        // missing data handling method.
+        let missing_method: MissingMethod = kwarg!(
+            kwargs,
+            "missing_method",
+            PyMissingMethod,
+            PyMissingMethod::PW
+        )?
+        .into();
+
+        // Get the missing data mechanism from the keyword arguments, if any.
+        let missing_mechanism: Option<PyMissingMechanism> =
+            kwarg!(kwargs, "missing_mechanism", PyMissingMechanism)?;
+
+        // Get the parallel flag from the keyword arguments, or default to parallel execution.
+        let parallel = kwarg!(kwargs, "parallel", bool, true)?;
+
+        // Get the seed from the keyword arguments, or default to `31`.
+        let seed = kwarg!(kwargs, "seed", u64, 31)?;
+
+        // Reject any unknown keyword arguments.
+        crate::utils::ensure_kwargs_consumed(kwargs)?;
+
         // Initialize the random number generator.
         let mut rng = Xoshiro256PlusPlus::seed_from_u64(seed);
         // Initialize the inference engine.
@@ -449,7 +489,7 @@ impl PyGaussBN {
                             .with_estimator(|d, x, z| {
                                 MLE::new(d)
                                     .with_missing_method(
-                                        Some(missing_method.into()),
+                                        Some(missing_method),
                                         missing_mechanism.as_ref().map(|m| (*m.lock()).clone()),
                                     )?
                                     .par_fit(x, z)
@@ -462,7 +502,7 @@ impl PyGaussBN {
                         .with_estimator(|d, x, z| {
                             MLE::new(d)
                                 .with_missing_method(
-                                    Some(missing_method.into()),
+                                    Some(missing_method),
                                     missing_mechanism.as_ref().map(|m| (*m.lock()).clone()),
                                 )?
                                 .fit(x, z)
@@ -480,7 +520,7 @@ impl PyGaussBN {
                             .with_estimator(|d, x, z| {
                                 BE::new(d)
                                     .with_missing_method(
-                                        Some(missing_method.into()),
+                                        Some(missing_method),
                                         missing_mechanism.as_ref().map(|m| (*m.lock()).clone()),
                                     )?
                                     .par_fit(x, z)
@@ -493,7 +533,7 @@ impl PyGaussBN {
                         .with_estimator(|d, x, z| {
                             BE::new(d)
                                 .with_missing_method(
-                                    Some(missing_method.into()),
+                                    Some(missing_method),
                                     missing_mechanism.as_ref().map(|m| (*m.lock()).clone()),
                                 )?
                                 .fit(x, z)
@@ -520,32 +560,34 @@ impl PyGaussBN {
     ///     Optional evidence to condition on during inference.
     /// estimator: EstimatorMethod | None
     ///     The estimator to use for estimation (default is `EstimatorMethod.BE`).
-    /// missing_method: MissingMethod | None
-    ///     The method to use for handling missing data (default is `MissingMethod.PW`).
-    /// missing_mechanism: MissingMechanism | None
-    ///     The missing mechanism to use for handling missing data (default is `None`).
-    /// seed: int
-    ///     The seed of the random number generator (default is `31`).
-    /// parallel: bool
-    ///     The flag to enable parallel estimation (default is `true`).
+    /// **kwargs: dict | None
+    ///     Optional keyword arguments:
+    ///
+    /// - `missing_method`: The method (`MissingMethod`) used to handle missing
+    ///   data (default is `MissingMethod.PW`).
+    /// - `missing_mechanism`: The mechanism (`MissingMechanism`) associated to
+    ///   the dataset (default is `None`). It is required by
+    ///   `MissingMethod.IPW` and `MissingMethod.AIPW`, and it must be `None`
+    ///   otherwise.
+    /// - `parallel`: The flag to enable parallel estimation (default is `true`).
+    /// - `seed`: The seed of the random number generator (default is `31`).
     ///
     /// Returns
     /// -------
     /// GaussCPD | None
     ///     A new conditional population average causal effect (CPACE) distribution, if identifiable.
     ///
-    #[allow(clippy::too_many_arguments)]
     #[pyo3(signature = (
         x,
         y,
         z,
         w = None,
         estimator_method = PyEstimatorMethod::BE,
-        missing_method = PyMissingMethod::PW,
-        missing_mechanism = None,
-        seed = 31,
-        parallel = true
+        **kwargs
     ))]
+    // NOTE: `x`, `y`, `z`, `w` and `estimator_method` are part of the public API,
+    // hence `do_estimate` cannot fit within the argument limit.
+    #[allow(clippy::too_many_arguments)]
     pub fn do_estimate(
         &self,
         py: Python<'_>,
@@ -554,10 +596,7 @@ impl PyGaussBN {
         z: &Bound<'_, PyAny>,
         w: Option<&Bound<'_, PyAny>>,
         estimator_method: PyEstimatorMethod,
-        missing_method: PyMissingMethod,
-        missing_mechanism: Option<PyMissingMechanism>,
-        seed: u64,
-        parallel: bool,
+        kwargs: Option<&Bound<'_, PyDict>>,
     ) -> PyResult<Option<PyGaussCPD>> {
         // Get a lock on the inner field.
         let lock = self.lock();
@@ -569,6 +608,29 @@ impl PyGaussBN {
         let w = w
             .map(|w| PyGaussEv::from_any(w, lock.labels()).map(Into::into))
             .transpose()?;
+        // Get the missing data handling method from the keyword arguments, or default to the PW
+        // missing data handling method.
+        let missing_method: MissingMethod = kwarg!(
+            kwargs,
+            "missing_method",
+            PyMissingMethod,
+            PyMissingMethod::PW
+        )?
+        .into();
+
+        // Get the missing data mechanism from the keyword arguments, if any.
+        let missing_mechanism: Option<PyMissingMechanism> =
+            kwarg!(kwargs, "missing_mechanism", PyMissingMechanism)?;
+
+        // Get the parallel flag from the keyword arguments, or default to parallel execution.
+        let parallel = kwarg!(kwargs, "parallel", bool, true)?;
+
+        // Get the seed from the keyword arguments, or default to `31`.
+        let seed = kwarg!(kwargs, "seed", u64, 31)?;
+
+        // Reject any unknown keyword arguments.
+        crate::utils::ensure_kwargs_consumed(kwargs)?;
+
         // Initialize the random number generator.
         let mut rng = Xoshiro256PlusPlus::seed_from_u64(seed);
         // Initialize the inference engine.
@@ -584,7 +646,7 @@ impl PyGaussBN {
                         let engine = engine.with_estimator(|d, x, z| {
                             MLE::new(d)
                                 .with_missing_method(
-                                    Some(missing_method.into()),
+                                    Some(missing_method),
                                     missing_mechanism.as_ref().map(|m| (*m.lock()).clone()),
                                 )?
                                 .par_fit(x, z)
@@ -596,7 +658,7 @@ impl PyGaussBN {
                     let engine = engine.with_estimator(|d, x, z| {
                         MLE::new(d)
                             .with_missing_method(
-                                Some(missing_method.into()),
+                                Some(missing_method),
                                 missing_mechanism.as_ref().map(|m| (*m.lock()).clone()),
                             )?
                             .fit(x, z)
@@ -613,7 +675,7 @@ impl PyGaussBN {
                         let engine = engine.with_estimator(|d, x, z| {
                             BE::new(d)
                                 .with_missing_method(
-                                    Some(missing_method.into()),
+                                    Some(missing_method),
                                     missing_mechanism.as_ref().map(|m| (*m.lock()).clone()),
                                 )?
                                 .par_fit(x, z)
@@ -625,7 +687,7 @@ impl PyGaussBN {
                     let engine = engine.with_estimator(|d, x, z| {
                         BE::new(d)
                             .with_missing_method(
-                                Some(missing_method.into()),
+                                Some(missing_method),
                                 missing_mechanism.as_ref().map(|m| (*m.lock()).clone()),
                             )?
                             .fit(x, z)

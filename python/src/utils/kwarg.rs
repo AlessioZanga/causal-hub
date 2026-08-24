@@ -10,6 +10,12 @@ use pyo3::{exceptions::PyTypeError, prelude::*, types::PyDict};
 /// Consumed keys are removed from the dictionary, so that any leftover key
 /// can be rejected as unknown (see [`ensure_kwargs_consumed`]).
 ///
+/// The three-argument form evaluates to `PyResult<Option<T>>`, returning
+/// `None` when the keyword argument is absent or explicitly `None`.
+///
+/// The four-argument form evaluates to `PyResult<T>`, falling back to the
+/// given default when the keyword argument is absent or explicitly `None`.
+///
 #[macro_export]
 macro_rules! kwarg {
     ($kwargs:ident, $key:expr, $type:ty) => {
@@ -27,6 +33,13 @@ macro_rules! kwarg {
                     .map_err(::pyo3::PyErr::from)
             }
         }
+    };
+    ($kwargs:ident, $key:expr, $type:ty, $default:expr) => {
+        // Fall back to the default when the keyword argument is not present
+        // or is explicitly `None`.
+        ::core::result::Result::map($crate::kwarg!($kwargs, $key, $type), |value| {
+            value.unwrap_or($default)
+        })
     };
 }
 

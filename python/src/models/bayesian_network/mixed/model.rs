@@ -8,7 +8,10 @@ use backend::{
     models::{BN, DiGraph, HasLabels, MixedBN},
     samplers::{BNSampler, ForwardSampler, ParBNSampler},
 };
-use pyo3::{prelude::*, types::PyType};
+use pyo3::{
+    prelude::*,
+    types::{PyDict, PyType},
+};
 use pyo3_stub_gen::derive::*;
 use rand::SeedableRng;
 use rand_xoshiro::Xoshiro256PlusPlus;
@@ -16,7 +19,7 @@ use rand_xoshiro::Xoshiro256PlusPlus;
 use crate::{
     datasets::PyMixedTable,
     error::to_pyerr,
-    impl_from_into_lock, indices_from,
+    impl_from_into_lock, indices_from, kwarg,
     models::{PyDiGraph, PyMixedCPD},
 };
 
@@ -139,14 +142,28 @@ impl PyMixedBN {
 
     /// Generate samples from the model.
     ///
-    #[pyo3(signature = (n, seed = 31, parallel = true))]
+    /// **kwargs: dict | None
+    ///     Optional keyword arguments:
+    ///
+    /// - `parallel`: The flag to enable parallel sampling (default is `true`).
+    /// - `seed`: The seed of the random number generator (default is `31`).
+    ///
+    #[pyo3(signature = (n, **kwargs))]
     pub fn sample(
         &self,
         py: Python<'_>,
         n: usize,
-        seed: u64,
-        parallel: bool,
+        kwargs: Option<&Bound<'_, PyDict>>,
     ) -> PyResult<PyMixedTable> {
+        // Get the parallel flag from the keyword arguments, or default to parallel execution.
+        let parallel = kwarg!(kwargs, "parallel", bool, true)?;
+
+        // Get the seed from the keyword arguments, or default to `31`.
+        let seed = kwarg!(kwargs, "seed", u64, 31)?;
+
+        // Reject any unknown keyword arguments.
+        crate::utils::ensure_kwargs_consumed(kwargs)?;
+
         let mut rng = Xoshiro256PlusPlus::seed_from_u64(seed);
         let lock = self.lock();
         let sampler = ForwardSampler::new(&mut rng, &*lock).map_err(to_pyerr)?;
